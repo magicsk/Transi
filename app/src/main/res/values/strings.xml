@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Transi</string>
+    <string name="where_you_want_to_go">Where you want to go ?</string>
+    <string name="stop_icon">stop_icon</string>
+</resources>
