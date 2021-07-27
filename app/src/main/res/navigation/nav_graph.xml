@@ -9,7 +9,8 @@
         android:label="MainFragment" >
         <action
             android:id="@+id/action_mainFragment_to_typeAheadFragment"
-            app:destination="@id/typeAheadFragment" />
+            app:destination="@id/typeAheadFragment"
+            app:launchSingleTop="false" />
         <argument
             android:name="stopId"
             app:argType="string" />

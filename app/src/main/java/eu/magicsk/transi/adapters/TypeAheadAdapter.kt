@@ -1,6 +1,5 @@
 package eu.magicsk.transi.adapters
 
-import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,11 +10,12 @@ import eu.magicsk.transi.data.remote.responses.StopsJSONItem
 import eu.magicsk.transi.util.unaccent
 import kotlinx.android.synthetic.main.stops_list_item.view.*
 
-class TypeAheadAdapter (
+class TypeAheadAdapter(
     private var typeAheadItemList: MutableList<StopsJSONItem>,
     private val onItemClicked: (pos: Int) -> Unit
-):  RecyclerView.Adapter<TypeAheadAdapter.TypeAheadViewHolder>() {
-    class TypeAheadViewHolder(itemView: View, private val onItemClicked: (pos: Int) -> Unit) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
+) : RecyclerView.Adapter<TypeAheadAdapter.TypeAheadViewHolder>() {
+    class TypeAheadViewHolder(itemView: View, private val onItemClicked: (pos: Int) -> Unit) :
+        RecyclerView.ViewHolder(itemView), View.OnClickListener {
         init {
             itemView.setOnClickListener(this)
         }
@@ -27,22 +27,26 @@ class TypeAheadAdapter (
     }
 
 
-    private val TypeAheadOriginalList: MutableList<StopsJSONItem> = mutableListOf()
+    private val typeAheadOriginalList: MutableList<StopsJSONItem> = mutableListOf()
 
-
-    @SuppressLint("NotifyDataSetChanged")
-    fun filter(term: String): MutableList<StopsJSONItem> {
-        typeAheadItemList = TypeAheadOriginalList.filter {
+    fun filter(term: String) {
+        typeAheadItemList = typeAheadOriginalList.filter {
             it.name.unaccent().contains(term.unaccent(), ignoreCase = true)
         } as MutableList<StopsJSONItem>
         notifyDataSetChanged()
-        return typeAheadItemList
+//        notifyItemRangeChanged(0, typeAheadItemList.size)
     }
 
-    fun addItems(items: StopsJSON){
+    fun addItems(items: StopsJSON) {
+        typeAheadItemList.clear()
+        typeAheadOriginalList.clear()
         typeAheadItemList.addAll(items)
-        TypeAheadOriginalList.addAll(items)
+        typeAheadOriginalList.addAll(items)
         notifyItemRangeChanged(0, typeAheadItemList.size)
+    }
+
+    fun getItem(pos: Int): StopsJSONItem {
+        return typeAheadItemList[pos]
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TypeAheadViewHolder {
@@ -50,13 +54,6 @@ class TypeAheadAdapter (
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.stops_list_item, parent, false)
         return TypeAheadViewHolder(view, onItemClicked)
-//        return TypeAheadAdapter.TypeAheadViewHolder(
-//            LayoutInflater.from(parent.context).inflate(
-//                R.layout.stops_list_item,
-//                parent,
-//                false
-//            )
-//        )
     }
 
     override fun onBindViewHolder(holder: TypeAheadViewHolder, position: Int) {

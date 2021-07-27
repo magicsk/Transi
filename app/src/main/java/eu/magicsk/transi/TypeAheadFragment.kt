@@ -17,7 +17,6 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
 
     private lateinit var typeAheadAdapter: TypeAheadAdapter
     private var stopList: StopsJSON = StopsJSON()
-    private var filteredStopList: StopsJSON = StopsJSON()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,7 +26,6 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
 //        sharedElementEnterTransition = animation
 //        sharedElementReturnTransition = animation
         stopList = requireArguments().getSerializable("stopsList") as StopsJSON
-        filteredStopList = stopList
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -35,8 +33,7 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
 
         fun onListItemClick(pos: Int) {
             val navController = findNavController()
-            println(filteredStopList[pos].name)
-            navController.previousBackStackEntry?.savedStateHandle?.set("selectedStop", filteredStopList[pos])
+            navController.previousBackStackEntry?.savedStateHandle?.set("selectedStopId", typeAheadAdapter.getItem(pos).id)
             navController.popBackStack()
         }
 
@@ -50,8 +47,7 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
             override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(p0: Editable?) {}
             override fun onTextChanged(s: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                filteredStopList.clear()
-                filteredStopList.addAll(typeAheadAdapter.filter(s.toString()))
+                typeAheadAdapter.filter(s.toString())
             }
         })
 

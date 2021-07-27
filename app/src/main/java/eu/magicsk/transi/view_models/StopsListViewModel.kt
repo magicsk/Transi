@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import eu.magicsk.transi.data.remote.responses.StopsJSON
 import eu.magicsk.transi.repository.DataRepository
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -23,7 +22,6 @@ class StopsListViewModel @Inject constructor(
         viewModelScope.launch {
             val stops = repository.getStops()
             stopsLiveData.value = stops.data
-            println(stops.message)
         }
     }
 }

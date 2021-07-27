@@ -25,35 +25,54 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class MHDTableAdapter(
-    private val TableItemList: MutableList<MHDTableData>
+    private val TableItemList: MutableList<MHDTableData>,
+    private val onItemClicked: (pos: Int) -> Unit
 ) : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>() {
+    class MHDTableViewHolder(itemView: View, private val onItemClicked: (pos: Int) -> Unit) :
+        RecyclerView.ViewHolder(itemView), View.OnClickListener {
+        init {
+            itemView.setOnClickListener(this)
+        }
 
-    class MHDTableViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+        override fun onClick(v: View?) {
+            val pos = adapterPosition
+            onItemClicked(pos)
+        }
+    }
 
-    fun ioConnect(activity: Activity) {
-        val uri = URI.create("https://imhd.sk/")
-        val options = IO.Options()
+    private val uri: URI = URI.create("https://imhd.sk/")
+    private val options = IO.Options()
+    private val socket: Socket = IO.socket(uri, options)
+    private val tabArgs = JSONArray()
+
+    fun ioConnect(stopId: Int) {
         options.reconnection = true
         options.path = "/rt/sio2"
-        val socket = IO.socket(uri, options)
-        val tabArgs = JSONArray()
-        tabArgs.put(0, 82)
+        tabArgs.put(0, stopId)
         tabArgs.put(1, "*")
         socket.connect()
-            .on(Socket.EVENT_CONNECT) { println("connecting") }
-            .on(Socket.EVENT_DISCONNECT) { println("disconnected") }
-            .on("cack") { println("connect successful") }
+        socket
             .emit("tabStart", tabArgs)
             .emit("infoStart")
+
+    }
+
+    fun ioObservers(activity: Activity) {
+        socket.on(Socket.EVENT_CONNECT) { println("connecting") }
+            .on(Socket.EVENT_DISCONNECT) { println("disconnected") }
+            .on("cack") { println("connect successful") }
             .on("vInfo") {
             }
             .on("tabs") {
+                println("gotTabs")
                 val data = JSONObject(it[0].toString())
                 val keys = data.keys()
                 while (keys.hasNext()) {
-                    val tabs = data.getJSONObject(keys.next()).getJSONArray("tab")
+                    val platform: MutableList<MHDTableData> = mutableListOf()
+                    val key = keys.next()
+                    val tabs = data.getJSONObject(key).getJSONArray("tab")
                     for (i in 0 until tabs.length()) {
-                        val result = MHDTableData(
+                        val item = MHDTableData(
                             try {
                                 tabs.getJSONObject(i).getLong("i")
                             } catch (e: JSONException) {
@@ -64,10 +83,11 @@ class MHDTableAdapter(
                             } catch (e: JSONException) {
                                 "Err"
                             },
+                            key,
                             try {
                                 tabs.getJSONObject(i).getString("issi")
                             } catch (e: JSONException) {
-                                "Error"
+                                "offline"
                             },
                             try {
                                 tabs.getJSONObject(i).getString("cielStr")
@@ -94,14 +114,31 @@ class MHDTableAdapter(
                                 "cp"
                             },
                             try {
+                                tabs.getJSONObject(i).getInt("tuZidx")
+                            } catch (e: JSONException) {
+                                -1
+                            },
+                            try {
                                 tabs.getJSONObject(i).getInt("predoslaZidx")
                             } catch (e: JSONException) {
-                                0
+                                -1
+                            },
+                            try {
+                                tabs.getJSONObject(i).getString("predoslaZstr")
+                                    .replace("Bratislava, ", "")
+                            } catch (e: JSONException) {
+                                "none"
+                            },
+                            try {
+                                tabs.getJSONObject(i).getBoolean("uviaznute")
+                            } catch (e: JSONException) {
+                                false
                             }
                         )
-                        activity.runOnUiThread() {
-                            addItems(result)
-                        }
+                        platform.add(item)
+                    }
+                    activity.runOnUiThread {
+                        addItems(platform)
                     }
                 }
             }
@@ -109,45 +146,49 @@ class MHDTableAdapter(
             }
     }
 
-    private fun addItems(item: MHDTableData) {
-        var size = TableItemList.size
-        var exists = false
-        if (size > 0) {
-            for (q in 0 until size) {
-                for (j in 0 until size) {
-                    // TODO just change time
-                    if (TableItemList[j].Id == item.Id) {
-                        exists = true
-                        TableItemList[j].departureTime = item.departureTime
-                        TableItemList[j].delay = item.delay
-                        TableItemList[j].lastStopId = item.lastStopId
-                        TableItemList[j].busID = item.busID
-                        TableItemList[j].type = item.type
-                        notifyItemChanged(j)
+    fun ioDisconnect() {
+        socket.disconnect()
+        socket.close()
+        clearList()
+    }
+
+    fun getInfo(pos: Int): MHDTableData {
+        return TableItemList[pos]
+    }
+
+    private fun clearList() {
+        TableItemList.clear()
+        notifyItemRangeRemoved(0, itemCount)
+    }
+
+    private fun addItems(items: MutableList<MHDTableData>) {
+        if (items.size > 0) {
+            val toRemove: MutableList<Int> = mutableListOf()
+            if (TableItemList.size > 0) {
+                for (i in 0 until TableItemList.size) {
+                    if (TableItemList[i].platform == items[0].platform) {
+                        toRemove.add(i)
                     }
-                    if (TableItemList[j].departureTime < System.currentTimeMillis()) {
-                        TableItemList.removeAt(j)
-                        notifyItemRemoved(j)
-                        size--
+                }
+                val size = toRemove.size - 1
+                if (size >= 0) {
+                    for (i in size downTo 0) {
+                        TableItemList.removeAt(toRemove[i])
                     }
                 }
             }
+            TableItemList.addAll(items)
+            TableItemList.sortBy { x -> x.departureTime }
+            notifyItemRangeChanged(0, TableItemList.size)
         }
-        if (!exists) {
-            TableItemList.add(item)
-            notifyItemInserted(TableItemList.size - 1)
-        }
-        TableItemList.sortBy { x -> x.departureTime }
+
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MHDTableViewHolder {
-        return MHDTableViewHolder(
-            LayoutInflater.from(parent.context).inflate(
-                R.layout.table_list_item,
-                parent,
-                false
-            )
-        )
+        val context = parent.context
+        val inflater = LayoutInflater.from(context)
+        val view = inflater.inflate(R.layout.table_list_item, parent, false)
+        return MHDTableViewHolder(view, onItemClicked)
     }
 
     override fun onBindViewHolder(holder: MHDTableViewHolder, position: Int) {
@@ -156,7 +197,7 @@ class MHDTableAdapter(
             (current.departureTime - System.currentTimeMillis()).toDouble() / 60000
         val hours = SimpleDateFormat("H:mm", Locale.UK).format(current.departureTime)
         val time =
-            if (mins > 60) hours else if (mins < 0.3) "●●  " else if (mins < 1) "<1 min" else "${mins.toInt()} min"
+            if (mins > 60) hours else if (mins < 0) "●●  " else if (mins < 1) "<1 min" else "${mins.toInt()} min"
         val timeText = if (current.type == "online") time else "~ $time"
         val rounded =
             try {
