@@ -10,7 +10,7 @@ interface ApiRequests {
 
     @GET("trip")
     suspend fun getTrip(
-        @Query("time") time: Int,
+        @Query("time") time: Long,
         @Query("from") from: String,
         @Query("to") to: String,
         @Query("ad") ad: Int,

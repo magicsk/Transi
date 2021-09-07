@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_height="wrap_content"
+    android:layout_width="match_parent">
+
+
+    <EditText
+        android:background="@drawable/round_shape"
+        android:hint="@string/where_you_want_to_go"
+        android:id="@+id/editText"
+        android:inputType="textNoSuggestions"
+        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginVertical="10dp"
+        android:lines="1"
+        android:padding="10dp"
+        android:singleLine="true"
+        android:transitionName="original_editText"
+        android:selectAllOnFocus="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/positionBtn"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:layout_height="55dp"
+        android:layout_width="45dp"
+        android:contentDescription="@string/enbale_disable_switching_table_for_nearest_stop"
+        android:id="@+id/positionBtn"
+        android:layout_marginHorizontal="5dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/editText"
+        app:layout_constraintTop_toTopOf="parent"
+        app:icon="@drawable/ic_location_search"
+        app:iconTint="?colorOnSurface"
+        app:iconPadding="0dp"
+        app:iconGravity="textStart"
+        app:strokeColor="@android:color/transparent"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

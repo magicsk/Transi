@@ -5,10 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <androidx.cardview.widget.CardView
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="3dp"
         android:layout_marginVertical="2dp"
         app:cardCornerRadius="8dp"
         app:cardBackgroundColor="?colorSurface"
@@ -19,20 +18,20 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginHorizontal="10dp"
             android:layout_marginVertical="5dp"
             android:orientation="horizontal">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/constraintLayout"
-                android:layout_width="55dp"
+                android:layout_width="65dp"
                 android:layout_height="wrap_content"
+                android:paddingEnd="10dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
                 <TextView
-                    android:id="@+id/MHDTableListLineNum"
+                    android:id="@+id/TableListItemLineNum"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/rounded_shape"
@@ -51,50 +50,66 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <TextView
-                android:id="@+id/MHDTableListHeadsign"
-                android:layout_width="230dp"
+                android:id="@+id/TableListItemHeadsign"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/roboto_medium"
-                android:padding="5dp"
-                android:text="Example"
-                android:textSize="18sp"
+                android:fontFamily="@font/roboto"
+                android:text="▶ Rajská"
+                android:textSize="16sp"
                 android:lines="1"
                 android:ellipsize="end"
-                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/constraintLayout"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
-                android:id="@+id/MHDTableListTime"
-                android:layout_width="wrap_content"
+                android:id="@+id/TableListItemDepartureTime"
+                android:layout_width="50dp"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/roboto_medium"
-                android:padding="5dp"
-                android:text="~ 59 min"
-                android:textSize="18sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/MHDTableListStuck"
-                app:layout_constraintTop_toTopOf="parent" />
-            <ImageView
-                android:id="@+id/MHDTableListStuck"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="5dp"
-                android:background="@drawable/ic_warning"
-                android:contentDescription="@string/stuck"
-                app:layout_constraintEnd_toStartOf="@+id/MHDTableListPlatform"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:fontFamily="@font/roboto"
+                android:text="16:20"
+                android:textSize="14sp"
+                android:lines="1"
+                android:ellipsize="end"
+                app:layout_constraintStart_toEndOf="@+id/constraintLayout"
+                app:layout_constraintTop_toBottomOf="@id/TableListItemHeadsign" />
+
             <TextView
-                android:id="@+id/MHDTableListPlatform"
+                android:id="@+id/TableListItemDepartureStop"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/roboto"
-                android:padding="5dp"
-                android:textSize="18sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:text="Hronská"
+                android:textSize="14sp"
+                android:lines="1"
+                android:ellipsize="end"
+                app:layout_constraintStart_toEndOf="@+id/TableListItemDepartureTime"
+                app:layout_constraintTop_toBottomOf="@id/TableListItemHeadsign" />
+
+            <TextView
+                android:id="@+id/TableListItemArrivalTime"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto"
+                android:text="16:40"
+                android:textSize="14sp"
+                android:lines="1"
+                android:ellipsize="end"
+                app:layout_constraintStart_toEndOf="@+id/constraintLayout"
+                app:layout_constraintTop_toBottomOf="@id/TableListItemDepartureTime" />
+
+            <TextView
+                android:id="@+id/TableListItemArrivalStop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto"
+                android:text="Autobusová stanica"
+                android:textSize="14sp"
+                android:lines="1"
+                android:ellipsize="end"
+                app:layout_constraintStart_toEndOf="@+id/TableListItemDepartureTime"
+                app:layout_constraintTop_toBottomOf="@id/TableListItemDepartureTime" />
+
+
         </androidx.constraintlayout.widget.ConstraintLayout>
-    </androidx.cardview.widget.CardView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

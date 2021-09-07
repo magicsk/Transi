@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="60dp"
-    android:padding="5dp">
+    android:padding="5dp"
+    android:background="?selectableItemBackground">
 
 
             <FrameLayout
@@ -18,16 +19,19 @@
                 app:layout_constraintTop_toTopOf="parent">
 
                 <ImageView
+                    android:id="@+id/stopIconBackground"
                     android:layout_width="36dp"
                     android:layout_height="36dp"
-                    android:src="@drawable/ic_stop_background"
+                    android:background="@drawable/ic_stop_background"
+                    android:backgroundTint="@color/red_100"
                     android:contentDescription="@string/stop_icon" />
 
                 <ImageView
+                    android:id="@+id/stopIconDrawable"
                     android:layout_width="18dp"
                     android:layout_height="18dp"
                     android:contentDescription="@string/stop_icon"
-                    android:src="@drawable/ic_bus_stop"
+                    android:background="@drawable/ic_bus"
                     android:layout_gravity="center"/>
 
             </FrameLayout>
@@ -48,12 +52,19 @@
                 app:layout_constraintStart_toEndOf="@+id/stopIcon"
                 app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageButton
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/directionBtn"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="45dp"
+        android:layout_height="55dp"
         android:layout_marginHorizontal="15dp"
-        android:background="@drawable/ic_directions"
-        android:contentDescription="directions"
+        android:contentDescription="@string/enbale_disable_switching_table_for_nearest_stop"
+        app:icon="@drawable/ic_directions"
+        app:iconGravity="textStart"
+        app:iconSize="26dp"
+        app:iconPadding="0dp"
+        app:iconTint="?colorOnSurface"
+        app:strokeColor="@android:color/transparent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

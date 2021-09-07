@@ -1,3 +1,7 @@
 package eu.magicsk.transi.data.remote.responses
 
-class StopsJSON : ArrayList<StopsJSONItem>()
+import android.os.Parcelable
+import kotlinx.android.parcel.Parcelize
+
+@Parcelize
+class StopsJSON : ArrayList<StopsJSONItem>(), Parcelable

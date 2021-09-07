@@ -9,11 +9,10 @@
         android:label="MainFragment" >
         <action
             android:id="@+id/action_mainFragment_to_typeAheadFragment"
-            app:destination="@id/typeAheadFragment"
-            app:launchSingleTop="false" />
+            app:destination="@id/typeAheadFragment"/>
         <argument
-            android:name="stopId"
-            app:argType="string" />
+            android:name="stopList"
+            app:argType="eu.magicsk.transi.data.remote.responses.StopsJSON"/>
     </fragment>
     <fragment
         android:id="@+id/typeAheadFragment"

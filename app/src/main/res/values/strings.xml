@@ -2,4 +2,12 @@
     <string name="app_name">Transi</string>
     <string name="where_you_want_to_go">Where you want to go ?</string>
     <string name="stop_icon">stop_icon</string>
+    <string name="looking_for_the_nearest_stop">Looking for the nearest stop…</string>
+    <string name="enbale_disable_switching_table_for_nearest_stop">enbale/disable switching table for nearest stop</string>
+    <string name="from">From…</string>
+    <string name="to">To…</string>
+    <string name="actual_position">Actual position</string>
+    <string name="back">Back</string>
+    <string name="stuck">stuck</string>
+    <string name="error">Error</string>
 </resources>

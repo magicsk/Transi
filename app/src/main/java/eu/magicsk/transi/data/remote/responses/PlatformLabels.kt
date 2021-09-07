@@ -4,7 +4,4 @@ import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize
 
 @Parcelize
-data class Stop(
-    val stop: String,
-    val time: String
-) : Parcelable
+class PlatformLabels() : ArrayList<PlatformLabel>(), Parcelable

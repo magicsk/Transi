@@ -1,10 +1,10 @@
 package eu.magicsk.transi.repository
 
+import dagger.hilt.android.scopes.ActivityScoped
+import eu.magicsk.transi.data.remote.ApiRequests
 import eu.magicsk.transi.data.remote.responses.StopsJSON
 import eu.magicsk.transi.data.remote.responses.TripPlannerJSON
-import dagger.hilt.android.scopes.ActivityScoped
 import eu.magicsk.transi.util.Resource
-import eu.magicsk.transi.data.remote.ApiRequests
 import javax.inject.Inject
 
 @ActivityScoped
@@ -12,7 +12,7 @@ class DataRepository @Inject constructor(
     private val api: ApiRequests
 ) {
 
-    suspend fun getTrip(time: Int, from: String, to: String, ad: Int): Resource<TripPlannerJSON> {
+    suspend fun getTrip(time: Long, from: String, to: String, ad: Int): Resource<TripPlannerJSON> {
         val response = try {
             api.getTrip(time, from, to, ad)
         } catch(e: Exception) {

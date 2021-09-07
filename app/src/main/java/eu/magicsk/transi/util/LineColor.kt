@@ -58,7 +58,16 @@ fun getLineColor(lineNum: String, dark: Boolean): Int {
 
 fun getLineTextColor(lineNum: String): Int {
     when (lineNum) {
+        "N21" -> return R.color.l21
+        "N31" -> return R.color.l31
+        "N33" -> return R.color.l33
+        "N47" -> return R.color.l207
+        "N61" -> return R.color.l61
         "N72" -> return R.color.l9
+        "N80" -> return R.color.l5
+        "N93" -> return R.color.l93
+        "N95" -> return R.color.l1
+        "N99" -> return R.color.l6
         "►" -> return R.color.material_on_surface_emphasis_high_type
         else -> {
             if (lineNum.contains("X")) return R.color.replacement_text

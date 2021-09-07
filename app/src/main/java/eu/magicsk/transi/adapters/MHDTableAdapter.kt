@@ -10,6 +10,7 @@ import androidx.core.view.setPadding
 import androidx.recyclerview.widget.RecyclerView
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.models.MHDTableData
+import eu.magicsk.transi.data.remote.responses.StopsJSON
 import eu.magicsk.transi.getLineColor
 import eu.magicsk.transi.getLineTextColor
 import eu.magicsk.transi.util.dpToPx
@@ -26,6 +27,7 @@ import java.util.*
 
 class MHDTableAdapter(
     private val TableItemList: MutableList<MHDTableData>,
+    private var TableInfo: String,
     private val onItemClicked: (pos: Int) -> Unit
 ) : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>() {
     class MHDTableViewHolder(itemView: View, private val onItemClicked: (pos: Int) -> Unit) :
@@ -44,8 +46,19 @@ class MHDTableAdapter(
     private val options = IO.Options()
     private val socket: Socket = IO.socket(uri, options)
     private val tabArgs = JSONArray()
+    private var connected = false
+    private var stopList: StopsJSON = StopsJSON()
+
+    fun putStopList(stops: StopsJSON) {
+        stopList.clear()
+        stopList.addAll(stops)
+    }
 
     fun ioConnect(stopId: Int) {
+        if (connected) {
+            ioDisconnect()
+        }
+        println("connecting")
         options.reconnection = true
         options.path = "/rt/sio2"
         tabArgs.put(0, stopId)
@@ -54,17 +67,28 @@ class MHDTableAdapter(
         socket
             .emit("tabStart", tabArgs)
             .emit("infoStart")
-
     }
 
     fun ioObservers(activity: Activity) {
-        socket.on(Socket.EVENT_CONNECT) { println("connecting") }
-            .on(Socket.EVENT_DISCONNECT) { println("disconnected") }
-            .on("cack") { println("connect successful") }
+        socket
+            .on(Socket.EVENT_CONNECT) {
+                connected = true
+                println("connected")
+            }
+            .on(Socket.EVENT_DISCONNECT) {
+                connected = false
+                println("disconnected")
+            }
+            .on(Socket.EVENT_RECONNECT) {
+                connected = true
+                println("reconnect")
+                socket
+                    .emit("tabStart", tabArgs)
+                    .emit("infoStart")
+            }
             .on("vInfo") {
             }
             .on("tabs") {
-                println("gotTabs")
                 val data = JSONObject(it[0].toString())
                 val keys = data.keys()
                 while (keys.hasNext()) {
@@ -143,17 +167,38 @@ class MHDTableAdapter(
                 }
             }
             .on("iText") {
+                var infos = ""
+                val data = JSONArray(it[0].toString())
+                for (i in 0 until data.length()) {
+                    val info = try {
+                        data.getString(i)
+                    } catch (e: JSONException) {
+                        ""
+                    }
+                    println(info)
+                    if (info != "" && infos != "") infos = "$infos\n\n$info" else if (info != "") infos =
+                        info
+                }
+                activity.runOnUiThread {
+                    addTableInfo(infos)
+                }
             }
     }
 
     fun ioDisconnect() {
         socket.disconnect()
         socket.close()
+        val size = TableItemList.size
         clearList()
+        notifyItemRangeRemoved(0, size)
     }
 
-    fun getInfo(pos: Int): MHDTableData {
+    fun getListItem(pos: Int): MHDTableData {
         return TableItemList[pos]
+    }
+
+    fun getInfoText(): String {
+        return TableInfo.toString()
     }
 
     private fun clearList() {
@@ -184,6 +229,10 @@ class MHDTableAdapter(
 
     }
 
+    private fun addTableInfo(info: String) {
+        TableInfo = info
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MHDTableViewHolder {
         val context = parent.context
         val inflater = LayoutInflater.from(context)
@@ -198,7 +247,7 @@ class MHDTableAdapter(
         val hours = SimpleDateFormat("H:mm", Locale.UK).format(current.departureTime)
         val time =
             if (mins > 60) hours else if (mins < 0) "●●  " else if (mins < 1) "<1 min" else "${mins.toInt()} min"
-        val timeText = if (current.type == "online") time else "~ $time"
+        val timeText = if (current.type == "online") time else if (mins < 0) "○○  " else "~ $time"
         val rounded =
             try {
                 current.line.contains("S") || current.line.toInt() < 10
@@ -237,8 +286,29 @@ class MHDTableAdapter(
             MHDTableListLineNum.background = drawable
             MHDTableListLineNum.text = current.line
             MHDTableListHeadsign.text = current.headsign
+            if (stopList.size > 1) {
+                for (i in 0 until stopList.size) {
+                    val currentStopId = tabArgs.getInt(0)
+                    if (currentStopId == stopList[i].id) {
+                        if (stopList[i].platform_labels != null) {
+                            stopList[i].platform_labels?.forEach { platformLabel ->
+                                if (current.platform.replace(
+                                        "${currentStopId}.",
+                                        ""
+                                    ) == platformLabel.id
+                                ) {
+                                    MHDTableListPlatform.text = platformLabel.label
+                                }
+                            }
+                        } else {
+                            MHDTableListPlatform.text = ""
+                        }
+                    }
+                }
+            }
             MHDTableListTime.text = timeText
-
+            if (current.stuck) MHDTableListStuck.visibility =
+                View.VISIBLE else MHDTableListStuck.visibility = View.GONE
         }
     }
 

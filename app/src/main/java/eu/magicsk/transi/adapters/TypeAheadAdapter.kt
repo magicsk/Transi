@@ -1,5 +1,6 @@
 package eu.magicsk.transi.adapters
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,12 +13,20 @@ import kotlinx.android.synthetic.main.stops_list_item.view.*
 
 class TypeAheadAdapter(
     private var typeAheadItemList: MutableList<StopsJSONItem>,
-    private val onItemClicked: (pos: Int) -> Unit
+    private val onItemClicked: (pos: Int) -> Unit,
+    private val onButtonClicked: (pos: Int) -> Unit
 ) : RecyclerView.Adapter<TypeAheadAdapter.TypeAheadViewHolder>() {
-    class TypeAheadViewHolder(itemView: View, private val onItemClicked: (pos: Int) -> Unit) :
+    class TypeAheadViewHolder(
+        itemView: View,
+        private val onItemClicked: (pos: Int) -> Unit,
+        private val onButtonClicked: (pos: Int) -> Unit
+    ) :
         RecyclerView.ViewHolder(itemView), View.OnClickListener {
         init {
             itemView.setOnClickListener(this)
+            itemView.directionBtn.setOnClickListener {
+                onButtonClicked(adapterPosition)
+            }
         }
 
         override fun onClick(v: View?) {
@@ -29,12 +38,12 @@ class TypeAheadAdapter(
 
     private val typeAheadOriginalList: MutableList<StopsJSONItem> = mutableListOf()
 
+    @SuppressLint("NotifyDataSetChanged")
     fun filter(term: String) {
         typeAheadItemList = typeAheadOriginalList.filter {
             it.name.unaccent().contains(term.unaccent(), ignoreCase = true)
         } as MutableList<StopsJSONItem>
         notifyDataSetChanged()
-//        notifyItemRangeChanged(0, typeAheadItemList.size)
     }
 
     fun addItems(items: StopsJSON) {
@@ -53,13 +62,31 @@ class TypeAheadAdapter(
         val context = parent.context
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.stops_list_item, parent, false)
-        return TypeAheadViewHolder(view, onItemClicked)
+        return TypeAheadViewHolder(view, onItemClicked, onButtonClicked)
     }
 
+    @SuppressLint("UseCompatLoadingForDrawables", "UseCompatLoadingForColorStateLists")
     override fun onBindViewHolder(holder: TypeAheadViewHolder, position: Int) {
         val current = typeAheadItemList[position]
         holder.itemView.apply {
             stopName.text = current.name
+            when (current.type) {
+                "train" -> {
+                    stopIconDrawable.background = resources.getDrawable(R.drawable.ic_train)
+                    stopIconBackground.backgroundTintList =
+                        resources.getColorStateList(R.color.blue_100)
+                }
+                "tram" -> {
+                    stopIconDrawable.background = resources.getDrawable(R.drawable.ic_tram)
+                    stopIconBackground.backgroundTintList =
+                        resources.getColorStateList(R.color.yellow_100)
+                }
+                else -> {
+                    stopIconDrawable.background = resources.getDrawable(R.drawable.ic_bus)
+                    stopIconBackground.backgroundTintList =
+                        resources.getColorStateList(R.color.red_100)
+                }
+            }
         }
     }
 
