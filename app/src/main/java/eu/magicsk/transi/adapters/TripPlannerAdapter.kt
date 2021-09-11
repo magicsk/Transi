@@ -16,13 +16,9 @@ class TripPlannerAdapter(
     class TripPlannerViewHolder(itemView: View) :
         RecyclerView.ViewHolder(itemView)
 
-    private fun clearList() {
-        TripPlannerItemList.clear()
-        notifyItemRangeRemoved(0, itemCount)
-    }
-
-    private fun addItems(items: MutableList<Route>) {
+   fun addItems(items: MutableList<Route>) {
         if (items.size > 0) {
+            TripPlannerItemList.clear()
             TripPlannerItemList.addAll(items)
             notifyItemRangeChanged(0, TripPlannerItemList.size)
         }

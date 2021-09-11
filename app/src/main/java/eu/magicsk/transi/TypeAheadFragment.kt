@@ -11,35 +11,58 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import eu.magicsk.transi.adapters.TypeAheadAdapter
 import eu.magicsk.transi.data.remote.responses.StopsJSON
+import eu.magicsk.transi.data.remote.responses.StopsJSONItem
+import kotlinx.android.synthetic.main.fragment_plan.*
 import kotlinx.android.synthetic.main.fragment_search.*
 import kotlinx.android.synthetic.main.fragment_type_ahead.*
 
 class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
 
     private lateinit var typeAheadAdapter: TypeAheadAdapter
+    private lateinit var origin: String
+    private var showDirections = false
     private var stopList: StopsJSON = StopsJSON()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        val animation = TransitionInflater.from(requireContext()).inflateTransition(android.R.transition.move).setDuration(100)
-//        sharedElementEnterTransition = animation
-//        sharedElementReturnTransition = animation
         stopList = requireArguments().getSerializable("stopsList") as StopsJSON
+        showDirections = requireArguments().getBoolean("directions")
+        origin = requireArguments().getString("origin").toString()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        if (origin != "editText") {
+            stopList.add(
+                0, StopsJSONItem(
+                    "Actual position",
+                    "Actual position",
+                    "",
+                    "a",
+                    "location",
+                    0,
+                    "0",
+                    "0",
+                    0,
+                    null
+                )
+            )
+        }
 
         fun onListItemClick(pos: Int) {
             val navController = findNavController()
-            navController.previousBackStackEntry?.savedStateHandle?.set(
-                "selectedStopId",
-                typeAheadAdapter.getItem(pos).id
-            )
-            activity?.editText?.setText(typeAheadAdapter.getItem(pos).name)
+            navController.previousBackStackEntry?.savedStateHandle?.apply {
+                remove<Int>("selectedToStopId")
+                set("selectedStopId", typeAheadAdapter.getItem(pos).id)
+                set("origin", origin)
+            }
+            when (origin) {
+                "editText" -> activity?.editText?.setText(typeAheadAdapter.getItem(pos).name)
+                "editTextFrom" -> activity?.editTextFrom?.setText(typeAheadAdapter.getItem(pos).name)
+                "editTextTo" -> activity?.editTextTo?.setText(typeAheadAdapter.getItem(pos).name)
+            }
 
-            val im: InputMethodManager? =
-                activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+            val im: InputMethodManager? = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
             im?.hideSoftInputFromWindow(view.windowToken, 0)
             navController.popBackStack()
         }
@@ -50,7 +73,6 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
                 "selectedToStopId",
                 typeAheadAdapter.getItem(pos).id
             )
-            activity?.editText?.clearFocus()
             val im: InputMethodManager? =
                 activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
             im?.hideSoftInputFromWindow(view.windowToken, 0)
@@ -58,23 +80,25 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
         }
 
         typeAheadAdapter =
-            TypeAheadAdapter(mutableListOf(), { position -> onListItemClick(position) }) { position -> onButtonItemClick(position) }
+            TypeAheadAdapter(
+                mutableListOf(), showDirections,
+                { position -> onListItemClick(position) }) { position -> onButtonItemClick(position) }
         typeAheadAdapter.addItems(stopList)
         StopList.adapter = typeAheadAdapter
         StopList.layoutManager = LinearLayoutManager(context)
 
+        val eText = when (origin) {
+            "editTextFrom" -> activity?.editTextFrom
+            "editTextTo" -> activity?.editTextTo
+            else -> activity?.editText
+        }
 
-        activity?.editText?.addTextChangedListener(object : TextWatcher {
+        eText?.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(p0: Editable?) {}
             override fun onTextChanged(s: CharSequence?, p1: Int, p2: Int, p3: Int) {
                 typeAheadAdapter.filter(s.toString())
             }
         })
-//
-//        editText.requestFocus()
-//        val im: InputMethodManager? =
-//            activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
-//        im?.showSoftInput(editText, 0)
     }
 }

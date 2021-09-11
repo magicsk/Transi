@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="3dp"
-        android:layout_marginVertical="2dp"
+        android:layout_marginBottom="5dp"
         app:cardCornerRadius="8dp"
         app:cardBackgroundColor="?colorSurface"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -19,7 +19,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginHorizontal="10dp"
+            android:layout_marginStart="10dp"
             android:layout_marginVertical="5dp"
             android:orientation="horizontal">
 
@@ -52,16 +52,17 @@
 
             <TextView
                 android:id="@+id/MHDTableListHeadsign"
-                android:layout_width="230dp"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/roboto_medium"
-                android:padding="5dp"
+                android:layout_marginStart="5dp"
                 android:text="Example"
                 android:textSize="18sp"
                 android:lines="1"
-                android:ellipsize="end"
+                android:ellipsize="marquee"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/constraintLayout"
+                app:layout_constraintEnd_toStartOf="@id/MHDTableListTime"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
@@ -69,9 +70,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/roboto_medium"
-                android:padding="5dp"
-                android:text="~ 59 min"
-                android:textSize="18sp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/ic_filled_now"
+                android:text=""
+                android:textSize="14sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/MHDTableListStuck"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -79,7 +81,7 @@
                 android:id="@+id/MHDTableListStuck"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="5dp"
+                android:layout_marginEnd="10dp"
                 android:background="@drawable/ic_warning"
                 android:contentDescription="@string/stuck"
                 app:layout_constraintEnd_toStartOf="@+id/MHDTableListPlatform"
@@ -90,8 +92,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/roboto"
-                android:padding="5dp"
+                android:layout_marginEnd="10dp"
                 android:textSize="18sp"
+                android:text="A"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />

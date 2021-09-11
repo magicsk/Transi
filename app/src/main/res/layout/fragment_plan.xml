@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_height="wrap_content"
-    android:layout_width="match_parent">
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/backBtn"
@@ -15,30 +15,32 @@
         app:iconGravity="textStart"
         app:iconPadding="0dp"
         app:iconTint="?colorOnSurface"
-        app:strokeColor="@android:color/transparent"
         app:layout_constraintEnd_toStartOf="@id/editTextFrom"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:strokeColor="@android:color/transparent" />
 
     <EditText
         android:id="@+id/editTextFrom"
-        android:layout_height="wrap_content"
         android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
         android:background="@drawable/round_shape_10"
         android:hint="@string/from"
+        android:text="@string/actual_position"
         android:inputType="textNoSuggestions"
         android:lines="1"
         android:paddingVertical="6dp"
-        android:singleLine="true"
-        android:layout_marginHorizontal="10dp"
         android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:autofillHints="none"
+        app:layout_constraintBottom_toTopOf="@id/editTextTo"
+        app:layout_constraintEnd_toStartOf="@id/positionPlanBtn"
         app:layout_constraintStart_toEndOf="@id/backBtn"
-        app:layout_constraintEnd_toStartOf="@id/positionBtn"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/editTextTo"/>
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/positionBtn"
+        android:id="@+id/positionPlanBtn"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="45dp"
         android:layout_height="55dp"
@@ -46,29 +48,30 @@
         android:contentDescription="@string/enbale_disable_switching_table_for_nearest_stop"
         app:icon="@drawable/ic_location_search"
         app:iconGravity="textStart"
-        app:iconTint="?colorOnSurface"
         app:iconPadding="0dp"
-        app:strokeColor="@android:color/transparent"
+        app:iconTint="?colorOnSurface"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/editTextFrom"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:strokeColor="@android:color/transparent" />
 
     <EditText
         android:id="@+id/editTextTo"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
         android:background="@drawable/round_shape_10"
         android:hint="@string/to"
         android:inputType="textNoSuggestions"
         android:lines="1"
-        android:paddingVertical="6dp"
         android:paddingHorizontal="10dp"
-        android:singleLine="true"
-        android:layout_marginHorizontal="10dp"
+        android:paddingVertical="6dp"
         android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:autofillHints="none"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@id/switchBtn"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/editTextFrom" />
 
     <com.google.android.material.button.MaterialButton
@@ -82,10 +85,37 @@
         app:iconGravity="textStart"
         app:iconPadding="0dp"
         app:iconTint="?colorOnSurface"
-        app:strokeColor="@android:color/transparent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/editTextTo"
-        app:layout_constraintTop_toBottomOf="@+id/positionBtn" />
+        app:layout_constraintTop_toBottomOf="@+id/positionPlanBtn"
+        app:strokeColor="@android:color/transparent" />
+
+    <LinearLayout
+        android:id="@+id/progressBar_bg"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@color/grayTint"
+        android:layout_weight="1"
+        android:visibility="gone"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
+
+    <ProgressBar
+        android:id="@+id/progressBar_ic"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:minWidth="40dp"
+        android:minHeight="40dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

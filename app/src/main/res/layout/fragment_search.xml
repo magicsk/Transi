@@ -6,7 +6,7 @@
 
 
     <EditText
-        android:background="@drawable/round_shape"
+        android:background="@drawable/round_shape_15"
         android:hint="@string/where_you_want_to_go"
         android:id="@+id/editText"
         android:inputType="textNoSuggestions"

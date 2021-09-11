@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.RecyclerView
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.remote.responses.StopsJSON
@@ -13,6 +14,7 @@ import kotlinx.android.synthetic.main.stops_list_item.view.*
 
 class TypeAheadAdapter(
     private var typeAheadItemList: MutableList<StopsJSONItem>,
+    private val showDirections: Boolean,
     private val onItemClicked: (pos: Int) -> Unit,
     private val onButtonClicked: (pos: Int) -> Unit
 ) : RecyclerView.Adapter<TypeAheadAdapter.TypeAheadViewHolder>() {
@@ -65,26 +67,31 @@ class TypeAheadAdapter(
         return TypeAheadViewHolder(view, onItemClicked, onButtonClicked)
     }
 
-    @SuppressLint("UseCompatLoadingForDrawables", "UseCompatLoadingForColorStateLists")
     override fun onBindViewHolder(holder: TypeAheadViewHolder, position: Int) {
         val current = typeAheadItemList[position]
         holder.itemView.apply {
+            directionBtn.visibility = if (showDirections) View.VISIBLE else View.GONE
             stopName.text = current.name
             when (current.type) {
-                "train" -> {
-                    stopIconDrawable.background = resources.getDrawable(R.drawable.ic_train)
+                "location" -> {
+                    stopIconDrawable.background = ResourcesCompat.getDrawable(resources,R.drawable.ic_location_on, context?.theme)
                     stopIconBackground.backgroundTintList =
-                        resources.getColorStateList(R.color.blue_100)
+                        ResourcesCompat.getColorStateList(resources,R.color.blue_100, context?.theme)
+                }
+                "train" -> {
+                    stopIconDrawable.background = ResourcesCompat.getDrawable(resources,R.drawable.ic_train, context?.theme)
+                    stopIconBackground.backgroundTintList =
+                        ResourcesCompat.getColorStateList(resources,R.color.blue_100, context?.theme)
                 }
                 "tram" -> {
-                    stopIconDrawable.background = resources.getDrawable(R.drawable.ic_tram)
+                    stopIconDrawable.background = ResourcesCompat.getDrawable(resources, R.drawable.ic_tram, context?.theme)
                     stopIconBackground.backgroundTintList =
-                        resources.getColorStateList(R.color.yellow_100)
+                        ResourcesCompat.getColorStateList(resources, R.color.yellow_100, context?.theme)
                 }
                 else -> {
-                    stopIconDrawable.background = resources.getDrawable(R.drawable.ic_bus)
+                    stopIconDrawable.background = ResourcesCompat.getDrawable(resources, R.drawable.ic_bus, context?.theme)
                     stopIconBackground.backgroundTintList =
-                        resources.getColorStateList(R.color.red_100)
+                        ResourcesCompat.getColorStateList(resources, R.color.red_100, context?.theme)
                 }
             }
         }

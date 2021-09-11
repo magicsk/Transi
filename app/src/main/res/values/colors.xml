@@ -13,6 +13,7 @@
     <color name="gray">#FF222222</color>
     <color name="white">#FFFFFFFF</color>
     <color name="milky">#FFEEEEEE</color>
+    <color name="grayTint">#99222222</color>
 
     //line colors
     <color name="l1">#FFff6600</color>
@@ -27,7 +28,6 @@
     <color name="l21">#FF66c3d0</color>
     <color name="l31">#FF5db56e</color>
     <color name="l33">#FFa79ecd</color>
-    <color name="l39">#FF5db56e</color>
     <color name="l50">#FF57a7b3</color>
     <color name="l61">#FFec6a6d</color>
     <color name="l68">#FFc7bc6a</color>
@@ -51,7 +51,6 @@
     <color name="l258">#FF9d9e9e</color>
     <color name="l269">#FFa2d9f7</color>
     <color name="l523">#FFea544a</color>
-    <color name="l524">#FFa2d9f7</color>
     <color name="l525">#FFaf9778</color>
     <color name="l530">#FF33b7bc</color>
     <color name="l540">#FF78b833</color>

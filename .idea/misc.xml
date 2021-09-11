@@ -5,20 +5,29 @@
       <map>
         <entry key="app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.24605263157894736" />
         <entry key="app/src/main/res/drawable/card_shape.xml" value="0.24605263157894736" />
+        <entry key="app/src/main/res/drawable/ic_arrow_back.xml" value="0.5510416666666667" />
         <entry key="app/src/main/res/drawable/ic_bus.xml" value="0.5482051282051282" />
         <entry key="app/src/main/res/drawable/ic_bus_stop.xml" value="0.24605263157894736" />
         <entry key="app/src/main/res/drawable/ic_directions.xml" value="0.5482051282051282" />
+        <entry key="app/src/main/res/drawable/ic_filled_circle.xml" value="0.5510416666666667" />
+        <entry key="app/src/main/res/drawable/ic_filled_now.xml" value="0.5510416666666667" />
         <entry key="app/src/main/res/drawable/ic_launcher_background.xml" value="0.24605263157894736" />
+        <entry key="app/src/main/res/drawable/ic_location.xml" value="0.5510416666666667" />
+        <entry key="app/src/main/res/drawable/ic_location_on.xml" value="0.33125" />
         <entry key="app/src/main/res/drawable/ic_location_search.xml" value="0.425" />
         <entry key="app/src/main/res/drawable/ic_location_searching.xml" value="0.425" />
         <entry key="app/src/main/res/drawable/ic_my_location.xml" value="0.425" />
+        <entry key="app/src/main/res/drawable/ic_outline_circle.xml" value="0.5510416666666667" />
+        <entry key="app/src/main/res/drawable/ic_outline_now.xml" value="0.5510416666666667" />
         <entry key="app/src/main/res/drawable/ic_stop_background.xml" value="0.24605263157894736" />
         <entry key="app/src/main/res/drawable/ic_train.xml" value="0.5482051282051282" />
         <entry key="app/src/main/res/drawable/ic_tram.xml" value="0.41875" />
         <entry key="app/src/main/res/drawable/ic_warning.xml" value="0.425" />
         <entry key="app/src/main/res/drawable/round_shape.xml" value="0.2118421052631579" />
+        <entry key="app/src/main/res/drawable/round_shape_10.xml" value="0.33125" />
         <entry key="app/src/main/res/drawable/round_shape_stroke.xml" value="0.2444078947368421" />
         <entry key="app/src/main/res/drawable/rounded_shape.xml" value="0.2118421052631579" />
+        <entry key="app/src/main/res/layout-land/fragment_main.xml" value="0.45282186948853614" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.25" />
         <entry key="app/src/main/res/layout/fragment_main.xml" value="0.33" />
         <entry key="app/src/main/res/layout/fragment_plan.xml" value="0.39375" />

@@ -2,18 +2,20 @@ package eu.magicsk.transi.adapters
 
 import android.app.Activity
 import android.graphics.PorterDuff
+import android.graphics.drawable.AnimatedVectorDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.setPadding
 import androidx.recyclerview.widget.RecyclerView
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.models.MHDTableData
 import eu.magicsk.transi.data.remote.responses.StopsJSON
-import eu.magicsk.transi.getLineColor
-import eu.magicsk.transi.getLineTextColor
 import eu.magicsk.transi.util.dpToPx
+import eu.magicsk.transi.util.getLineColor
+import eu.magicsk.transi.util.getLineTextColor
 import eu.magicsk.transi.util.isDarkTheme
 import io.socket.client.IO
 import io.socket.client.Socket
@@ -246,8 +248,8 @@ class MHDTableAdapter(
             (current.departureTime - System.currentTimeMillis()).toDouble() / 60000
         val hours = SimpleDateFormat("H:mm", Locale.UK).format(current.departureTime)
         val time =
-            if (mins > 60) hours else if (mins < 0) "●●  " else if (mins < 1) "<1 min" else "${mins.toInt()} min"
-        val timeText = if (current.type == "online") time else if (mins < 0) "○○  " else "~ $time"
+            if (mins > 60) hours else if (mins < 0) "now" else if (mins < 1) "<1 min" else "${mins.toInt()} min"
+        val timeText = if (current.type == "online") time else if (mins < 0) "nowo" else "~ $time"
         val rounded =
             try {
                 current.line.contains("S") || current.line.toInt() < 10
@@ -286,6 +288,18 @@ class MHDTableAdapter(
             MHDTableListLineNum.background = drawable
             MHDTableListLineNum.text = current.line
             MHDTableListHeadsign.text = current.headsign
+
+            if (timeText == "now" || timeText == "nowo") {
+                MHDTableListTime.text = ""
+                MHDTableListTime.textSize = 14f
+                MHDTableListTime.background = ResourcesCompat.getDrawable(resources, if (timeText == "now") R.drawable.ic_filled_now else R.drawable.ic_outline_now, context?.theme)
+                (MHDTableListTime.background as AnimatedVectorDrawable).start()
+            } else {
+                MHDTableListTime.text = timeText
+                MHDTableListTime.textSize = 18f
+                MHDTableListTime.background = null
+            }
+
             if (stopList.size > 1) {
                 for (i in 0 until stopList.size) {
                     val currentStopId = tabArgs.getInt(0)
@@ -306,7 +320,7 @@ class MHDTableAdapter(
                     }
                 }
             }
-            MHDTableListTime.text = timeText
+
             if (current.stuck) MHDTableListStuck.visibility =
                 View.VISIBLE else MHDTableListStuck.visibility = View.GONE
         }

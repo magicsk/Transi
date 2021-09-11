@@ -9,8 +9,8 @@ import androidx.core.view.setPadding
 import androidx.recyclerview.widget.RecyclerView
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.remote.responses.Step
-import eu.magicsk.transi.getLineColor
-import eu.magicsk.transi.getLineTextColor
+import eu.magicsk.transi.util.getLineColor
+import eu.magicsk.transi.util.getLineTextColor
 import eu.magicsk.transi.util.dpToPx
 import eu.magicsk.transi.util.isDarkTheme
 import kotlinx.android.synthetic.main.trip_planner_list_item_transit.view.*

@@ -1,0 +1,79 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:name="vector"
+            android:width="48dp"
+            android:height="18dp"
+            android:viewportWidth="60"
+            android:viewportHeight="24">
+            <path
+                android:name="path_1"
+                android:fillColor="?attr/colorOnSurface"
+                android:pathData="M12,2C6.47,2 2,6.47 2,12c0,5.53 4.47,10 10,10s10,-4.47 10,-10C22,6.47 17.53,2 12,2zM12,20c-4.42,0 -8,-3.58 -8,-8c0,-4.42 3.58,-8 8,-8s8,3.58 8,8C20,16.42 16.42,20 12,20z" />
+            <path
+                android:name="path"
+                android:fillColor="?attr/colorOnSurface"
+                android:pathData="M48,2C42.47,2 38,6.47 38,12c0,5.53 4.47,10 10,10s10,-4.47 10,-10C58,6.47 53.53,2 48,2zM48,20c-4.42,0 -8,-3.58 -8,-8c0,-4.42 3.58,-8 8,-8s8,3.58 8,8C56,16.42 52.42,20 48,20z" />
+        </vector>
+    </aapt:attr>
+    <target android:name="path_1">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:duration="2000"
+                    android:interpolator="@android:interpolator/accelerate_decelerate"
+                    android:valueFrom="0"
+                    android:valueTo="0"
+                    android:valueType="floatType"
+                    android:repeatMode="restart"
+                    android:repeatCount="infinite">
+                    <propertyValuesHolder android:propertyName="fillAlpha">
+                        <keyframe
+                            android:fraction="0"
+                            android:value="0" />
+                        <keyframe
+                            android:fraction="0.4"
+                            android:value="1" />
+                        <keyframe
+                            android:fraction="0.6"
+                            android:value="1" />
+                        <keyframe
+                            android:fraction="1"
+                            android:value="0" />
+                    </propertyValuesHolder>
+                </objectAnimator>
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="path">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:duration="2000"
+                    android:startOffset="1000"
+                    android:interpolator="@android:interpolator/accelerate_decelerate"
+                    android:valueFrom="0"
+                    android:valueTo="0"
+                    android:valueType="floatType"
+                    android:repeatMode="restart"
+                    android:repeatCount="infinite">
+                    <propertyValuesHolder android:propertyName="fillAlpha">
+                        <keyframe
+                            android:fraction="0"
+                            android:value="0" />
+                        <keyframe
+                            android:fraction="0.4"
+                            android:value="1" />
+                        <keyframe
+                            android:fraction="0.6"
+                            android:value="1" />
+                        <keyframe
+                            android:fraction="1"
+                            android:value="0" />
+                    </propertyValuesHolder>
+                </objectAnimator>
+            </set>
+        </aapt:attr>
+    </target>
+</animated-vector>

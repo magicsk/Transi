@@ -18,10 +18,9 @@ class TripPlannerViewModel @Inject constructor(
     private val tripLiveData = MutableLiveData<TripPlannerJSON>()
     val trip: LiveData<TripPlannerJSON> = tripLiveData
 
-    init {
-        viewModelScope.launch {
-            val trip = repository.getTrip(System.currentTimeMillis(), "Hronská", "Hrad", 0)
-            tripLiveData.value = trip.data
-        }
+    fun getTrip(time: Long, from: String, to: String) = viewModelScope.launch {
+        val trip = repository.getTrip(time, from, to, 0)
+        tripLiveData.value = trip.data
     }
+
 }

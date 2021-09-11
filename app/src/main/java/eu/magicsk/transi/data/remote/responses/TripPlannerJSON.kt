@@ -6,5 +6,6 @@ import kotlinx.android.parcel.Parcelize
 @Parcelize
 data class TripPlannerJSON(
     val routes: List<Route>,
-    val status: String
+    val status: String,
+    val code: Int
 ) : Parcelable

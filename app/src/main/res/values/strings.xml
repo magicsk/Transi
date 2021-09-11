@@ -10,4 +10,8 @@
     <string name="back">Back</string>
     <string name="stuck">stuck</string>
     <string name="error">Error</string>
+    <string name="error400">One of given inputs is invalid!</string>
+    <string name="error404">Unable to find a trip!</string>
+    <string name="unknownError">Something went wrong...</string>
+    <string name="ops">Ops...</string>
 </resources>

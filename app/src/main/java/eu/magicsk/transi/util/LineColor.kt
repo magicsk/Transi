@@ -1,4 +1,6 @@
-package eu.magicsk.transi
+package eu.magicsk.transi.util
+
+import eu.magicsk.transi.R
 
 fun getLineColor(lineNum: String, dark: Boolean): Int {
     when (lineNum) {
