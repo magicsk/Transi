@@ -3,10 +3,10 @@
     <aapt:attr name="android:drawable">
         <vector
             android:name="vector"
-            android:width="48dp"
+            android:width="40dp"
             android:height="18dp"
-            android:viewportWidth="60"
-            android:viewportHeight="24">
+            android:viewportWidth="50"
+            android:viewportHeight="22">
             <path
                 android:name="path_1"
                 android:fillColor="?attr/colorOnSurface"
@@ -14,7 +14,7 @@
             <path
                 android:name="path"
                 android:fillColor="?attr/colorOnSurface"
-                android:pathData="M48,2C42.47,2 38,6.47 38,12s4.47,10 10,10 10,-4.47 10,-10S53.53,2 48,2z" />
+                android:pathData="M40,2C34.47,2 30,6.47 30,12s4.47,10 10,10 10,-4.47 10,-10S45.53,2 40,2z" />
         </vector>
     </aapt:attr>
     <target android:name="path_1">

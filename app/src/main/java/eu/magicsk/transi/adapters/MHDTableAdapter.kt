@@ -292,7 +292,11 @@ class MHDTableAdapter(
             if (timeText == "now" || timeText == "nowo") {
                 MHDTableListTime.text = ""
                 MHDTableListTime.textSize = 14f
-                MHDTableListTime.background = ResourcesCompat.getDrawable(resources, if (timeText == "now") R.drawable.ic_filled_now else R.drawable.ic_outline_now, context?.theme)
+                MHDTableListTime.background = ResourcesCompat.getDrawable(
+                    resources,
+                    if (timeText == "now") R.drawable.ic_filled_now else R.drawable.ic_outline_now,
+                    context?.theme
+                )
                 (MHDTableListTime.background as AnimatedVectorDrawable).start()
             } else {
                 MHDTableListTime.text = timeText
