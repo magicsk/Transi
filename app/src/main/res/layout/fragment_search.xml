@@ -7,7 +7,7 @@
 
     <EditText
         android:background="@drawable/round_shape_15"
-        android:hint="@string/where_you_want_to_go"
+        android:hint="@string/search"
         android:id="@+id/editText"
         android:inputType="textNoSuggestions"
         android:layout_height="wrap_content"
@@ -19,6 +19,7 @@
         android:singleLine="true"
         android:transitionName="original_editText"
         android:selectAllOnFocus="true"
+        android:autofillHints="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@id/positionBtn"
@@ -27,7 +28,7 @@
     <com.google.android.material.button.MaterialButton
         android:layout_height="55dp"
         android:layout_width="45dp"
-        android:contentDescription="@string/enbale_disable_switching_table_for_nearest_stop"
+        android:contentDescription="@string/enable_disable_switching_table_for_nearest_stop"
         android:id="@+id/positionBtn"
         android:layout_marginHorizontal="5dp"
         app:layout_constraintBottom_toBottomOf="parent"

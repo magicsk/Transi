@@ -19,7 +19,7 @@ android {
         minSdk = 29
         targetSdk = 31
         versionCode = 1
-        versionName = "0.9.0"
+        versionName = "0.9.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -76,4 +76,7 @@ dependencies {
     implementation("io.socket:socket.io-client:1.0.0") {
         exclude(group = "org.json", module = "json")
     }
+
+    implementation("com.github.bumptech.glide:glide:4.11.0")
+    kapt("com.github.bumptech.glide:compiler:4.11.0")
 }

@@ -11,7 +11,6 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
@@ -21,16 +20,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.MHDTableAdapter
 import eu.magicsk.transi.adapters.TripPlannerAdapter
-import eu.magicsk.transi.data.remote.responses.Route
-import eu.magicsk.transi.data.remote.responses.StopsJSON
-import eu.magicsk.transi.data.remote.responses.StopsJSONItem
+import eu.magicsk.transi.data.remote.responses.*
 import eu.magicsk.transi.view_models.StopsListViewModel
 import eu.magicsk.transi.view_models.TripPlannerViewModel
 import kotlinx.android.synthetic.main.fragment_main.*
 import kotlinx.android.synthetic.main.fragment_main.view.*
 import kotlinx.android.synthetic.main.fragment_plan.*
 import kotlinx.android.synthetic.main.fragment_search.*
-import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.Comparator
 import kotlin.math.*
@@ -44,6 +40,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     private val viewModel: StopsListViewModel by viewModels()
     val tripViewModel: TripPlannerViewModel by viewModels()
     var stopList: StopsJSON = StopsJSON()
+    private lateinit var tripHolder: TripPlannerJSON
     var nearestSwitching: Boolean = true
     var waitingForLocation: Boolean = false
     private var selected: StopsJSONItem = StopsJSONItem(
@@ -70,23 +67,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         return selected
     }
 
-    private fun onListItemClick(pos: Int) {
-        val info = tableAdapter.getListItem(pos)
-        Toast.makeText(
-            context,
-            "Departure: ${
-                SimpleDateFormat(
-                    "H:mm",
-                    Locale.UK
-                ).format(info.departureTime)
-            } Delay: ${info.delay} min LastStop: ${info.lastStopName} ID: ${info.busID}",
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-
-
-    val tableAdapter: MHDTableAdapter =
-        MHDTableAdapter(mutableListOf(), "") { position -> onListItemClick(position) }
+    val tableAdapter: MHDTableAdapter = MHDTableAdapter(mutableListOf(), mutableListOf(), "")
     var actualLocation: Location? = null
 
     private fun calcDistance(x: StopsJSONItem): Double {
@@ -218,6 +199,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                     it.progressBar_ic?.visibility = View.GONE
                     if (trip.code == 200) {
                         it.TripPlannerList.visibility = View.VISIBLE
+                        tripHolder = trip
                         tripPlannerAdapter.addItems(trip.routes as MutableList<Route>)
                     } else {
                         val errorAlertBuilder = AlertDialog.Builder(activity)
@@ -257,6 +239,9 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                         nearestSwitching = false
                         selected = getStopById(id)
                         MHDTableStopName.text = selected.name
+                        activity?.positionBtn?.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
+                        activity?.positionPlanBtn?.icon =
+                            ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
                         tableAdapter.ioDisconnect()
                         tableAdapter.ioConnect(selected.id)
                     } else planFragment.getTrip()
@@ -283,6 +268,8 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         MHDTableList.layoutManager = LinearLayoutManager(context)
         TripPlannerList.adapter = tripPlannerAdapter
         TripPlannerList.layoutManager = LinearLayoutManager(context)
+
+        TripPlannerList.visibility = if (::tripHolder.isInitialized) View.VISIBLE else View.GONE
 
         val infoText = tableAdapter.getInfoText()
         if (infoText != "") {

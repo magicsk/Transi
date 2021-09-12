@@ -58,7 +58,7 @@
         android:layout_width="45dp"
         android:layout_height="55dp"
         android:layout_marginHorizontal="15dp"
-        android:contentDescription="@string/enbale_disable_switching_table_for_nearest_stop"
+        android:contentDescription="@string/enable_disable_switching_table_for_nearest_stop"
         app:icon="@drawable/ic_directions"
         app:iconGravity="textStart"
         app:iconSize="26dp"

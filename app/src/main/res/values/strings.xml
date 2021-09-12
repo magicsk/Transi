@@ -1,17 +1,30 @@
 <resources>
     <string name="app_name">Transi</string>
-    <string name="where_you_want_to_go">Where you want to go ?</string>
+
+    <string name="search">Search for stops</string>
     <string name="stop_icon">stop_icon</string>
     <string name="looking_for_the_nearest_stop">Looking for the nearest stop…</string>
-    <string name="enbale_disable_switching_table_for_nearest_stop">enbale/disable switching table for nearest stop</string>
+    <string name="enable_disable_switching_table_for_nearest_stop">enable/disable switching table for nearest stop</string>
     <string name="from">From…</string>
     <string name="to">To…</string>
     <string name="actual_position">Actual position</string>
     <string name="back">Back</string>
-    <string name="stuck">stuck</string>
+
+    <string name="tripTime">(%1$s)</string>
+
     <string name="error">Error</string>
     <string name="error400">One of given inputs is invalid!</string>
     <string name="error404">Unable to find a trip!</string>
-    <string name="unknownError">Something went wrong...</string>
-    <string name="ops">Ops...</string>
+    <string name="unknownError">Something went wrong…</string>
+    <string name="ops">Ops…</string>
+
+    <string name="picture_of_vehicle">Picture of vehicle</string>
+    <string name="stuck">Stuck</string>
+    <string name="offline">Offline</string>
+    <string name="onTime">on time</string>
+    <string name="inAdvance">%1$s min in advance</string>
+    <string name="delay">%1$s min delay</string>
+    <string name="vehicleText">%1$s #%2$s</string>
+    <string name="lastStop">Last stop: %1$s</string>
+    <string name="departureTime">Expected departure: %1$s</string>
 </resources>

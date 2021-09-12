@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
@@ -10,8 +9,8 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="3dp"
         android:layout_marginBottom="5dp"
-        app:cardCornerRadius="8dp"
         app:cardBackgroundColor="?colorSurface"
+        app:cardCornerRadius="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -19,15 +18,13 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginStart="10dp"
             android:layout_marginVertical="5dp"
-            android:orientation="horizontal">
+            android:layout_marginStart="10dp">
 
             <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/constraintLayout"
+                android:id="@+id/MHDTableListLineNumLayout"
                 android:layout_width="55dp"
                 android:layout_height="wrap_content"
-                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
@@ -36,14 +33,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/rounded_shape"
+                    android:ellipsize="end"
                     android:fontFamily="@font/roboto_bold"
+                    android:lines="1"
                     android:padding="5dp"
                     android:text="N999"
                     android:textAlignment="center"
                     android:textColor="@color/white"
                     android:textSize="18sp"
-                    android:lines="1"
-                    android:ellipsize="end"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
@@ -54,29 +51,30 @@
                 android:id="@+id/MHDTableListHeadsign"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginHorizontal="5dp"
+                android:ellipsize="marquee"
                 android:fontFamily="@font/roboto_medium"
-                android:layout_marginStart="5dp"
+                android:lines="1"
                 android:text="Example"
                 android:textSize="18sp"
-                android:lines="1"
-                android:ellipsize="marquee"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/constraintLayout"
+                app:layout_constraintBottom_toBottomOf="@id/MHDTableListLineNumLayout"
                 app:layout_constraintEnd_toStartOf="@id/MHDTableListTime"
+                app:layout_constraintStart_toEndOf="@id/MHDTableListLineNumLayout"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
                 android:id="@+id/MHDTableListTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/roboto_medium"
                 android:layout_marginEnd="10dp"
                 android:background="@drawable/ic_filled_now"
+                android:fontFamily="@font/roboto_medium"
                 android:text=""
-                android:textSize="14sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/MHDTableListStuck"
+                android:textSize="12sp"
+                app:layout_constraintBottom_toBottomOf="@id/MHDTableListLineNumLayout"
+                app:layout_constraintEnd_toStartOf="@id/MHDTableListStuck"
                 app:layout_constraintTop_toTopOf="parent" />
+
             <ImageView
                 android:id="@+id/MHDTableListStuck"
                 android:layout_width="wrap_content"
@@ -84,20 +82,137 @@
                 android:layout_marginEnd="10dp"
                 android:background="@drawable/ic_warning"
                 android:contentDescription="@string/stuck"
-                app:layout_constraintEnd_toStartOf="@+id/MHDTableListPlatform"
-                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintBottom_toBottomOf="@id/MHDTableListLineNumLayout"
+                app:layout_constraintEnd_toStartOf="@id/MHDTableListPlatform"
                 app:layout_constraintTop_toTopOf="parent" />
+
             <TextView
                 android:id="@+id/MHDTableListPlatform"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/roboto"
                 android:layout_marginEnd="10dp"
+                android:fontFamily="@font/roboto"
+                android:text=""
                 android:textSize="18sp"
-                android:text="A"
-                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintBottom_toBottomOf="@id/MHDTableListLineNumLayout"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/MHDTableListDetailLayout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="15dp"
+                android:layout_marginEnd="10dp"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@id/MHDTableListLineNumLayout">
+
+                <ImageView
+                    android:id="@+id/MHDTableListVehicleImg"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_marginEnd="15dp"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="@string/picture_of_vehicle"
+                    android:scaleType="fitStart"
+                    app:layout_constraintBottom_toTopOf="@id/MHDTableListVehicleText"
+                    app:layout_constraintEnd_toStartOf="@id/MHDTableListDeparture"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/MHDTableListVehicleText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/vehicleText"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <TextView
+                    android:id="@+id/MHDTableListDeparture"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/departureTime"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/MHDTableListLastStop"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="@string/lastStop"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/MHDTableListDeparture" />
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/MHDTableListOnlineInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/MHDTableListLastStop">
+
+                    <ImageView
+                        android:id="@+id/MHDTableListDelayIcon"
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_marginEnd="5dp"
+                        android:background="@drawable/round_shape"
+                        android:backgroundTint="@color/black"
+                        android:contentDescription="@string/stuck"
+                        app:layout_constraintBottom_toBottomOf="@id/MHDTableListDelayText"
+                        app:layout_constraintEnd_toStartOf="@id/MHDTableListDelayText"
+                        app:layout_constraintTop_toTopOf="@id/MHDTableListDelayText" />
+
+                    <TextView
+                        android:id="@+id/MHDTableListDelayText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:text="@string/delay"
+                        app:layout_constraintEnd_toStartOf="@id/MHDTableListStuckInfo"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/MHDTableListStuckInfo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
+
+
+                        <TextView
+                            android:id="@+id/MHDTableListStuckSpacer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="5dp"
+                            app:layout_constraintEnd_toEndOf="@id/MHDTableListStuckIcon"
+                            app:layout_constraintEnd_toStartOf="@id/MHDTableListStuckIcon"
+                            app:layout_constraintTop_toTopOf="@id/MHDTableListStuckIcon" />
+
+                        <ImageView
+                            android:id="@+id/MHDTableListStuckIcon"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginEnd="5dp"
+                            android:background="@drawable/ic_warning"
+                            android:contentDescription="@string/stuck"
+                            app:layout_constraintBottom_toBottomOf="@id/MHDTableListStuckText"
+                            app:layout_constraintEnd_toStartOf="@id/MHDTableListStuckText"
+                            app:layout_constraintTop_toTopOf="@id/MHDTableListStuckText" />
+
+                        <TextView
+                            android:id="@+id/MHDTableListStuckText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:text="@string/stuck"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
 </androidx.constraintlayout.widget.ConstraintLayout>

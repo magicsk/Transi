@@ -15,6 +15,13 @@
     <color name="milky">#FFEEEEEE</color>
     <color name="grayTint">#99222222</color>
 
+    //delay colors
+    <color name="onTime">#FF1CFC4C</color>
+    <color name="delay1">#FF96F030</color>
+    <color name="delay2">#FFFFCD38</color>
+    <color name="delay3">#FFE33636</color>
+    <color name="inAdvance">#FFE134F7</color>
+
     //line colors
     <color name="l1">#FFff6600</color>
     <color name="l2">#FF393185</color>

@@ -36,11 +36,12 @@ class TripPlannerAdapter(
         val current = TripPlannerItemList[position]
         holder.itemView.apply {
             TableListDuration.text = current.duration
-            TableListTime.text = "(${current.arrival_departure_time})"
+            TableListTime.text = context.getString(R.string.tripTime).format(current.arrival_departure_time)
             TableListItems.layoutManager =
                 LinearLayoutManager(TableListItems.context, RecyclerView.VERTICAL, false)
+            // TODO trip detail on tap
             TableListItems.adapter =
-                TripPlannerStepsAdapter(TripPlannerItemList[position].steps as MutableList<Step>) { pos -> {} }
+                TripPlannerStepsAdapter(TripPlannerItemList[position].steps as MutableList<Step>) { run {} }
         }
     }
 
