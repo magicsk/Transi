@@ -12,5 +12,6 @@ data class MHDTableData(
     val currentStopId: Int,
     val lastStopId: Int,
     val lastStopName: String,
-    val stuck: Boolean
+    val stuck: Boolean,
+    var expanded: Boolean
 )

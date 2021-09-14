@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="15dp"
         android:fontFamily="@font/roboto_medium"
-        android:text="@string/looking_for_the_nearest_stop"
+        android:text="@string/locating_nearest_stop"
         android:textSize="28sp"
         app:layout_constraintTop_toTopOf="parent"
         tools:layout_editor_absoluteX="15dp" />
@@ -23,6 +23,8 @@
         android:padding="10dp"
         android:fontFamily="@font/roboto"
         android:textSize="14sp"
+        android:autoLink="web"
+        android:visibility="gone"
         android:background="@drawable/round_shape_10"
         app:layout_constraintTop_toBottomOf="@id/MHDTableStopName" />
 

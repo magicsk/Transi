@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context.LOCATION_SERVICE
-import android.content.DialogInterface
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -44,7 +43,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     var nearestSwitching: Boolean = true
     var waitingForLocation: Boolean = false
     private var selected: StopsJSONItem = StopsJSONItem(
-        "Looking for the nearest stop…",
+        "none",
         "none",
         "/ba/zastavka/Hronsk%C3%A1/b68883",
         "g94",
@@ -55,6 +54,18 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         101,
         null
     )
+//    private var selected: StopsJSONItem = StopsJSONItem(
+//        "none",
+//        "none",
+//        "/ba/zastavka/Hronsk%C3%A1/b68883",
+//        "g20",
+//        "bus",
+//        20,
+//        "48,13585663",
+//        "17,20938683",
+//        101,
+//        null
+//    )
 
     fun getStopById(id: Int): StopsJSONItem {
         stopList.let {
@@ -67,7 +78,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         return selected
     }
 
-    val tableAdapter: MHDTableAdapter = MHDTableAdapter(mutableListOf(), mutableListOf(), "")
+    val tableAdapter: MHDTableAdapter = MHDTableAdapter(mutableListOf(), mutableListOf())
     var actualLocation: Location? = null
 
     private fun calcDistance(x: StopsJSONItem): Double {
@@ -85,7 +96,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                                 sin(deltaLong / 2).pow(2.0)
                     )
                 )
-                return radius * angle;
+                return radius * angle
             }
         }
         return 100000000.0
@@ -185,11 +196,6 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                             }
                         }
                     }
-                    val infoText = tableAdapter.getInfoText()
-                    if (infoText != "") {
-                        MHDTableInfoText.text = infoText
-                        MHDTableInfoText.visibility = View.VISIBLE
-                    } else MHDTableInfoText.visibility = View.GONE
                 }
             }
             tripViewModel.trip.observe(it) { trip ->
@@ -204,9 +210,9 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                     } else {
                         val errorAlertBuilder = AlertDialog.Builder(activity)
                         errorAlertBuilder.setTitle(getString(R.string.ops))
-                            .setPositiveButton("OK", DialogInterface.OnClickListener { dialog, _ ->
+                            .setPositiveButton("OK") { dialog, _ ->
                                 dialog.cancel()
-                            })
+                            }
                         val errorAlert = errorAlertBuilder.create()
 
                         when (trip.code) {
@@ -239,9 +245,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                         nearestSwitching = false
                         selected = getStopById(id)
                         MHDTableStopName.text = selected.name
-                        activity?.positionBtn?.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
-                        activity?.positionPlanBtn?.icon =
-                            ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
+                        activity?.positionBtn?.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
                         tableAdapter.ioDisconnect()
                         tableAdapter.ioConnect(selected.id)
                     } else planFragment.getTrip()
@@ -263,18 +267,12 @@ class MainFragment : Fragment(R.layout.fragment_main) {
             }
         }
 
-        MHDTableStopName.text = selected.name
+        if (selected.name != "none") MHDTableStopName.text = selected.name
         MHDTableList.adapter = tableAdapter
         MHDTableList.layoutManager = LinearLayoutManager(context)
         TripPlannerList.adapter = tripPlannerAdapter
         TripPlannerList.layoutManager = LinearLayoutManager(context)
 
         TripPlannerList.visibility = if (::tripHolder.isInitialized) View.VISIBLE else View.GONE
-
-        val infoText = tableAdapter.getInfoText()
-        if (infoText != "") {
-            MHDTableInfoText.text = infoText
-            MHDTableInfoText.visibility = View.VISIBLE
-        } else MHDTableInfoText.visibility = View.GONE
     }
 }

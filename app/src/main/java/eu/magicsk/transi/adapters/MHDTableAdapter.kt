@@ -21,6 +21,7 @@ import eu.magicsk.transi.util.getLineTextColor
 import eu.magicsk.transi.util.isDarkTheme
 import io.socket.client.IO
 import io.socket.client.Socket
+import kotlinx.android.synthetic.main.fragment_main.*
 import kotlinx.android.synthetic.main.table_list_item.view.*
 import org.json.JSONArray
 import org.json.JSONException
@@ -32,7 +33,6 @@ import java.util.*
 class MHDTableAdapter(
     private val TableItemList: MutableList<MHDTableData>,
     private val TableVehicleInfo: MutableList<MHDTableVehicle>,
-    private var TableInfo: String,
 ) : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>() {
     class MHDTableViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
@@ -123,6 +123,7 @@ class MHDTableAdapter(
                 TableVehicleInfo.add(item)
             }
             .on("tabs") {
+                println("new tabs")
                 val data = JSONObject(it[0].toString())
                 val keys = data.keys()
                 while (keys.hasNext()) {
@@ -191,7 +192,8 @@ class MHDTableAdapter(
                                 tabs.getJSONObject(i).getBoolean("uviaznute")
                             } catch (e: JSONException) {
                                 false
-                            }
+                            },
+                            false
                         )
                         platform.add(item)
                     }
@@ -209,12 +211,16 @@ class MHDTableAdapter(
                     } catch (e: JSONException) {
                         ""
                     }
-                    println(info)
                     if (info != "" && infos != "") infos = "$infos\n\n$info" else if (info != "") infos =
                         info
                 }
                 activity.runOnUiThread {
-                    addTableInfo(infos)
+                    if (infos != "") {
+                        activity.MHDTableInfoText.text = infos
+                        activity.MHDTableInfoText.visibility = View.VISIBLE
+                    } else {
+                        activity.MHDTableInfoText.visibility = View.GONE
+                    }
                 }
             }
     }
@@ -227,40 +233,48 @@ class MHDTableAdapter(
         notifyItemRangeRemoved(0, size)
     }
 
-    fun getInfoText(): String {
-        return TableInfo
-    }
-
     private fun clearList() {
         TableItemList.clear()
         notifyItemRangeRemoved(0, itemCount)
     }
 
     private fun addItems(items: MutableList<MHDTableData>) {
+        val tempList = mutableListOf<MHDTableData>()
+        val platform = items[0].platform
         if (items.size > 0) {
-            val toRemove: MutableList<Int> = mutableListOf()
             if (TableItemList.size > 0) {
                 for (i in 0 until TableItemList.size) {
-                    if (TableItemList[i].platform == items[0].platform) {
-                        toRemove.add(i)
-                    }
-                }
-                val size = toRemove.size - 1
-                if (size >= 0) {
-                    for (i in size downTo 0) {
-                        TableItemList.removeAt(toRemove[i])
+                    if (TableItemList[i].platform == platform) {
+                        var found = false
+                        for (j in 0 until items.size) {
+                            if (TableItemList[i].Id == items[j].Id && !found) {
+                                found = true
+                                items[j].expanded = TableItemList[i].expanded
+                                TableItemList[i] = items[j]
+                                items.removeAt(j)
+                                notifyItemChanged(i)
+                                break
+                            }
+                        }
+                        if (!found) {
+                            TableItemList.removeAt(i)
+                            notifyItemRemoved(i)
+                            break
+                        }
                     }
                 }
             }
+            tempList.addAll(TableItemList)
             TableItemList.addAll(items)
             TableItemList.sortBy { x -> x.departureTime }
-            notifyItemRangeChanged(0, TableItemList.size)
+            for (i in TableItemList.size - 1 downTo tempList.size) {
+                notifyItemInserted(i)
+            }
+            for (i in 0 until tempList.size) {
+                if (TableItemList[i] != tempList[i]) notifyItemChanged(i)
+            }
         }
 
-    }
-
-    private fun addTableInfo(info: String) {
-        TableInfo = info
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MHDTableViewHolder {
@@ -404,29 +418,40 @@ class MHDTableAdapter(
                     if (TableVehicleInfo[i].issi == current.busID) {
                         val currentVehicle = TableVehicleInfo[i]
                         val busID = current.busID.drop(2)
+                        val v = if (currentVehicle.imgt == 0) "vm" else "vs"
+                        val url = "https://imhd.sk/ba/media/$v/${currentVehicle.img.toString().padStart(8, '0')}/$busID"
                         setOnClickListener {
-                            val v = if (currentVehicle.imgt == 0) "vm" else "vs"
-                            val url = "https://imhd.sk/ba/media/$v/${currentVehicle.img.toString().padStart(8, '0')}/$busID"
-                            println(url)
-                            Glide.with(this)
-                                .load(url)
-                                .into(MHDTableListVehicleImg)
-                            val expanded = MHDTableListDetailLayout.visibility == View.VISIBLE
-                            MHDTableListDetailLayout.visibility = if (expanded) View.GONE else View.VISIBLE
+                            if (current.expanded) {
+                                MHDTableListDetailLayout.visibility = View.GONE
+                            } else {
+                                println(url)
+                                Glide.with(this)
+                                    .load(url)
+                                    .into(MHDTableListVehicleImg)
+                                MHDTableListVehicleImg.visibility = View.VISIBLE
+                                MHDTableListDetailLayout.visibility = View.VISIBLE
+                            }
+                            current.expanded = !current.expanded
                         }
+                        Glide.with(this)
+                            .load(url)
+                            .onlyRetrieveFromCache(true)
+                            .into(MHDTableListVehicleImg)
                         MHDTableListVehicleText.text =
                             context.getString(R.string.vehicleText).format(currentVehicle.type, busID)
                     }
                 }
             } else {
                 setOnClickListener {
-                    val expanded = MHDTableListDetailLayout.visibility == View.VISIBLE
-                    MHDTableListDetailLayout.visibility = if (expanded) View.GONE else View.VISIBLE
+                    MHDTableListVehicleImg.visibility = View.GONE
+                    MHDTableListDetailLayout.visibility = if (current.expanded) View.GONE else View.VISIBLE
+                    current.expanded = !current.expanded
                 }
                 MHDTableListVehicleText.text = ""
                 MHDTableListOnlineInfo.visibility = View.GONE
                 MHDTableListLastStop.text = context.getString(R.string.offline)
             }
+            MHDTableListDetailLayout.visibility = if (current.expanded) View.VISIBLE else View.GONE
         }
     }
 

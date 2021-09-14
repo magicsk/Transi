@@ -3,7 +3,7 @@
 
     <string name="search">Search for stops</string>
     <string name="stop_icon">stop_icon</string>
-    <string name="looking_for_the_nearest_stop">Looking for the nearest stop…</string>
+    <string name="locating_nearest_stop">Locating nearest stop…</string>
     <string name="enable_disable_switching_table_for_nearest_stop">enable/disable switching table for nearest stop</string>
     <string name="from">From…</string>
     <string name="to">To…</string>

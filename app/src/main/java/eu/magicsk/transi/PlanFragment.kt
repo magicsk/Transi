@@ -5,7 +5,6 @@ import android.graphics.drawable.AnimatedVectorDrawable
 import android.os.Bundle
 import android.view.View
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import kotlinx.android.synthetic.main.fragment_main.*
@@ -49,10 +48,8 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
         val navController = findNavController()
         mainFragment!!.let { mainFragment ->
 
-            editTextFrom.addTextChangedListener { getTrip() }
-            editTextTo.addTextChangedListener { getTrip() }
-
             editTextTo.setText(mainFragment.getStopById(requireArguments().getInt("selectedToStopId")).name)
+            getTrip()
 
             if (mainFragment.nearestSwitching) {
                 if (mainFragment.actualLocation == null) {

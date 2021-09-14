@@ -32,6 +32,13 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val planFragment =
+            try {
+                activity?.supportFragmentManager?.findFragmentById(R.id.search_barFL) as PlanFragment?
+            } catch (e: ClassCastException) {
+                println("not PlanFragment")
+                null
+            }
         if (origin != "editText") {
             stopList.add(
                 0, StopsJSONItem(
@@ -58,8 +65,14 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
             }
             when (origin) {
                 "editText" -> activity?.editText?.setText(typeAheadAdapter.getItem(pos).name)
-                "editTextFrom" -> activity?.editTextFrom?.setText(typeAheadAdapter.getItem(pos).name)
-                "editTextTo" -> activity?.editTextTo?.setText(typeAheadAdapter.getItem(pos).name)
+                "editTextFrom" -> {
+                    activity?.editTextFrom?.setText(typeAheadAdapter.getItem(pos).name)
+                    planFragment?.getTrip()
+                }
+                "editTextTo" -> {
+                    activity?.editTextTo?.setText(typeAheadAdapter.getItem(pos).name)
+                    planFragment?.getTrip()
+                }
             }
 
             val im: InputMethodManager? = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
