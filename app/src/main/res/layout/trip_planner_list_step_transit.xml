@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:paddingVertical="5dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/TripPlannerListStepLineNumLayout"
+            android:layout_width="65dp"
+            android:layout_height="0dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="10dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/TripPlannerListStepArrivalTime">
+
+            <TextView
+                android:id="@+id/TripPlannerListStepLineNum"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_shape"
+                android:ellipsize="end"
+                android:fontFamily="@font/roboto_bold"
+                android:lines="1"
+                android:padding="5dp"
+                android:text="N999"
+                android:textAlignment="center"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <View
+                android:id="@+id/TripPlannerListStepLineArrow"
+                android:layout_width="3dp"
+                android:layout_height="0dp"
+                android:background="@color/black"
+                app:layout_constraintTop_toBottomOf="@id/TripPlannerListStepLineNum"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <TextView
+            android:id="@+id/TripPlannerListStepHeadsign"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/roboto_bold"
+            android:lines="1"
+            android:text="@string/tripHeadsign"
+            android:textSize="18sp"
+            app:layout_constraintStart_toEndOf="@id/TripPlannerListStepLineNumLayout"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/TripPlannerListStepDepartureTime"
+            android:layout_width="50dp"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@font/roboto_medium"
+            android:lines="1"
+            android:text="16:20"
+            android:textSize="16sp"
+            app:layout_constraintStart_toEndOf="@id/TripPlannerListStepLineNumLayout"
+            app:layout_constraintTop_toBottomOf="@id/TripPlannerListStepHeadsign" />
+
+        <TextView
+            android:id="@+id/TripPlannerListStepDepartureStop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@font/roboto_medium"
+            android:lines="1"
+            android:text="Hronská"
+            android:textSize="16sp"
+            app:layout_constraintStart_toEndOf="@id/TripPlannerListStepDepartureTime"
+            app:layout_constraintTop_toTopOf="@id/TripPlannerListStepDepartureTime" />
+
+        <LinearLayout
+            android:id="@+id/TripPlannerListStepDurationStopList"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:paddingVertical="3dp"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/TripPlannerListStepDepartureTime"
+            app:layout_constraintTop_toBottomOf="@id/TripPlannerListStepDepartureTime">
+
+            <TextView
+                android:id="@+id/TripPlannerListStepDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="20dp"
+                android:fontFamily="@font/roboto_medium"
+                android:ellipsize="end"
+                android:textSize="16sp"
+                android:text="@string/tripStepDuration"
+                android:textColor="?colorOnSurface"/>
+
+            <TextView
+                android:id="@+id/TripPlannerListStepStopList"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/roboto"
+                android:ellipsize="end"
+                android:visibility="gone"
+                android:text="16:21  Hrad\n16:22  Priveozká"
+                android:textSize="16sp"
+                android:textColor="?colorOnSurface"/>
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/TripPlannerListStepArrivalTime"
+            android:layout_width="50dp"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@font/roboto_medium"
+            android:lines="1"
+            android:text="16:40"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="@id/TripPlannerListStepDepartureTime"
+            app:layout_constraintTop_toBottomOf="@id/TripPlannerListStepDurationStopList" />
+
+        <TextView
+            android:id="@+id/TripPlannerListStepArrivalStop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@font/roboto_medium"
+            android:lines="1"
+            android:text="Autobusová stanica"
+            android:textSize="16sp"
+            app:layout_constraintStart_toEndOf="@id/TripPlannerListStepDepartureTime"
+            app:layout_constraintTop_toTopOf="@id/TripPlannerListStepArrivalTime" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

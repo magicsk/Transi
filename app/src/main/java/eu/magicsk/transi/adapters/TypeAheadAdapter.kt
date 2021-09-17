@@ -38,11 +38,10 @@ class TypeAheadAdapter(
     }
 
 
-    private val typeAheadOriginalList: MutableList<StopsJSONItem> = mutableListOf()
 
     @SuppressLint("NotifyDataSetChanged")
     fun filter(term: String) {
-        typeAheadItemList = typeAheadOriginalList.filter {
+        typeAheadItemList = typeAheadItemList.filter {
             it.name.unaccent().contains(term.unaccent(), ignoreCase = true)
         } as MutableList<StopsJSONItem>
         notifyDataSetChanged()
@@ -50,9 +49,7 @@ class TypeAheadAdapter(
 
     fun addItems(items: StopsJSON) {
         typeAheadItemList.clear()
-        typeAheadOriginalList.clear()
         typeAheadItemList.addAll(items)
-        typeAheadOriginalList.addAll(items)
         notifyItemRangeChanged(0, typeAheadItemList.size)
     }
 

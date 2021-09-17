@@ -19,7 +19,7 @@ class TripPlannerViewModel @Inject constructor(
     val trip: LiveData<TripPlannerJSON> = tripLiveData
 
     fun getTrip(time: Long, from: String, to: String) = viewModelScope.launch {
-        val trip = repository.getTrip(time, from, to, 0)
+        val trip = repository.getTrip(time, from, to)
         tripLiveData.value = trip.data
     }
 

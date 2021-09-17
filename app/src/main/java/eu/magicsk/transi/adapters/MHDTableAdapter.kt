@@ -239,29 +239,32 @@ class MHDTableAdapter(
     }
 
     private fun addItems(items: MutableList<MHDTableData>) {
-        val tempList = mutableListOf<MHDTableData>()
-        val platform = items[0].platform
         if (items.size > 0) {
+            val tempList = mutableListOf<MHDTableData>()
             if (TableItemList.size > 0) {
-                for (i in 0 until TableItemList.size) {
-                    if (TableItemList[i].platform == platform) {
-                        var found = false
-                        for (j in 0 until items.size) {
-                            if (TableItemList[i].Id == items[j].Id && !found) {
-                                found = true
-                                items[j].expanded = TableItemList[i].expanded
-                                TableItemList[i] = items[j]
-                                items.removeAt(j)
-                                notifyItemChanged(i)
-                                break
+                val platform = items[0].platform
+                try {
+                    for (i in 0 until itemCount) {
+                        if (TableItemList[i].platform == platform) {
+                            var found = false
+                            for (j in 0 until items.size) {
+                                if (TableItemList[i].Id == items[j].Id) {
+                                    found = true
+                                    items[j].expanded = TableItemList[i].expanded
+                                    TableItemList[i] = items[j]
+                                    items.removeAt(j)
+                                    notifyItemChanged(i)
+                                    break
+                                }
+                            }
+                            if (!found) {
+                                TableItemList.removeAt(i)
+                                notifyItemRemoved(i)
                             }
                         }
-                        if (!found) {
-                            TableItemList.removeAt(i)
-                            notifyItemRemoved(i)
-                            break
-                        }
                     }
+                } catch (e: IndexOutOfBoundsException) {
+                    //shouldn't be like this
                 }
             }
             tempList.addAll(TableItemList)
@@ -274,7 +277,6 @@ class MHDTableAdapter(
                 if (TableItemList[i] != tempList[i]) notifyItemChanged(i)
             }
         }
-
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MHDTableViewHolder {
@@ -379,8 +381,6 @@ class MHDTableAdapter(
                 MHDTableListStuckInfo.visibility = View.GONE
             }
 
-            // vehicle TODO
-
             // expected departure
             MHDTableListDeparture.text =
                 context.getString(R.string.departureTime).format(SimpleDateFormat("H:mm", Locale.UK).format(current.departureTime))
@@ -438,7 +438,7 @@ class MHDTableAdapter(
                             .onlyRetrieveFromCache(true)
                             .into(MHDTableListVehicleImg)
                         MHDTableListVehicleText.text =
-                            context.getString(R.string.vehicleText).format(currentVehicle.type, busID)
+                            context.getString(R.string.vehicleText).format(currentVehicle.type, current.Id)
                     }
                 }
             } else {
@@ -447,7 +447,7 @@ class MHDTableAdapter(
                     MHDTableListDetailLayout.visibility = if (current.expanded) View.GONE else View.VISIBLE
                     current.expanded = !current.expanded
                 }
-                MHDTableListVehicleText.text = ""
+                MHDTableListVehicleText.text = current.Id.toString()
                 MHDTableListOnlineInfo.visibility = View.GONE
                 MHDTableListLastStop.text = context.getString(R.string.offline)
             }

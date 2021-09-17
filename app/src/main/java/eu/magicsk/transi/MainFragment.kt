@@ -1,16 +1,10 @@
 package eu.magicsk.transi
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
-import android.content.Context.LOCATION_SERVICE
 import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
-import android.os.Build
 import android.os.Bundle
 import android.view.View
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -43,7 +37,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     var nearestSwitching: Boolean = true
     var waitingForLocation: Boolean = false
     private var selected: StopsJSONItem = StopsJSONItem(
-        "none",
+        "Locating nearest stop…",
         "none",
         "/ba/zastavka/Hronsk%C3%A1/b68883",
         "g94",
@@ -55,7 +49,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         null
     )
 //    private var selected: StopsJSONItem = StopsJSONItem(
-//        "none",
+//        "Locating nearest stop…",
 //        "none",
 //        "/ba/zastavka/Hronsk%C3%A1/b68883",
 //        "g20",
@@ -108,72 +102,19 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         return@Comparator (aDist - bDist).roundToInt()
     }
 
-    private val locationListener: LocationListener = object : LocationListener {
-        override fun onLocationChanged(location: Location) {
-            println("location changed")
-            if (waitingForLocation) planFragment.getTrip()
-            if (stopList.size > 0) {
-                actualLocation = location
-                stopList.sortWith(sortByNearest)
-                if (nearestSwitching && selected != stopList[0]) {
-                    val id = selected.id
-                    selected = stopList[0]
-                    MHDTableStopName?.text = selected.name
-                    activity?.positionBtn?.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
-                    activity?.positionPlanBtn?.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
-                    if (id != selected.id) {
-                        tableAdapter.ioDisconnect()
-                        tableAdapter.ioConnect(selected.id)
-                    }
-                }
-            }
-        }
-
-        override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {}
-        override fun onProviderEnabled(provider: String) {}
-        override fun onProviderDisabled(provider: String) {}
-    }
-
     @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         tableAdapter.ioConnect(selected.id)
-
-        val locationManager = activity?.getSystemService(LOCATION_SERVICE) as LocationManager?
-        val locationPermissionRequest = registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { permissions ->
-            fun requestLocation() {
-                locationManager?.requestLocationUpdates(
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                        LocationManager.FUSED_PROVIDER else LocationManager.GPS_PROVIDER,
-                    0L,
-                    0f,
-                    locationListener
-                )
-            }
-            when {
-                permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> requestLocation()
-                permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> requestLocation()
-            }
-        }
-
-        locationPermissionRequest.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
-
         activity?.let {
 
             tableAdapter.ioObservers(it)
             viewModel.stops.observe(it) { stops ->
+                println("stops fetched")
                 if (stops != null && stopList.size < 1) {
                     stopList.addAll(stops)
-
+                    actualLocation?.let { l -> locationChange(l) }
                     tableAdapter.putStopList(stopList)
-
                     stopListBundle.clear()
                     stopListBundle.putSerializable("stopsList", stopList)
                     val searchBundle = stopListBundle
@@ -183,18 +124,6 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                     activity?.supportFragmentManager?.beginTransaction()?.apply {
                         replace(R.id.search_barFL, searchFragment)
                         commit()
-                    }
-                    if (actualLocation != null) {
-                        stopList.sortWith(sortByNearest)
-                        if (nearestSwitching && selected != stopList[0]) {
-                            val id = selected.id
-                            selected = stopList[0]
-                            MHDTableStopName?.text = selected.name
-                            if (id != selected.id) {
-                                tableAdapter.ioDisconnect()
-                                tableAdapter.ioConnect(selected.id)
-                            }
-                        }
                     }
                 }
             }
@@ -227,9 +156,34 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         }
     }
 
+    fun locationChange(location: Location) {
+        println("location changed")
+        actualLocation = location
+        if (waitingForLocation) planFragment.getTrip()
+        if (stopList.size > 0) {
+            stopList.sortWith(sortByNearest)
+            if (nearestSwitching && selected != stopList[0]) {
+                val id = selected.id
+                selected = stopList[0]
+                MHDTableStopName?.text = selected.name
+                activity?.positionBtn?.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
+                activity?.positionPlanBtn?.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
+                if (id != selected.id) {
+                    tableAdapter.ioDisconnect()
+                    tableAdapter.ioConnect(selected.id)
+                }
+            }
+        }
+    }
+
     override fun onPause() {
         super.onPause()
-        println("pause")
+        tableAdapter.ioDisconnect()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        tableAdapter.ioConnect(selected.id)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -237,6 +191,8 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         activity?.editText?.clearFocus()
         activity?.editTextFrom?.clearFocus()
         activity?.editTextTo?.clearFocus()
+
+        actualLocation?.let { locationChange(it) }
 
         findNavController().currentBackStackEntry?.savedStateHandle?.apply {
             getLiveData<Int>("selectedStopId").observe(viewLifecycleOwner) { id ->

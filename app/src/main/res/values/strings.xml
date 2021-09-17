@@ -10,7 +10,10 @@
     <string name="actual_position">Actual position</string>
     <string name="back">Back</string>
 
+    <string name="walking_directions">walking directions</string>
     <string name="tripTime">(%1$s)</string>
+    <string name="tripHeadsign"> ▶ %1$s</string>
+    <string name="tripStepDuration">%1$s stops, %2$s</string>
 
     <string name="error">Error</string>
     <string name="error400">One of given inputs is invalid!</string>

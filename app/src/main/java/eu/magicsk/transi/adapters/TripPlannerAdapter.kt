@@ -18,11 +18,13 @@ class TripPlannerAdapter(
 
    fun addItems(items: MutableList<Route>) {
         if (items.size > 0) {
+            val oldSize = itemCount
             TripPlannerItemList.clear()
             TripPlannerItemList.addAll(items)
-            notifyItemRangeChanged(0, TripPlannerItemList.size)
+            notifyItemRangeRemoved(itemCount, oldSize)
+            notifyItemRangeChanged(0, itemCount)
+            notifyItemRangeInserted(oldSize, itemCount)
         }
-
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripPlannerViewHolder {
@@ -35,13 +37,13 @@ class TripPlannerAdapter(
     override fun onBindViewHolder(holder: TripPlannerViewHolder, position: Int) {
         val current = TripPlannerItemList[position]
         holder.itemView.apply {
-            TableListDuration.text = current.duration
+            TableListDurationStopList.text = current.duration
             TableListTime.text = context.getString(R.string.tripTime).format(current.arrival_departure_time)
             TableListItems.layoutManager =
                 LinearLayoutManager(TableListItems.context, RecyclerView.VERTICAL, false)
             // TODO trip detail on tap
             TableListItems.adapter =
-                TripPlannerStepsAdapter(TripPlannerItemList[position].steps as MutableList<Step>) { run {} }
+                TripPlannerStepsAdapter(TripPlannerItemList[position].steps as MutableList<Step>)
         }
     }
 

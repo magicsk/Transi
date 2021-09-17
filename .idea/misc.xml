@@ -41,7 +41,10 @@
         <entry key="app/src/main/res/layout/tirp_planner_list_item.xml" value="0.540625" />
         <entry key="app/src/main/res/layout/trip_planner_list.xml" value="0.33013435700575816" />
         <entry key="app/src/main/res/layout/trip_planner_list_item.xml" value="0.5" />
+        <entry key="app/src/main/res/layout/trip_planner_list_item_transit.xml" value="0.5" />
         <entry key="app/src/main/res/layout/trip_planner_list_item_walking.xml" value="0.3151041666666667" />
+        <entry key="app/src/main/res/layout/trip_planner_list_step_transit.xml" value="0.5226449275362319" />
+        <entry key="app/src/main/res/layout/trip_planner_list_step_walking.xml" value="0.3958333333333333" />
         <entry key="app/src/main/res/layout/type_ahead_fragment.xml" value="0.3414473684210526" />
       </map>
     </option>

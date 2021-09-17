@@ -24,7 +24,7 @@
             android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/TableListDuration"
+                android:id="@+id/TableListDurationStopList"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="128 min"
@@ -38,8 +38,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="(23:55-23:59)"
-                app:layout_constraintStart_toEndOf="@id/TableListDuration"
-                app:layout_constraintBottom_toBottomOf="@id/TableListDuration" />
+                app:layout_constraintStart_toEndOf="@id/TableListDurationStopList"
+                app:layout_constraintBottom_toBottomOf="@id/TableListDurationStopList" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/TableListItems"

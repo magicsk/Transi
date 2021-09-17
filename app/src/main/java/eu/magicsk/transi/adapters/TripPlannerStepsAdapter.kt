@@ -9,41 +9,18 @@ import androidx.core.view.setPadding
 import androidx.recyclerview.widget.RecyclerView
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.remote.responses.Step
+import eu.magicsk.transi.util.dpToPx
 import eu.magicsk.transi.util.getLineColor
 import eu.magicsk.transi.util.getLineTextColor
-import eu.magicsk.transi.util.dpToPx
 import eu.magicsk.transi.util.isDarkTheme
-import kotlinx.android.synthetic.main.trip_planner_list_item_transit.view.*
-import kotlinx.android.synthetic.main.trip_planner_list_item_walking.view.*
+import kotlinx.android.synthetic.main.trip_planner_list_step_transit.view.*
+import kotlinx.android.synthetic.main.trip_planner_list_step_walking.view.*
 
 class TripPlannerStepsAdapter(
-    private val TripPlannerStepList: MutableList<Step>,
-    private val onItemClicked: (pos: Int) -> Unit
+    private val TripPlannerStepList: MutableList<Step>
 ) : RecyclerView.Adapter<TripPlannerStepsAdapter.TripPlannerViewHolder>() {
-    class TripPlannerViewHolder(itemView: View, private val onItemClicked: (pos: Int) -> Unit) :
-        RecyclerView.ViewHolder(itemView), View.OnClickListener {
-        init {
-            itemView.setOnClickListener(this)
-        }
-
-        override fun onClick(v: View?) {
-            val pos = adapterPosition
-            onItemClicked(pos)
-        }
-    }
-
-    private fun clearList() {
-        TripPlannerStepList.clear()
-        notifyItemRangeRemoved(0, itemCount)
-    }
-
-    private fun addItems(items: MutableList<Step>) {
-        if (items.size > 0) {
-            TripPlannerStepList.addAll(items)
-            notifyItemRangeChanged(0, TripPlannerStepList.size)
-        }
-
-    }
+    class TripPlannerViewHolder(itemView: View) :
+        RecyclerView.ViewHolder(itemView)
 
     override fun getItemViewType(position: Int): Int {
         return if (TripPlannerStepList[position].type == "TRANSIT") 1 else 0
@@ -53,11 +30,11 @@ class TripPlannerStepsAdapter(
         val context = parent.context
         val inflater = LayoutInflater.from(context)
         val view = if (viewType == 1) {
-            inflater.inflate(R.layout.trip_planner_list_item_transit, parent, false)
+            inflater.inflate(R.layout.trip_planner_list_step_transit, parent, false)
         } else {
-            inflater.inflate(R.layout.trip_planner_list_item_walking, parent, false)
+            inflater.inflate(R.layout.trip_planner_list_step_walking, parent, false)
         }
-        return TripPlannerViewHolder(view, onItemClicked)
+        return TripPlannerViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: TripPlannerViewHolder, position: Int) {
@@ -72,45 +49,70 @@ class TripPlannerStepsAdapter(
                             false
                         }
                     if (rounded) {
-                        TableListItemLineNum.setBackgroundResource(R.drawable.round_shape)
-                        if (!current.line.number.contains("S")) TableListItemLineNum.setPadding(
+                        TripPlannerListStepLineNum.setBackgroundResource(R.drawable.round_shape)
+                        if (!current.line.number.contains("S")) TripPlannerListStepLineNum.setPadding(
                             12f.dpToPx(context),
                             5f.dpToPx(context),
                             12f.dpToPx(context),
                             5f.dpToPx(context)
                         ) else {
-                            TableListItemLineNum.setPadding(5f.dpToPx(context))
+                            TripPlannerListStepLineNum.setPadding(5f.dpToPx(context))
                         }
                     } else {
-                        TableListItemLineNum.setBackgroundResource(R.drawable.rounded_shape)
+                        TripPlannerListStepLineNum.setBackgroundResource(R.drawable.rounded_shape)
                     }
-                    val drawable = TableListItemLineNum.background
+                    val drawable = TripPlannerListStepLineNum.background
                     drawable.setColorFilter(
                         ContextCompat.getColor(
                             context,
                             getLineColor(current.line.number, isDarkTheme(resources))
                         ), PorterDuff.Mode.SRC
                     )
-                    TableListItemLineNum.setTextColor(
+                    TripPlannerListStepLineNum.setTextColor(
                         ContextCompat.getColor(
                             context,
                             getLineTextColor(current.line.number)
                         )
                     )
 
-                    TableListItemLineNum.background = drawable
-                    TableListItemLineNum.text = current.line.number
-                    TableListItemHeadsign.text = "▶ ${current.headsign}"
-                    TableListItemDepartureStop.text = current.departure_stop
-                    TableListItemDepartureTime.text = current.departure_time
-                    TableListItemArrivalStop.text = current.arrival_stop
-                    TableListItemArrivalTime.text = current.arrival_time
+                    TripPlannerListStepLineNum.background = drawable
+                    TripPlannerListStepLineArrow.background = drawable
+                    TripPlannerListStepLineNum.text = current.line.number
+                    TripPlannerListStepHeadsign.text = context.getString(R.string.tripHeadsign).format(current.headsign)
+                    TripPlannerListStepDepartureStop.text = current.departure_stop
+                    TripPlannerListStepDepartureTime.text = current.departure_time
+                    TripPlannerListStepDuration.text =
+                        context.getString(R.string.tripStepDuration).format(current.num_stops, current.duration)
+                    TripPlannerListStepArrivalStop.text = current.arrival_stop
+                    TripPlannerListStepArrivalTime.text = current.arrival_time
+
+                    setOnClickListener {
+                        val duration = TripPlannerListStepDuration
+                        val stopList = TripPlannerListStepStopList
+                        var stopsListText = ""
+
+                        current.stops.forEach { stop ->
+                            stopsListText += if (stopsListText == "") "${stop.time}  ${stop.stop}" else {
+                                "\n${stop.time}  ${stop.stop}"
+                            }
+                        }
+
+                        TripPlannerListStepStopList.text = stopsListText
+
+                        if (duration.visibility == View.VISIBLE) {
+                            duration.visibility = View.GONE
+                            stopList.visibility = View.VISIBLE
+                        } else {
+                            duration.visibility = View.VISIBLE
+                            stopList.visibility = View.GONE
+                        }
+                    }
                 }
                 "WALKING" -> {
-                    TableListItemWalkingText.text = current.text
+                    TripPlannerListStepWalkingText.text = current.text
                 }
                 else -> {
-                    TableListItemWalkingText.text = context.getString(R.string.error)
+                    TripPlannerListStepWalkingText.text = context.getString(R.string.error)
                 }
             }
         }
