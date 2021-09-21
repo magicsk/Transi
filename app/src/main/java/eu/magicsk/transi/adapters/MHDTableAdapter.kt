@@ -9,6 +9,8 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.setPadding
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import eu.magicsk.transi.R
@@ -41,6 +43,7 @@ class MHDTableAdapter(
     private val socket: Socket = IO.socket(uri, options)
     private val tabArgs = JSONArray()
     private var connected = false
+    private var dismissed = false
     private var stopList: StopsJSON = StopsJSON()
 
     fun putStopList(stops: StopsJSON) {
@@ -215,9 +218,19 @@ class MHDTableAdapter(
                         info
                 }
                 activity.runOnUiThread {
-                    if (infos != "") {
-                        activity.MHDTableInfoText.text = infos
-                        activity.MHDTableInfoText.visibility = View.VISIBLE
+                    if (infos != "" && !dismissed) {
+                            val adapter = TableInfoAdapter(mutableListOf(infos))
+                            activity.MHDTableInfoText.adapter = adapter
+                            ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
+                                override fun onMove(v: RecyclerView, h: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) = false
+                                override fun onSwiped(h: RecyclerView.ViewHolder, dir: Int) {
+                                    adapter.removeAt(h.adapterPosition)
+                                    activity.MHDTableInfoText.visibility = View.GONE
+                                    dismissed = true
+                                }
+                            }).attachToRecyclerView(activity.MHDTableInfoText)
+                            activity.MHDTableInfoText.layoutManager = LinearLayoutManager(activity)
+                            activity.MHDTableInfoText.visibility = View.VISIBLE
                     } else {
                         activity.MHDTableInfoText.visibility = View.GONE
                     }
@@ -438,7 +451,7 @@ class MHDTableAdapter(
                             .onlyRetrieveFromCache(true)
                             .into(MHDTableListVehicleImg)
                         MHDTableListVehicleText.text =
-                            context.getString(R.string.vehicleText).format(currentVehicle.type, current.Id)
+                            context.getString(R.string.vehicleText).format(currentVehicle.type, busID)
                     }
                 }
             } else {

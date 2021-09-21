@@ -5,6 +5,8 @@
     <string name="stop_icon">stop_icon</string>
     <string name="locating_nearest_stop">Locating nearest stop…</string>
     <string name="enable_disable_switching_table_for_nearest_stop">enable/disable switching table for nearest stop</string>
+    <string name="display_menu">display menu</string>
+    <string name="pick_a_date_and_time">pick a date and time</string>
     <string name="from">From…</string>
     <string name="to">To…</string>
     <string name="actual_position">Actual position</string>
@@ -30,4 +32,5 @@
     <string name="vehicleText">%1$s #%2$s</string>
     <string name="lastStop">Last stop: %1$s</string>
     <string name="departureTime">Expected departure: %1$s</string>
+    <string name="this_is_a_request_stop">This is a request stop.</string>
 </resources>

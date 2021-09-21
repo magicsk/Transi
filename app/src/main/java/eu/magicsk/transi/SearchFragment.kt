@@ -12,10 +12,6 @@ import kotlinx.android.synthetic.main.fragment_search.*
 
 class SearchFragment : Fragment(R.layout.fragment_search) {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val navHostFragment = activity?.supportFragmentManager?.findFragmentById(R.id.navHostFragment)
@@ -34,10 +30,10 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
             mainFragment.nearestSwitching = !mainFragment.nearestSwitching
             if (mainFragment.nearestSwitching) {
                 positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
-                val selected = mainFragment.stopList[0]
-                MHDTableStopName?.text = selected.name
+                mainFragment.selected = mainFragment.stopList[0]
+                MHDTableStopName?.text = mainFragment.selected.name
                 mainFragment.tableAdapter.ioDisconnect()
-                mainFragment.tableAdapter.ioConnect(selected.id)
+                mainFragment.tableAdapter.ioConnect(mainFragment.selected.id)
             } else {
                 positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
             }

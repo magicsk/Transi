@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.location.Location
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
@@ -36,7 +37,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     private lateinit var tripHolder: TripPlannerJSON
     var nearestSwitching: Boolean = true
     var waitingForLocation: Boolean = false
-    private var selected: StopsJSONItem = StopsJSONItem(
+    var selected: StopsJSONItem = StopsJSONItem(
         "Locating nearest stop…",
         "none",
         "/ba/zastavka/Hronsk%C3%A1/b68883",
@@ -201,10 +202,11 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                         nearestSwitching = false
                         selected = getStopById(id)
                         MHDTableStopName.text = selected.name
-                        activity?.positionBtn?.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
+                        activity?.positionBtn?.icon =
+                            ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
                         tableAdapter.ioDisconnect()
                         tableAdapter.ioConnect(selected.id)
-                    } else planFragment.getTrip()
+                    } else Log.d("TripPlanner", "searched from here")
                 }
             }
 

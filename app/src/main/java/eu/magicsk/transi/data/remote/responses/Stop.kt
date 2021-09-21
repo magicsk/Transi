@@ -5,6 +5,8 @@ import kotlinx.android.parcel.Parcelize
 
 @Parcelize
 data class Stop(
+    val time: String,
     val stop: String,
-    val time: String
+    val zone: String,
+    val request: Boolean
 ) : Parcelable

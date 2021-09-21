@@ -6,9 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.view.setPadding
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.remote.responses.Step
+import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.util.dpToPx
 import eu.magicsk.transi.util.getLineColor
 import eu.magicsk.transi.util.getLineTextColor
@@ -18,15 +20,15 @@ import kotlinx.android.synthetic.main.trip_planner_list_step_walking.view.*
 
 class TripPlannerStepsAdapter(
     private val TripPlannerStepList: MutableList<Step>
-) : RecyclerView.Adapter<TripPlannerStepsAdapter.TripPlannerViewHolder>() {
-    class TripPlannerViewHolder(itemView: View) :
+) : RecyclerView.Adapter<TripPlannerStepsAdapter.TripPlannerStepsViewHolder>() {
+    class TripPlannerStepsViewHolder(itemView: View) :
         RecyclerView.ViewHolder(itemView)
 
     override fun getItemViewType(position: Int): Int {
         return if (TripPlannerStepList[position].type == "TRANSIT") 1 else 0
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripPlannerViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripPlannerStepsViewHolder {
         val context = parent.context
         val inflater = LayoutInflater.from(context)
         val view = if (viewType == 1) {
@@ -34,10 +36,10 @@ class TripPlannerStepsAdapter(
         } else {
             inflater.inflate(R.layout.trip_planner_list_step_walking, parent, false)
         }
-        return TripPlannerViewHolder(view)
+        return TripPlannerStepsViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: TripPlannerViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: TripPlannerStepsViewHolder, position: Int) {
         val current = TripPlannerStepList[position]
         holder.itemView.apply {
             when (current.type) {
@@ -75,9 +77,17 @@ class TripPlannerStepsAdapter(
                         )
                     )
 
+                    val arrowDrawable = TripPlannerListStepLineArrow.background
+                        arrowDrawable.setColorFilter(
+                        ContextCompat.getColor(
+                            context,
+                            getLineColor(current.line.number, isDarkTheme(resources))
+                        ), PorterDuff.Mode.SRC
+                    )
+
                     TripPlannerListStepLineNum.background = drawable
-                    TripPlannerListStepLineArrow.background = drawable
                     TripPlannerListStepLineNum.text = current.line.number
+                    TripPlannerListStepLineArrow.background = arrowDrawable
                     TripPlannerListStepHeadsign.text = context.getString(R.string.tripHeadsign).format(current.headsign)
                     TripPlannerListStepDepartureStop.text = current.departure_stop
                     TripPlannerListStepDepartureTime.text = current.departure_time
@@ -89,15 +99,12 @@ class TripPlannerStepsAdapter(
                     setOnClickListener {
                         val duration = TripPlannerListStepDuration
                         val stopList = TripPlannerListStepStopList
-                        var stopsListText = ""
 
-                        current.stops.forEach { stop ->
-                            stopsListText += if (stopsListText == "") "${stop.time}  ${stop.stop}" else {
-                                "\n${stop.time}  ${stop.stop}"
-                            }
-                        }
-
-                        TripPlannerListStepStopList.text = stopsListText
+//                        val reducedStopList = TripPlannerStepList[position].stops as MutableList<Stop>
+//                        reducedStopList.removeAt(0)
+//                        reducedStopList.removeAt(reducedStopList.size-1)
+                        stopList.layoutManager = LinearLayoutManager(stopList.context, RecyclerView.VERTICAL, false)
+                        stopList.adapter = TripPlannerStopsAdapter(TripPlannerStepList[position].stops as MutableList<Stop>)
 
                         if (duration.visibility == View.VISIBLE) {
                             duration.visibility = View.GONE

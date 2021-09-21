@@ -16,18 +16,24 @@ class TypeAheadAdapter(
     private var typeAheadItemList: MutableList<StopsJSONItem>,
     private val showDirections: Boolean,
     private val onItemClicked: (pos: Int) -> Unit,
-    private val onButtonClicked: (pos: Int) -> Unit
+    private val onButtonClicked: (pos: Int) -> Unit,
+    private val onButtonLongClicked: () -> Unit
 ) : RecyclerView.Adapter<TypeAheadAdapter.TypeAheadViewHolder>() {
     class TypeAheadViewHolder(
         itemView: View,
         private val onItemClicked: (pos: Int) -> Unit,
-        private val onButtonClicked: (pos: Int) -> Unit
+        private val onButtonClicked: (pos: Int) -> Unit,
+        private val onButtonLongClicked: () -> Unit
     ) :
         RecyclerView.ViewHolder(itemView), View.OnClickListener {
         init {
             itemView.setOnClickListener(this)
             itemView.directionBtn.setOnClickListener {
                 onButtonClicked(adapterPosition)
+            }
+            itemView.directionBtn.setOnLongClickListener {
+                onButtonLongClicked()
+                true
             }
         }
 
@@ -61,7 +67,7 @@ class TypeAheadAdapter(
         val context = parent.context
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.stops_list_item, parent, false)
-        return TypeAheadViewHolder(view, onItemClicked, onButtonClicked)
+        return TypeAheadViewHolder(view, onItemClicked, onButtonClicked, onButtonLongClicked)
     }
 
     override fun onBindViewHolder(holder: TypeAheadViewHolder, position: Int) {

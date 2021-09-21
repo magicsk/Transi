@@ -1,38 +1,61 @@
 package eu.magicsk.transi
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.os.Bundle
+import android.text.format.DateFormat
 import android.view.View
+import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.findNavController
+import eu.magicsk.transi.data.models.SelectedTrip
 import kotlinx.android.synthetic.main.fragment_main.*
 import kotlinx.android.synthetic.main.fragment_plan.*
+import java.util.*
 
 class PlanFragment : Fragment(R.layout.fragment_plan) {
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var mainFragment: MainFragment
+    private var selectedTripCalendar = Calendar.getInstance()
+    private var selectedTrip = SelectedTrip()
 
     fun getTrip(
-        time: Long = System.currentTimeMillis(),
-        from: String = editTextFrom.text.toString(),
-        to: String = editTextTo.text.toString()
+        time: Long = selectedTrip.time,
+        from: String = selectedTrip.from,
+        to: String = selectedTrip.to,
+        ad: Int = selectedTrip.ad
     ) {
+        selectedTrip = SelectedTrip(time, from, to)
         mainFragment.apply {
             activity?.progressBar_bg?.visibility = View.VISIBLE
             activity?.progressBar_ic?.visibility = View.VISIBLE
-            if ((to == "Actual position" || from == "Actual position") && actualLocation == null) {
-                waitingForLocation = true
+            if ((to == "" || from == "") || (to == "0" && from == "0")) {
+                val errorAlertBuilder = AlertDialog.Builder(activity)
+                errorAlertBuilder.setTitle(getString(R.string.ops))
+                    .setPositiveButton("OK") { dialog, _ ->
+                        dialog.cancel()
+                    }
+                val errorAlert = errorAlertBuilder.create()
+                errorAlert.setMessage(getString(R.string.error400))
+                errorAlert.show()
             } else {
-                val lat = actualLocation!!.latitude
-                val long = actualLocation!!.longitude
-                tripViewModel.getTrip(
-                    time,
-                    if (from == "Actual position") "c$lat,$long" else from,
-                    if (to == "Actual position") "c$lat,$long" else to
-                )
+                if ((to == "0" || from == "0") && actualLocation == null) {
+                    waitingForLocation = true
+                } else {
+                    val lat = actualLocation!!.latitude
+                    val long = actualLocation!!.longitude
+                    tripViewModel.getTrip(
+                        if (time == 0L) System.currentTimeMillis() else time,
+                        if (from == "0") "c$lat,$long" else from,
+                        if (to == "0") "c$lat,$long" else to,
+                        ad
+                    )
+                }
             }
         }
     }
@@ -49,8 +72,12 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
         super.onViewCreated(view, savedInstanceState)
 
         val navController = findNavController()
-        editTextTo.setText(mainFragment.getStopById(requireArguments().getInt("selectedToStopId")).name)
-        getTrip()
+        val argId = requireArguments().getInt("selectedToStopId")
+        if (argId > 0) {
+            val selectedToStop = mainFragment.getStopById(argId)
+            editTextTo.setText(selectedToStop.name)
+            getTrip(from = "0", to = selectedToStop.value)
+        }
 
         if (mainFragment.nearestSwitching) {
             if (mainFragment.actualLocation == null) {
@@ -66,10 +93,10 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
             if (mainFragment.nearestSwitching) {
                 positionPlanBtn.icon =
                     ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
-                val selected = mainFragment.stopList[0]
-                activity?.MHDTableStopName?.text = selected.name
+                mainFragment.selected = mainFragment.stopList[0]
+                activity?.MHDTableStopName?.text = mainFragment.selected.name
                 mainFragment.tableAdapter.ioDisconnect()
-                mainFragment.tableAdapter.ioConnect(selected.id)
+                mainFragment.tableAdapter.ioConnect(mainFragment.selected.id)
             } else {
                 positionPlanBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
             }
@@ -87,7 +114,47 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
             val temp = editTextFrom.text
             editTextFrom.text = editTextTo.text
             editTextTo.text = temp
+            getTrip(from = selectedTrip.to, to = selectedTrip.from)
         }
+
+        val timePickerListener = TimePickerDialog.OnTimeSetListener { _, hours, minutes ->
+            selectedTripCalendar.set(
+                selectedTripCalendar.get(Calendar.YEAR),
+                selectedTripCalendar.get(Calendar.MONTH),
+                selectedTripCalendar.get(Calendar.DAY_OF_MONTH),
+                hours,
+                minutes
+            )
+            getTrip(time = selectedTripCalendar.timeInMillis)
+        }
+
+        timeDateBtn.setOnClickListener {
+            val datePickerDialog = DatePickerDialog(requireContext())
+            val calendar = Calendar.getInstance()
+            if (selectedTrip.time != 0L) {
+                calendar.timeInMillis = selectedTrip.time
+                datePickerDialog.updateDate(
+                    calendar.get(Calendar.YEAR),
+                    calendar.get(Calendar.MONTH),
+                    calendar.get(Calendar.DAY_OF_MONTH)
+                )
+            }
+            datePickerDialog.datePicker.minDate = System.currentTimeMillis() - 86400000
+            datePickerDialog.show()
+            datePickerDialog.setOnDateSetListener { _, year, month, day ->
+                selectedTripCalendar.set(year, month, day)
+                val timePickerDialog = TimePickerDialog(
+                    requireContext(),
+                    timePickerListener,
+                    calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE),
+                    DateFormat.is24HourFormat(context)
+                )
+                selectedTrip.time
+                timePickerDialog.show()
+            }
+        }
+
 
         val typeAheadBundle = Bundle()
         typeAheadBundle.clear()
@@ -104,6 +171,14 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
                 )
             }
         }
+
+        timeDateBtn.setOnLongClickListener {
+            selectedTripCalendar = Calendar.getInstance()
+            selectedTrip.time = System.currentTimeMillis()
+            Toast.makeText(context, "Changed to current date and time.", Toast.LENGTH_SHORT).show()
+            true
+        }
+
         editTextTo.setOnFocusChangeListener { _, b ->
             typeAheadBundle.putString("origin", "editTextTo")
             if (b) {

@@ -41,7 +41,6 @@ class TripPlannerAdapter(
             TableListTime.text = context.getString(R.string.tripTime).format(current.arrival_departure_time)
             TableListItems.layoutManager =
                 LinearLayoutManager(TableListItems.context, RecyclerView.VERTICAL, false)
-            // TODO trip detail on tap
             TableListItems.adapter =
                 TripPlannerStepsAdapter(TripPlannerItemList[position].steps as MutableList<Step>)
         }

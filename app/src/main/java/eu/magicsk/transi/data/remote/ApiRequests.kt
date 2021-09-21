@@ -13,6 +13,7 @@ interface ApiRequests {
         @Query("time") time: Long,
         @Query("from") from: String,
         @Query("to") to: String,
+        @Query("ad") ad: Int
     ): TripPlannerJSON
 
     @GET("stops")

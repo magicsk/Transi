@@ -35,24 +35,41 @@
         android:singleLine="true"
         android:autofillHints="none"
         app:layout_constraintBottom_toTopOf="@id/editTextTo"
-        app:layout_constraintEnd_toStartOf="@id/positionPlanBtn"
+        app:layout_constraintEnd_toStartOf="@id/morePlanBtn"
         app:layout_constraintStart_toEndOf="@id/backBtn"
         app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/positionPlanBtn"
+        android:id="@+id/morePlanBtn"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="45dp"
         android:layout_height="55dp"
         android:layout_marginHorizontal="5dp"
-        android:contentDescription="@string/enable_disable_switching_table_for_nearest_stop"
-        app:icon="@drawable/ic_location_search"
+        android:contentDescription="@string/display_menu"
+        app:icon="@drawable/ic_more"
         app:iconGravity="textStart"
         app:iconPadding="0dp"
         app:iconTint="?colorOnSurface"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/editTextFrom"
         app:layout_constraintTop_toTopOf="parent"
+        app:strokeColor="@android:color/transparent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/switchBtn"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="45dp"
+        android:layout_height="55dp"
+        android:layout_marginHorizontal="5dp"
+        android:contentDescription="@string/enable_disable_switching_table_for_nearest_stop"
+        app:icon="@drawable/ic_swap_vert"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
+        app:iconTint="?colorOnSurface"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/editTextTo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/backBtn"
         app:strokeColor="@android:color/transparent" />
 
     <EditText
@@ -70,25 +87,42 @@
         android:singleLine="true"
         android:autofillHints="none"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/switchBtn"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/timeDateBtn"
+        app:layout_constraintStart_toEndOf="@id/switchBtn"
         app:layout_constraintTop_toBottomOf="@id/editTextFrom" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/switchBtn"
+        android:id="@+id/timeDateBtn"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="45dp"
+        android:layout_height="55dp"
+        android:layout_marginHorizontal="5dp"
+        android:contentDescription="@string/pick_a_date_and_time"
+        app:icon="@drawable/ic_edit_calendar"
+        app:iconGravity="textStart"
+        app:iconPadding="0dp"
+        app:iconTint="?colorOnSurface"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/positionPlanBtn"
+        app:layout_constraintStart_toEndOf="@+id/editTextTo"
+        app:layout_constraintTop_toBottomOf="@+id/morePlanBtn"
+        app:strokeColor="@android:color/transparent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/positionPlanBtn"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="45dp"
         android:layout_height="55dp"
         android:layout_marginHorizontal="5dp"
         android:contentDescription="@string/enable_disable_switching_table_for_nearest_stop"
-        app:icon="@drawable/ic_swap_vert"
+        app:icon="@drawable/ic_location_search"
         app:iconGravity="textStart"
         app:iconPadding="0dp"
         app:iconTint="?colorOnSurface"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/editTextTo"
-        app:layout_constraintTop_toBottomOf="@+id/positionPlanBtn"
+        app:layout_constraintStart_toEndOf="@+id/timeDateBtn"
+        app:layout_constraintTop_toBottomOf="@+id/morePlanBtn"
         app:strokeColor="@android:color/transparent" />
 
     <LinearLayout

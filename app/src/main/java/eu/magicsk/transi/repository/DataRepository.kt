@@ -12,9 +12,9 @@ class DataRepository @Inject constructor(
     private val api: ApiRequests
 ) {
 
-    suspend fun getTrip(time: Long, from: String, to: String): Resource<TripPlannerJSON> {
+    suspend fun getTrip(time: Long, from: String, to: String, ad: Int): Resource<TripPlannerJSON> {
         val response = try {
-            api.getTrip(time, from, to)
+            api.getTrip(time, from, to, ad)
         } catch(e: Exception) {
             return Resource.Error("An unknown error occurred.")
         }

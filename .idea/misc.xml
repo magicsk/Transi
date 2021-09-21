@@ -9,6 +9,7 @@
         <entry key="app/src/main/res/drawable/ic_bus.xml" value="0.5482051282051282" />
         <entry key="app/src/main/res/drawable/ic_bus_stop.xml" value="0.24605263157894736" />
         <entry key="app/src/main/res/drawable/ic_directions.xml" value="0.5482051282051282" />
+        <entry key="app/src/main/res/drawable/ic_edit_calendar.xml" value="0.5333333333333333" />
         <entry key="app/src/main/res/drawable/ic_filled_circle.xml" value="0.5510416666666667" />
         <entry key="app/src/main/res/drawable/ic_filled_now.xml" value="0.5510416666666667" />
         <entry key="app/src/main/res/drawable/ic_launcher_background.xml" value="0.24605263157894736" />
@@ -16,9 +17,11 @@
         <entry key="app/src/main/res/drawable/ic_location_on.xml" value="0.33125" />
         <entry key="app/src/main/res/drawable/ic_location_search.xml" value="0.425" />
         <entry key="app/src/main/res/drawable/ic_location_searching.xml" value="0.425" />
+        <entry key="app/src/main/res/drawable/ic_more.xml" value="0.5333333333333333" />
         <entry key="app/src/main/res/drawable/ic_my_location.xml" value="0.425" />
         <entry key="app/src/main/res/drawable/ic_outline_circle.xml" value="0.5510416666666667" />
         <entry key="app/src/main/res/drawable/ic_outline_now.xml" value="0.5510416666666667" />
+        <entry key="app/src/main/res/drawable/ic_request.xml" value="0.5333333333333333" />
         <entry key="app/src/main/res/drawable/ic_stop_background.xml" value="0.24605263157894736" />
         <entry key="app/src/main/res/drawable/ic_train.xml" value="0.5482051282051282" />
         <entry key="app/src/main/res/drawable/ic_tram.xml" value="0.41875" />
@@ -37,6 +40,7 @@
         <entry key="app/src/main/res/layout/layout.xml" value="0.3414473684210526" />
         <entry key="app/src/main/res/layout/loaction_search.xml" value="0.39375" />
         <entry key="app/src/main/res/layout/stops_list_item.xml" value="0.33" />
+        <entry key="app/src/main/res/layout/table_info_list.xml" value="0.5348958333333333" />
         <entry key="app/src/main/res/layout/table_list_item.xml" value="0.5" />
         <entry key="app/src/main/res/layout/tirp_planner_list_item.xml" value="0.540625" />
         <entry key="app/src/main/res/layout/trip_planner_list.xml" value="0.33013435700575816" />
@@ -45,6 +49,7 @@
         <entry key="app/src/main/res/layout/trip_planner_list_item_walking.xml" value="0.3151041666666667" />
         <entry key="app/src/main/res/layout/trip_planner_list_step_transit.xml" value="0.5226449275362319" />
         <entry key="app/src/main/res/layout/trip_planner_list_step_walking.xml" value="0.3958333333333333" />
+        <entry key="app/src/main/res/layout/trip_planner_list_stops.xml" value="0.5172101449275363" />
         <entry key="app/src/main/res/layout/type_ahead_fragment.xml" value="0.3414473684210526" />
       </map>
     </option>

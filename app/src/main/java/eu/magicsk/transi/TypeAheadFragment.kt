@@ -45,7 +45,7 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
                     "Actual position",
                     "Actual position",
                     "",
-                    "a",
+                    "0",
                     "location",
                     0,
                     "0",
@@ -63,15 +63,16 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
                 set("selectedStopId", typeAheadAdapter.getItem(pos).id)
                 set("origin", origin)
             }
+            val stop = typeAheadAdapter.getItem(pos)
             when (origin) {
-                "editText" -> activity?.editText?.setText(typeAheadAdapter.getItem(pos).name)
+                "editText" -> activity?.editText?.setText(stop.name)
                 "editTextFrom" -> {
-                    activity?.editTextFrom?.setText(typeAheadAdapter.getItem(pos).name)
-                    planFragment?.getTrip()
+                    activity?.editTextFrom?.setText(stop.name)
+                    planFragment?.getTrip(from = stop.value)
                 }
                 "editTextTo" -> {
-                    activity?.editTextTo?.setText(typeAheadAdapter.getItem(pos).name)
-                    planFragment?.getTrip()
+                    activity?.editTextTo?.setText(stop.name)
+                    planFragment?.getTrip(to = stop.value)
                 }
             }
 
@@ -92,10 +93,22 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
             navController.popBackStack()
         }
 
+        fun onButtonItemLongClick() {
+            val navController = findNavController()
+            navController.previousBackStackEntry?.savedStateHandle?.set(
+                "selectedToStopId",
+                0
+            )
+            val im: InputMethodManager? =
+                activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+            im?.hideSoftInputFromWindow(view.windowToken, 0)
+            navController.popBackStack()
+        }
+
         typeAheadAdapter =
             TypeAheadAdapter(
                 mutableListOf(), showDirections,
-                { position -> onListItemClick(position) }) { position -> onButtonItemClick(position) }
+                { position -> onListItemClick(position) }, { position -> onButtonItemClick(position) }) { onButtonItemLongClick() }
         typeAheadAdapter.addItems(stopList)
         StopList.adapter = typeAheadAdapter
         StopList.layoutManager = LinearLayoutManager(context)
