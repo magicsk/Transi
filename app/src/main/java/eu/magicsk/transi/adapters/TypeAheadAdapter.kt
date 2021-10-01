@@ -73,13 +73,18 @@ class TypeAheadAdapter(
     override fun onBindViewHolder(holder: TypeAheadViewHolder, position: Int) {
         val current = typeAheadItemList[position]
         holder.itemView.apply {
-            directionBtn.visibility = if (showDirections) View.VISIBLE else View.GONE
+            directionBtn.visibility = if (showDirections && current.type != "map") View.VISIBLE else View.GONE
             stopName.text = current.name
             when (current.type) {
                 "location" -> {
                     stopIconDrawable.background = ResourcesCompat.getDrawable(resources,R.drawable.ic_location_on, context?.theme)
                     stopIconBackground.backgroundTintList =
                         ResourcesCompat.getColorStateList(resources,R.color.blue_100, context?.theme)
+                }
+                "map" -> {
+                    stopIconDrawable.background = ResourcesCompat.getDrawable(resources,R.drawable.ic_map, context?.theme)
+                    stopIconBackground.backgroundTintList =
+                        ResourcesCompat.getColorStateList(resources,R.color.green_100, context?.theme)
                 }
                 "train" -> {
                     stopIconDrawable.background = ResourcesCompat.getDrawable(resources,R.drawable.ic_train, context?.theme)
@@ -90,6 +95,11 @@ class TypeAheadAdapter(
                     stopIconDrawable.background = ResourcesCompat.getDrawable(resources, R.drawable.ic_tram, context?.theme)
                     stopIconBackground.backgroundTintList =
                         ResourcesCompat.getColorStateList(resources, R.color.yellow_100, context?.theme)
+                }
+                "regio_bus" -> {
+                    stopIconDrawable.background = ResourcesCompat.getDrawable(resources, R.drawable.ic_bus, context?.theme)
+                    stopIconBackground.backgroundTintList =
+                        ResourcesCompat.getColorStateList(resources, R.color.green_100, context?.theme)
                 }
                 else -> {
                     stopIconDrawable.background = ResourcesCompat.getDrawable(resources, R.drawable.ic_bus, context?.theme)

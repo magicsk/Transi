@@ -5,14 +5,14 @@ import kotlinx.android.parcel.Parcelize
 
 @Parcelize
 data class StopsJSONItem(
+    val station_id: Int,
     val name: String,
     val html: String,
     val url: String,
     val value: String,
     val type: String,
     val id: Int,
-    val lat: String?,
-    val long: String?,
-    val zone: Int,
+    val lat: Double,
+    val long: Double,
     val platform_labels: PlatformLabels?
 ) : Parcelable

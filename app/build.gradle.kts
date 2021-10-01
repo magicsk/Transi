@@ -5,6 +5,7 @@ plugins {
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
     id("androidx.navigation.safeargs.kotlin")
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
 android {
@@ -19,7 +20,7 @@ android {
         minSdk = 29
         targetSdk = 31
         versionCode = 1
-        versionName = "0.9.6"
+        versionName = "0.9.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -52,6 +53,8 @@ dependencies {
     implementation("com.google.android.material:material:1.4.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.0")
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
+    implementation("androidx.preference:preference:1.1.1")
+    implementation("androidx.preference:preference-ktx:1.1.1")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.3")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
@@ -79,4 +82,7 @@ dependencies {
 
     implementation("com.github.bumptech.glide:glide:4.11.0")
     kapt("com.github.bumptech.glide:compiler:4.11.0")
+
+    implementation("com.google.android.gms:play-services-maps:17.0.1")
+    implementation("com.google.maps.android:android-maps-utils:1.1.0")
 }

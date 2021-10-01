@@ -68,17 +68,36 @@ class MHDTableAdapter(
 
     fun ioObservers(activity: Activity) {
         socket
+            .on(Socket.EVENT_CONNECTING) {
+                activity.runOnUiThread {
+                    activity.MHDTableListConnectInfo?.text = activity.getString(R.string.connecting)
+                }
+            }
             .on(Socket.EVENT_CONNECT) {
                 connected = true
                 println("connected")
+                activity.runOnUiThread {
+                    activity.MHDTableListConnectInfo?.text = ""
+                }
             }
             .on(Socket.EVENT_DISCONNECT) {
                 connected = false
                 println("disconnected")
+                activity.runOnUiThread {
+                    activity.MHDTableListConnectInfo?.text = activity.getString(R.string.disconnected)
+                }
+            }
+            .on(Socket.EVENT_RECONNECTING) {
+                activity.runOnUiThread {
+                    activity.MHDTableListConnectInfo?.text = activity.getString(R.string.reconnecting)
+                }
             }
             .on(Socket.EVENT_RECONNECT) {
                 connected = true
-                println("reconnect")
+                println("reconnected")
+                activity.runOnUiThread {
+                    activity.MHDTableListConnectInfo?.text = ""
+                }
                 socket
                     .emit("tabStart", tabArgs)
                     .emit("infoStart")
@@ -219,20 +238,22 @@ class MHDTableAdapter(
                 }
                 activity.runOnUiThread {
                     if (infos != "" && !dismissed) {
-                            val adapter = TableInfoAdapter(mutableListOf(infos))
-                            activity.MHDTableInfoText.adapter = adapter
+                        val adapter = TableInfoAdapter(mutableListOf(infos))
+                        activity.MHDTableInfoText?.let { rv ->
+                            rv.adapter = adapter
                             ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
                                 override fun onMove(v: RecyclerView, h: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) = false
                                 override fun onSwiped(h: RecyclerView.ViewHolder, dir: Int) {
                                     adapter.removeAt(h.adapterPosition)
-                                    activity.MHDTableInfoText.visibility = View.GONE
+                                    rv.visibility = View.GONE
                                     dismissed = true
                                 }
-                            }).attachToRecyclerView(activity.MHDTableInfoText)
-                            activity.MHDTableInfoText.layoutManager = LinearLayoutManager(activity)
-                            activity.MHDTableInfoText.visibility = View.VISIBLE
+                            }).attachToRecyclerView(rv)
+                            rv.layoutManager = LinearLayoutManager(activity)
+                            rv.visibility = View.VISIBLE
+                        }
                     } else {
-                        activity.MHDTableInfoText.visibility = View.GONE
+                        activity.MHDTableInfoText?.visibility = View.GONE
                     }
                 }
             }

@@ -22,7 +22,7 @@ class MainActivity : AppCompatActivity() {
             override fun onLocationChanged(location: Location) {
                 println("location changed activity")
                 val navHostFragment = supportFragmentManager.findFragmentById(R.id.navHostFragment)
-                val mainFragment = navHostFragment?.childFragmentManager?.fragments?.get(0) as MainFragment?
+                val mainFragment = navHostFragment?.childFragmentManager?.fragments?.get(0) as? MainFragment?
                 mainFragment?.locationChange(location)
             }
 
@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                     LocationManager.FUSED_PROVIDER else LocationManager.GPS_PROVIDER,
                 0L,
-                50f,
+                10f,
                 locationListener
             )
         }
@@ -70,4 +70,9 @@ class MainActivity : AppCompatActivity() {
             )
         )
     }
+
+//    override fun onBackPressed() {
+//        super.onBackPressed()
+//        exitProcess(0)
+//    }
 }

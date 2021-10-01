@@ -27,6 +27,14 @@ class TripPlannerAdapter(
         }
     }
 
+    fun clear() {
+        if (itemCount > 0) {
+            val oldSize = itemCount
+            TripPlannerItemList.clear()
+            notifyItemRangeRemoved(itemCount, oldSize)
+        }
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripPlannerViewHolder {
         val context = parent.context
         val inflater = LayoutInflater.from(context)

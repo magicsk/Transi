@@ -13,6 +13,9 @@
         <argument
             android:name="stopList"
             app:argType="eu.magicsk.transi.data.remote.responses.StopsJSON"/>
+        <action
+            android:id="@+id/action_mainFragment_to_settingsFragment"
+            app:destination="@id/settingsFragment"/>
     </fragment>
     <fragment
         android:id="@+id/typeAheadFragment"
@@ -21,5 +24,25 @@
         <argument
             android:name="stopsList"
             app:argType="eu.magicsk.transi.data.remote.responses.StopsJSON"/>
+        <action
+            android:id="@+id/action_typeAheadFragment_to_settingsFragment"
+            app:destination="@id/settingsFragment"/>
+        <action
+            android:id="@+id/action_typeAheadFragment_to_mapFragment"
+            app:destination="@id/mapFragment"/>
     </fragment>
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="eu.magicsk.transi.SettingsFragment"
+        android:label="SettingsFragment" >
+    </fragment>
+    <fragment
+        android:id="@+id/mapFragment"
+        android:name="eu.magicsk.transi.MapFragment"
+        android:label="MapFragment">
+        <argument
+            android:name="stopsList"
+            app:argType="eu.magicsk.transi.data.remote.responses.StopsJSON"/>
+    </fragment>
+
 </navigation>

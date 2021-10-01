@@ -39,4 +39,16 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/TripPlannerList" />
 
+    <TextView
+        android:id="@+id/MHDTableListConnectInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/connecting"
+        android:fontFamily="@font/roboto_medium"
+        android:textSize="26sp"
+        app:layout_constraintTop_toTopOf="@id/MHDTableList"
+        app:layout_constraintBottom_toBottomOf="@id/MHDTableList"
+        app:layout_constraintLeft_toLeftOf="@id/MHDTableList"
+        app:layout_constraintRight_toRightOf="@id/MHDTableList"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

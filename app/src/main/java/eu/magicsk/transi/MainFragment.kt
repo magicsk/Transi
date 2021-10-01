@@ -4,13 +4,14 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.location.Location
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.MHDTableAdapter
 import eu.magicsk.transi.adapters.TripPlannerAdapter
@@ -34,31 +35,31 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     private val viewModel: StopsListViewModel by viewModels()
     val tripViewModel: TripPlannerViewModel by viewModels()
     var stopList: StopsJSON = StopsJSON()
-    private lateinit var tripHolder: TripPlannerJSON
+    private var tripHolder = TripPlannerJSON(listOf(), "", 0)
     var nearestSwitching: Boolean = true
     var waitingForLocation: Boolean = false
     var selected: StopsJSONItem = StopsJSONItem(
+        0,
         "Locating nearest stop…",
         "none",
         "/ba/zastavka/Hronsk%C3%A1/b68883",
         "g94",
         "bus",
         94,
-        "48,13585663",
-        "17,20938683",
-        101,
+        48.13585663,
+        17.20938683,
         null
     )
-//    private var selected: StopsJSONItem = StopsJSONItem(
+//    var selected: StopsJSONItem = StopsJSONItem(
+//        0,
 //        "Locating nearest stop…",
 //        "none",
 //        "/ba/zastavka/Hronsk%C3%A1/b68883",
 //        "g20",
 //        "bus",
 //        20,
-//        "48,13585663",
-//        "17,20938683",
-//        101,
+//        48.13585663,
+//        17.20938683,
 //        null
 //    )
 
@@ -77,24 +78,19 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     var actualLocation: Location? = null
 
     private fun calcDistance(x: StopsJSONItem): Double {
-        x.lat?.let { lat ->
-            x.long?.let { long ->
-                val xLat = lat.replace(",", ".").toDouble()
-                val xLong = long.replace(",", ".").toDouble()
-                val radius = 6378137.toDouble()
-                val deltaLat = xLat - actualLocation!!.latitude
-                val deltaLong = xLong - actualLocation!!.longitude
-                val angle = 2 * asin(
-                    sqrt(
-                        sin(deltaLat / 2).pow(2.0) +
-                                cos(actualLocation!!.latitude) * cos(xLat) *
-                                sin(deltaLong / 2).pow(2.0)
-                    )
-                )
-                return radius * angle
-            }
-        }
-        return 100000000.0
+        val xLat = x.lat
+        val xLong = x.long
+        val radius = 6378137.toDouble()
+        val deltaLat = xLat - actualLocation!!.latitude
+        val deltaLong = xLong - actualLocation!!.longitude
+        val angle = 2 * asin(
+            sqrt(
+                sin(deltaLat / 2).pow(2.0) +
+                        cos(actualLocation!!.latitude) * cos(xLat) *
+                        sin(deltaLong / 2).pow(2.0)
+            )
+        )
+        return radius * angle
     }
 
     private val sortByNearest = Comparator<StopsJSONItem> { a, b ->
@@ -106,13 +102,12 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        tableAdapter.ioConnect(selected.id)
+//        tableAdapter.ioConnect(selected.id)
         activity?.let {
-
             tableAdapter.ioObservers(it)
             viewModel.stops.observe(it) { stops ->
-                println("stops fetched")
                 if (stops != null && stopList.size < 1) {
+                    println("stops fetched")
                     stopList.addAll(stops)
                     actualLocation?.let { l -> locationChange(l) }
                     tableAdapter.putStopList(stopList)
@@ -198,7 +193,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         findNavController().currentBackStackEntry?.savedStateHandle?.apply {
             getLiveData<Int>("selectedStopId").observe(viewLifecycleOwner) { id ->
                 getLiveData<String>("origin").observe(viewLifecycleOwner) { origin ->
-                    if (origin == "editText") {
+                    if (origin != "editTextTo") {
                         nearestSwitching = false
                         selected = getStopById(id)
                         MHDTableStopName.text = selected.name
@@ -206,7 +201,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                             ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
                         tableAdapter.ioDisconnect()
                         tableAdapter.ioConnect(selected.id)
-                    } else Log.d("TripPlanner", "searched from here")
+                    }
                 }
             }
 
@@ -230,7 +225,14 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         MHDTableList.layoutManager = LinearLayoutManager(context)
         TripPlannerList.adapter = tripPlannerAdapter
         TripPlannerList.layoutManager = LinearLayoutManager(context)
-
-        TripPlannerList.visibility = if (::tripHolder.isInitialized) View.VISIBLE else View.GONE
+        TripPlannerList.visibility = if (tripHolder.code == 200) View.VISIBLE else View.GONE
+        ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
+            override fun onMove(v: RecyclerView, h: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) = false
+            override fun onSwiped(h: RecyclerView.ViewHolder, dir: Int) {
+                tripPlannerAdapter.clear()
+                TripPlannerList.visibility = View.GONE
+                tripHolder = TripPlannerJSON(listOf(), "", 0)
+            }
+        }).attachToRecyclerView(TripPlannerList)
     }
 }

@@ -31,7 +31,7 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
             if (mainFragment.nearestSwitching) {
                 positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
                 mainFragment.selected = mainFragment.stopList[0]
-                MHDTableStopName?.text = mainFragment.selected.name
+                activity?.MHDTableStopName?.text = mainFragment.selected.name
                 mainFragment.tableAdapter.ioDisconnect()
                 mainFragment.tableAdapter.ioConnect(mainFragment.selected.id)
             } else {

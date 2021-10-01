@@ -21,11 +21,11 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
     private lateinit var typeAheadAdapter: TypeAheadAdapter
     private lateinit var origin: String
     private var showDirections = false
-    private var stopList: StopsJSON = StopsJSON()
+    private var stopsList: StopsJSON = StopsJSON()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        stopList = requireArguments().getSerializable("stopsList") as StopsJSON
+        stopsList = requireArguments().getSerializable("stopsList") as StopsJSON
         showDirections = requireArguments().getBoolean("directions")
         origin = requireArguments().getString("origin").toString()
     }
@@ -39,18 +39,36 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
                 println("not PlanFragment")
                 null
             }
+
+        val fromMap = StopsJSONItem(
+            0,
+            "From map",
+            "From map",
+            "",
+            "-1",
+            "map",
+            0,
+            0.0,
+            0.0,
+            null
+        )
+        stopsList.remove(fromMap)
+        stopsList.add(
+            0, fromMap
+        )
+
         if (origin != "editText") {
-            stopList.add(
+            stopsList.add(
                 0, StopsJSONItem(
+                    0,
                     "Actual position",
                     "Actual position",
                     "",
                     "0",
                     "location",
                     0,
-                    "0",
-                    "0",
-                    0,
+                    0.0,
+                    0.0,
                     null
                 )
             )
@@ -58,27 +76,40 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
 
         fun onListItemClick(pos: Int) {
             val navController = findNavController()
-            navController.previousBackStackEntry?.savedStateHandle?.apply {
-                remove<Int>("selectedToStopId")
-                set("selectedStopId", typeAheadAdapter.getItem(pos).id)
-                set("origin", origin)
-            }
-            val stop = typeAheadAdapter.getItem(pos)
-            when (origin) {
-                "editText" -> activity?.editText?.setText(stop.name)
-                "editTextFrom" -> {
-                    activity?.editTextFrom?.setText(stop.name)
-                    planFragment?.getTrip(from = stop.value)
+            if (typeAheadAdapter.getItem(pos).type == "map") {
+                val mapBundle = Bundle();
+                mapBundle.putSerializable("stopsList", stopsList)
+                mapBundle.putString("origin", origin)
+                findNavController().navigate(
+                    R.id.action_typeAheadFragment_to_mapFragment,
+                    mapBundle,
+                    null,
+                )
+                val im: InputMethodManager? = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+                im?.hideSoftInputFromWindow(view.windowToken, 0)
+            } else {
+                navController.previousBackStackEntry?.savedStateHandle?.apply {
+                    remove<Int>("selectedToStopId")
+                    set("selectedStopId", typeAheadAdapter.getItem(pos).id)
+                    set("origin", origin)
                 }
-                "editTextTo" -> {
-                    activity?.editTextTo?.setText(stop.name)
-                    planFragment?.getTrip(to = stop.value)
+                val stop = typeAheadAdapter.getItem(pos)
+                when (origin) {
+                    "editText" -> activity?.editText?.setText(stop.name)
+                    "editTextFrom" -> {
+                        activity?.editTextFrom?.setText(stop.name)
+                        planFragment?.getTrip(from = stop.value)
+                    }
+                    "editTextTo" -> {
+                        activity?.editTextTo?.setText(stop.name)
+                        planFragment?.getTrip(to = stop.value)
+                    }
                 }
-            }
 
-            val im: InputMethodManager? = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
-            im?.hideSoftInputFromWindow(view.windowToken, 0)
-            navController.popBackStack()
+                val im: InputMethodManager? = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+                im?.hideSoftInputFromWindow(view.windowToken, 0)
+                navController.popBackStack()
+            }
         }
 
         fun onButtonItemClick(pos: Int) {
@@ -109,7 +140,7 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
             TypeAheadAdapter(
                 mutableListOf(), showDirections,
                 { position -> onListItemClick(position) }, { position -> onButtonItemClick(position) }) { onButtonItemLongClick() }
-        typeAheadAdapter.addItems(stopList)
+        typeAheadAdapter.addItems(stopsList)
         StopList.adapter = typeAheadAdapter
         StopList.layoutManager = LinearLayoutManager(context)
 
