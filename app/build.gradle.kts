@@ -17,10 +17,10 @@ android {
 
     defaultConfig {
         applicationId = "eu.magicsk.transi"
-        minSdk = 29
+        minSdk = 28
         targetSdk = 31
         versionCode = 1
-        versionName = "0.9.7"
+        versionName = "0.9.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

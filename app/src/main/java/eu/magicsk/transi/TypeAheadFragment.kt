@@ -52,32 +52,36 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
             0.0,
             null
         )
+
+        val actualPosition = StopsJSONItem(
+            0,
+            "Actual position",
+            "Actual position",
+            "",
+            "0",
+            "location",
+            0,
+            0.0,
+            0.0,
+            null
+        )
+
         stopsList.remove(fromMap)
         stopsList.add(
             0, fromMap
         )
 
         if (origin != "editText") {
+            stopsList.remove(actualPosition)
             stopsList.add(
-                0, StopsJSONItem(
-                    0,
-                    "Actual position",
-                    "Actual position",
-                    "",
-                    "0",
-                    "location",
-                    0,
-                    0.0,
-                    0.0,
-                    null
-                )
+                0, actualPosition
             )
         }
 
         fun onListItemClick(pos: Int) {
             val navController = findNavController()
             if (typeAheadAdapter.getItem(pos).type == "map") {
-                val mapBundle = Bundle();
+                val mapBundle = Bundle()
                 mapBundle.putSerializable("stopsList", stopsList)
                 mapBundle.putString("origin", origin)
                 findNavController().navigate(
@@ -154,6 +158,7 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
             override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(p0: Editable?) {}
             override fun onTextChanged(s: CharSequence?, p1: Int, p2: Int, p3: Int) {
+                typeAheadAdapter.addItems(stopsList)
                 typeAheadAdapter.filter(s.toString())
             }
         })

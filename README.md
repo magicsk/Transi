@@ -5,13 +5,17 @@ App with list of virtual tables and trip planner for MHD in Bratislava.
 ## Features
 
 ### Future  
-- [ ] Cache stops.json
 - [ ] Local tripplanner parser
 - [ ] Trip planner trip notification
 - [ ] Trip planner add time arrival departure switch
 - [ ] Table on long press notification
 - [ ] ŽSR table support if possible
 - [ ] Add settings: home a address, default stop
+
+### 0.9.8
+- [x] Cache stops.json
+- [x] Zoom map on actual location
+- [x] Actual time in Table next to stop name
 
 ### 0.9.7
 - [x] Add Trip planner dismiss
@@ -52,6 +56,12 @@ App with list of virtual tables and trip planner for MHD in Bratislava.
 
 
 ## Bugs
+- [ ] Fix location working only each other start of application
+
+### 0.9.8
+- [x] Fix typeAhead search not recovering items
+- [x] Fix duplicate stops in TripPlanner
+- [x] Fix crash when back button is used in map
 
 ### 0.9.7
 - [x] Fix crash on opening TypeAhead before table info loaded

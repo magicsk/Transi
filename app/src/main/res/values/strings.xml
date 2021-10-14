@@ -4,6 +4,7 @@
     <string name="search">Search for stops</string>
     <string name="stop_icon">stop_icon</string>
     <string name="locating_nearest_stop">Locating nearest stop…</string>
+    <string name="actualTime">%1$s:%2$s:%3$s</string>
     <string name="enable_disable_switching_table_for_nearest_stop">enable/disable switching table for nearest stop</string>
     <string name="display_menu">display menu</string>
     <string name="pick_a_date_and_time">pick a date and time</string>
@@ -38,6 +39,7 @@
     <string name="reconnecting">Reconnecting…</string>
     <string name="disconnected">Disconnected</string>
     <string name="home">home</string>
+
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
     <string name="sync_header">Sync</string>

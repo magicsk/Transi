@@ -2,8 +2,11 @@ package eu.magicsk.transi
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.location.LocationManager
+import android.os.Build
 import android.os.Bundle
 import android.view.View
+import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -27,7 +30,7 @@ class MapFragment : SupportMapFragment() {
     private val placesList = arrayListOf<Place>()
 
     class PlaceRenderer(
-        private val context: Context,
+        context: Context,
         map: GoogleMap,
         clusterManager: ClusterManager<Place>
     ) : DefaultClusterRenderer<Place>(context, map, clusterManager) {
@@ -101,9 +104,9 @@ class MapFragment : SupportMapFragment() {
 
     private fun getItem(name: String): StopsJSONItem {
         stopsList.forEach {
-            if (it.name == name) return it;
+            if (it.name == name) return it
         }
-        return stopsList[0];
+        return stopsList[0]
     }
 
     @SuppressLint("RestrictedApi")
@@ -120,7 +123,7 @@ class MapFragment : SupportMapFragment() {
 
         // Set custom info window adapter
         clusterManager.markerCollection.setOnInfoWindowClickListener { marker ->
-            val stop = getItem(marker.title)
+            val stopInfo = marker.title?.let { getItem(it) }
             val navController = findNavController()
             val planFragment =
                 try {
@@ -132,21 +135,21 @@ class MapFragment : SupportMapFragment() {
             navController.backStack.forEach {
                 it.savedStateHandle.apply {
                     remove<Int>("selectedToStopId")
-                    set("selectedStopId", stop.id)
+                    set("selectedStopId", stopInfo?.id)
                     set("origin", origin)
                 }
             }
-            println(origin)
-            println(stop.id)
-            when (origin) {
-                "editText" -> activity?.editText?.setText(stop.name)
-                "editTextFrom" -> {
-                    activity?.editTextFrom?.setText(stop.name)
-                    planFragment?.getTrip(from = stop.value)
-                }
-                "editTextTo" -> {
-                    activity?.editTextTo?.setText(stop.name)
-                    planFragment?.getTrip(to = stop.value)
+            stopInfo?.let { stop ->
+                when (origin) {
+                    "editTextFrom" -> {
+                        activity?.editTextFrom?.setText(stop.name)
+                        planFragment?.getTrip(from = stop.value)
+                    }
+                    "editTextTo" -> {
+                        activity?.editTextTo?.setText(stop.name)
+                        planFragment?.getTrip(to = stop.value)
+                    }
+                    else -> activity?.editText?.setText(stop.name)
                 }
             }
             navController.popBackStack()
@@ -168,15 +171,24 @@ class MapFragment : SupportMapFragment() {
     @SuppressLint("MissingPermission")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val locationManager = activity?.getSystemService(AppCompatActivity.LOCATION_SERVICE) as LocationManager
+        val actualLocation = locationManager.getLastKnownLocation(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                LocationManager.FUSED_PROVIDER else LocationManager.GPS_PROVIDER
+        )
         findNavController().previousBackStackEntry?.savedStateHandle
         getMapAsync { googleMap ->
             googleMap.setOnMapLoadedCallback {
+                googleMap.isMyLocationEnabled = true
                 val bounds = LatLngBounds.builder()
                 stopsList.forEach {
-                    if (it.id != 0) bounds.include(LatLng(it.lat.toDouble(), it.long.toDouble()))
+                    if (it.id != 0) bounds.include(LatLng(it.lat, it.long))
                 }
+                if (actualLocation != null) {
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(actualLocation.latitude, actualLocation.longitude), 16f))
+            } else {
                 googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 50))
-                googleMap.isMyLocationEnabled = true
+            }
             }
             addMarkers(googleMap)
         }

@@ -78,7 +78,7 @@ class TripPlannerStepsAdapter(
                     )
 
                     val arrowDrawable = TripPlannerListStepLineArrow.background
-                        arrowDrawable.setColorFilter(
+                    arrowDrawable.setColorFilter(
                         ContextCompat.getColor(
                             context,
                             getLineColor(current.line.number, isDarkTheme(resources))
@@ -104,7 +104,11 @@ class TripPlannerStepsAdapter(
 //                        reducedStopList.removeAt(0)
 //                        reducedStopList.removeAt(reducedStopList.size-1)
                         stopList.layoutManager = LinearLayoutManager(stopList.context, RecyclerView.VERTICAL, false)
-                        stopList.adapter = TripPlannerStopsAdapter(TripPlannerStepList[position].stops as MutableList<Stop>)
+                        val filteredStops: MutableList<Stop> = mutableListOf()
+                        filteredStops.addAll(TripPlannerStepList[position].stops)
+                        filteredStops.removeAt(0)
+                        filteredStops.removeAt(filteredStops.size - 1)
+                        stopList.adapter = TripPlannerStopsAdapter(filteredStops)
 
                         if (duration.visibility == View.VISIBLE) {
                             duration.visibility = View.GONE

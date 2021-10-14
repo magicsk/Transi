@@ -2,6 +2,8 @@ package eu.magicsk.transi
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.Context
+import android.content.SharedPreferences
 import android.location.Location
 import android.os.Bundle
 import android.view.View
@@ -12,10 +14,12 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.MHDTableAdapter
 import eu.magicsk.transi.adapters.TripPlannerAdapter
 import eu.magicsk.transi.data.remote.responses.*
+import eu.magicsk.transi.view_models.StopsListVersionViewModel
 import eu.magicsk.transi.view_models.StopsListViewModel
 import eu.magicsk.transi.view_models.TripPlannerViewModel
 import kotlinx.android.synthetic.main.fragment_main.*
@@ -32,9 +36,11 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     val searchFragment = SearchFragment()
     private val planFragment = PlanFragment()
     private val stopListBundle = Bundle()
-    private val viewModel: StopsListViewModel by viewModels()
+    private val stopsViewModel: StopsListViewModel by viewModels()
+    private val stopsVersionViewModel: StopsListVersionViewModel by viewModels()
     val tripViewModel: TripPlannerViewModel by viewModels()
     var stopList: StopsJSON = StopsJSON()
+    private lateinit var sharedPreferences: SharedPreferences
     private var tripHolder = TripPlannerJSON(listOf(), "", 0)
     var nearestSwitching: Boolean = true
     var waitingForLocation: Boolean = false
@@ -50,18 +56,6 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         17.20938683,
         null
     )
-//    var selected: StopsJSONItem = StopsJSONItem(
-//        0,
-//        "Locating nearest stop…",
-//        "none",
-//        "/ba/zastavka/Hronsk%C3%A1/b68883",
-//        "g20",
-//        "bus",
-//        20,
-//        48.13585663,
-//        17.20938683,
-//        null
-//    )
 
     fun getStopById(id: Int): StopsJSONItem {
         stopList.let {
@@ -102,13 +96,36 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        tableAdapter.ioConnect(selected.id)
+        sharedPreferences = context?.getSharedPreferences("Transi", Context.MODE_PRIVATE)!!
+        val savedStopListJson = sharedPreferences.getString("stopList", "")
         activity?.let {
-            tableAdapter.ioObservers(it)
-            viewModel.stops.observe(it) { stops ->
-                if (stops != null && stopList.size < 1) {
-                    println("stops fetched")
-                    stopList.addAll(stops)
+            val savedStopListVersion = sharedPreferences.getString("stopsVersion", "")
+            stopsVersionViewModel.stopsVersion.observe(it) { stopsVersion ->
+                if (savedStopListVersion != stopsVersion.version || savedStopListJson == "") {
+                    stopsViewModel.stops.observe(it) { stops ->
+                        if (stops != null && stopList.size < 1) {
+                            println("stops fetched")
+                            stopList.addAll(stops)
+                            val stopListJson = Gson().toJson(stopList)
+                            sharedPreferences.edit().putString("stopList", stopListJson).apply()
+                            sharedPreferences.edit().putString("stopsVersion", stopsVersion.version).apply()
+                            actualLocation?.let { l -> locationChange(l) }
+                            tableAdapter.putStopList(stopList)
+                            stopListBundle.clear()
+                            stopListBundle.putSerializable("stopsList", stopList)
+                            val searchBundle = stopListBundle
+                            searchBundle.putBoolean("nearestSwitching", nearestSwitching)
+                            searchFragment.arguments = searchBundle
+                            println("create search fragment")
+                            activity?.supportFragmentManager?.beginTransaction()?.apply {
+                                replace(R.id.search_barFL, searchFragment)
+                                commit()
+                            }
+                        }
+                    }
+                } else {
+                    val savedStopList = Gson().fromJson(savedStopListJson, StopsJSON::class.java)
+                    stopList.addAll(savedStopList)
                     actualLocation?.let { l -> locationChange(l) }
                     tableAdapter.putStopList(stopList)
                     stopListBundle.clear()
@@ -121,15 +138,17 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                         replace(R.id.search_barFL, searchFragment)
                         commit()
                     }
+
                 }
             }
+            tableAdapter.ioObservers(it)
             tripViewModel.trip.observe(it) { trip ->
                 waitingForLocation = false
                 if (trip != null) {
                     it.progressBar_bg?.visibility = View.GONE
                     it.progressBar_ic?.visibility = View.GONE
                     if (trip.code == 200) {
-                        it.TripPlannerList.visibility = View.VISIBLE
+                        it.TripPlannerList?.visibility = View.VISIBLE
                         tripHolder = trip
                         tripPlannerAdapter.addItems(trip.routes as MutableList<Route>)
                     } else {
@@ -149,6 +168,25 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                     }
                 }
             }
+            val thread: Thread = object : Thread() {
+                override fun run() {
+                    try {
+                        while (!this.isInterrupted) {
+                            sleep(1000)
+                            it.runOnUiThread {
+                                val calendar = Calendar.getInstance()
+                                MHDTableActualTime?.text = it.getString(R.string.actualTime).format(
+                                    calendar.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0'),
+                                    calendar.get(Calendar.MINUTE).toString().padStart(2, '0'),
+                                    calendar.get(Calendar.SECOND).toString().padStart(2, '0')
+                                )
+                            }
+                        }
+                    } catch (e: InterruptedException) {
+                    }
+                }
+            }
+            thread.start();
         }
     }
 
@@ -221,6 +259,12 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         }
 
         if (selected.name != "none") MHDTableStopName.text = selected.name
+        val calendar = Calendar.getInstance()
+        MHDTableActualTime?.text = context?.getString(R.string.actualTime)?.format(
+            calendar.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0'),
+            calendar.get(Calendar.MINUTE).toString().padStart(2, '0'),
+            calendar.get(Calendar.SECOND).toString().padStart(2, '0')
+        )
         MHDTableList.adapter = tableAdapter
         MHDTableList.layoutManager = LinearLayoutManager(context)
         TripPlannerList.adapter = tripPlannerAdapter

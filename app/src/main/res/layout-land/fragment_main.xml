@@ -7,14 +7,33 @@
 
     <TextView
         android:id="@+id/MHDTableStopName"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="15dp"
+        android:layout_marginTop="15dp"
+        android:layout_marginStart="15dp"
         android:fontFamily="@font/roboto_medium"
         android:text="@string/locating_nearest_stop"
-        android:textSize="28sp"
+        android:lines="1"
+        android:ellipsize="end"
+        android:scrollHorizontally="true"
+        android:textSize="26sp"
         app:layout_constraintTop_toTopOf="parent"
-        tools:layout_editor_absoluteX="15dp" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/MHDTableActualTime"/>
+    <TextView
+        android:id="@+id/MHDTableActualTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="15dp"
+        android:fontFamily="@font/roboto_medium"
+        android:text="@string/actualTime"
+        android:textSize="18sp"
+        android:gravity="end"
+        android:lines="1"
+        app:layout_constraintStart_toEndOf="@id/MHDTableStopName"
+        app:layout_constraintBottom_toBottomOf="@id/MHDTableStopName"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/MHDTableInfoText"
