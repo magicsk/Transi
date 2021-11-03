@@ -481,7 +481,7 @@ class MHDTableAdapter(
                     MHDTableListDetailLayout.visibility = if (current.expanded) View.GONE else View.VISIBLE
                     current.expanded = !current.expanded
                 }
-                MHDTableListVehicleText.text = current.Id.toString()
+                MHDTableListVehicleText.text = ""
                 MHDTableListOnlineInfo.visibility = View.GONE
                 MHDTableListLastStop.text = context.getString(R.string.offline)
             }

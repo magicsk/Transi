@@ -5,12 +5,19 @@ App with list of virtual tables and trip planner for MHD in Bratislava.
 ## Features
 
 ### Future  
-- [ ] Local tripplanner parser
+- [ ] Local Trip planner parser
 - [ ] Trip planner trip notification
 - [ ] Trip planner add time arrival departure switch
 - [ ] Table on long press notification
 - [ ] ŽSR table support if possible
 - [ ] Add settings: home a address, default stop
+
+### 0.9.9
+- [x] Material You dynamic colors support 
+- [x] Material You redesign
+- [x] Dark google map
+- [x] New map marker
+- [x] New regional stops icon color
 
 ### 0.9.8
 - [x] Cache stops.json

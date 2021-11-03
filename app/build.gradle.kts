@@ -20,7 +20,7 @@ android {
         minSdk = 28
         targetSdk = 31
         versionCode = 1
-        versionName = "0.9.8"
+        versionName = "0.9.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -47,10 +47,9 @@ android {
 }
 
 dependencies {
-
     implementation("androidx.core:core-ktx:1.6.0")
     implementation("androidx.appcompat:appcompat:1.3.1")
-    implementation("com.google.android.material:material:1.4.0")
+    implementation("com.google.android.material:material:1.5.0-alpha05")
     implementation("androidx.constraintlayout:constraintlayout:2.1.0")
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
     implementation("androidx.preference:preference:1.1.1")

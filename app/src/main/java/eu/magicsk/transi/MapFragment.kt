@@ -2,19 +2,23 @@ package eu.magicsk.transi
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import androidx.annotation.ColorInt
+import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import com.google.maps.android.clustering.ClusterItem
 import com.google.maps.android.clustering.ClusterManager
 import com.google.maps.android.clustering.view.DefaultClusterRenderer
@@ -29,30 +33,52 @@ class MapFragment : SupportMapFragment() {
     private lateinit var origin: String
     private val placesList = arrayListOf<Place>()
 
+    object BitmapHelper {
+        fun vectorToBitmap(
+            context: Context,
+            @DrawableRes id: Int,
+            @ColorInt color: Int
+        ): BitmapDescriptor {
+            val vectorDrawable = ResourcesCompat.getDrawable(context.resources, id, null)
+                ?: return BitmapDescriptorFactory.defaultMarker()
+            val bitmap = Bitmap.createBitmap(
+                vectorDrawable.intrinsicWidth,
+                vectorDrawable.intrinsicHeight,
+                Bitmap.Config.ARGB_8888
+            )
+            val canvas = Canvas(bitmap)
+            vectorDrawable.setBounds(0, 0, canvas.width, canvas.height)
+            DrawableCompat.setTint(vectorDrawable, color)
+            vectorDrawable.draw(canvas)
+            return BitmapDescriptorFactory.fromBitmap(bitmap)
+        }
+    }
+
+
     class PlaceRenderer(
         context: Context,
         map: GoogleMap,
         clusterManager: ClusterManager<Place>
     ) : DefaultClusterRenderer<Place>(context, map, clusterManager) {
+        private val markerIcon: BitmapDescriptor by lazy {
+            val color = ContextCompat.getColor(
+                context,
+                R.color.md_theme_light_primary
+            )
+            BitmapHelper.vectorToBitmap(
+                context,
+                R.drawable.ic_marker,
+                color
+            )
+        }
 
-        //          ICON
-//        private val bicycleIcon: BitmapDescriptor by lazy {
-//            val color = ContextCompat.getColor(context,
-//                R.color.colorPrimary
-//            )
-//            BitmapHelper.vectorToBitmap(
-//                context,
-//                R.drawable.ic_directions_bike_black_24dp,
-//                color
-//            )
-//        }
         override fun onBeforeClusterItemRendered(
             item: Place,
             markerOptions: MarkerOptions
         ) {
             markerOptions.title(item.name)
                 .position(item.latLng)
-//                .icon(bicycleIcon)
+                .icon(markerIcon)
         }
 
         override fun onClusterItemRendered(clusterItem: Place, marker: Marker) {
@@ -156,12 +182,9 @@ class MapFragment : SupportMapFragment() {
             navController.popBackStack()
         }
 
-        // Add the places to the ClusterManager.
         clusterManager.addItems(placesList)
         clusterManager.cluster()
 
-        // Set ClusterManager as the OnCameraIdleListener so that it
-        // can re-cluster when zooming in and out.
         googleMap.setOnCameraIdleListener {
             clusterManager.onCameraIdle()
         }
@@ -171,13 +194,16 @@ class MapFragment : SupportMapFragment() {
     @SuppressLint("MissingPermission")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val locationManager = activity?.getSystemService(AppCompatActivity.LOCATION_SERVICE) as LocationManager
+        val locationManager =
+            activity?.getSystemService(AppCompatActivity.LOCATION_SERVICE) as LocationManager
         val actualLocation = locationManager.getLastKnownLocation(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                 LocationManager.FUSED_PROVIDER else LocationManager.GPS_PROVIDER
         )
         findNavController().previousBackStackEntry?.savedStateHandle
         getMapAsync { googleMap ->
+            googleMap.setMapStyle(MapStyleOptions(resources.getString(R.string.style_json)))
+            googleMap.uiSettings.isMapToolbarEnabled = false
             googleMap.setOnMapLoadedCallback {
                 googleMap.isMyLocationEnabled = true
                 val bounds = LatLngBounds.builder()
@@ -185,10 +211,17 @@ class MapFragment : SupportMapFragment() {
                     if (it.id != 0) bounds.include(LatLng(it.lat, it.long))
                 }
                 if (actualLocation != null) {
-                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(actualLocation.latitude, actualLocation.longitude), 16f))
-            } else {
-                googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 50))
-            }
+                    googleMap.animateCamera(
+                        CameraUpdateFactory.newLatLngZoom(
+                            LatLng(
+                                actualLocation.latitude,
+                                actualLocation.longitude
+                            ), 16f
+                        )
+                    )
+                } else {
+                    googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 50))
+                }
             }
             addMarkers(googleMap)
         }

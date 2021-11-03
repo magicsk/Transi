@@ -97,9 +97,9 @@ class TypeAheadAdapter(
                         ResourcesCompat.getColorStateList(resources, R.color.yellow_100, context?.theme)
                 }
                 "regio_bus" -> {
-                    stopIconDrawable.background = ResourcesCompat.getDrawable(resources, R.drawable.ic_bus, context?.theme)
+                    stopIconDrawable.background = ResourcesCompat.getDrawable(resources, R.drawable.ic_regiobus, context?.theme)
                     stopIconBackground.backgroundTintList =
-                        ResourcesCompat.getColorStateList(resources, R.color.green_100, context?.theme)
+                        ResourcesCompat.getColorStateList(resources, R.color.yellow_100, context?.theme)
                 }
                 else -> {
                     stopIconDrawable.background = ResourcesCompat.getDrawable(resources, R.drawable.ic_bus, context?.theme)
