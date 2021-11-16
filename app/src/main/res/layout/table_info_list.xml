@@ -11,9 +11,8 @@
         android:layout_height="wrap_content"
         android:padding="15dp"
         android:background="@drawable/round_shape_25"
-        android:backgroundTint="?colorPrimary"
-        android:text="@string/appbar_scrolling_view_behavior"
-        android:textColor="?colorOnPrimary"
+        android:backgroundTint="?colorAccent"
+        android:textColor="?colorOnPrimarySurface"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"/>
 
