@@ -1,10 +1,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Theme.Transi" parent="Theme.Material3.Light.NoActionBar">
-        <item name="colorPrimaryContainer">@color/md_theme_light_primary</item>
-        <item name="colorOnPrimaryContainer">@color/md_theme_light_onPrimary</item>
-        <item name="colorPrimary">@color/md_theme_light_primaryContainer</item>
-        <item name="colorOnPrimary">@color/md_theme_light_onPrimaryContainer</item>
+        <item name="colorPrimaryContainer">@color/md_theme_light_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_light_onPrimaryContainer</item>
+        <item name="colorPrimary">@color/md_theme_light_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_light_onPrimary</item>
         <item name="colorSecondary">@color/md_theme_light_secondary</item>
         <item name="colorOnSecondary">@color/md_theme_light_onSecondary</item>
         <item name="colorSecondaryContainer">@color/md_theme_light_secondaryContainer</item>
@@ -27,6 +27,7 @@
         <item name="colorOnSurfaceInverse">@color/md_theme_light_inverseOnSurface</item>
         <item name="colorSurfaceInverse">@color/md_theme_light_inverseSurface</item>
         <item name="colorPrimaryInverse">@color/md_theme_light_primaryInverse</item>
+        <item name="colorAccent">?colorPrimary</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">@color/md_theme_light_background</item>
         <item name="android:windowLightStatusBar">true</item>
@@ -35,8 +36,9 @@
         <item name="android:windowBackground">@color/md_theme_light_background</item>
         <item name="android:windowLightNavigationBar">true</item>
         <item name="android:textColor">@color/md_theme_light_onBackground</item>
-        <item name="colorAccent">?colorPrimaryContainer</item>
-        <item name="colorOnPrimarySurface">?colorOnPrimaryContainer</item>
+        <item name="colorMyContainer">?colorPrimaryContainer</item>
+        <item name="colorOnMyContainer">?colorOnPrimaryContainer</item>
+        <item name="colorMyBackground">@color/white</item>
     </style>
 
     <style name="Theme.Transi.NoActionBar">
@@ -44,7 +46,7 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="Theme.Transi.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="Theme.Transi.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" tools:keep="@style/Theme_Transi_AppBarOverlay" />
 
-    <style name="Theme.Transi.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+    <style name="Theme.Transi.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" tools:keep="@style/Theme_Transi_PopupOverlay" />
 </resources>

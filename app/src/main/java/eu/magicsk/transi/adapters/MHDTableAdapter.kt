@@ -1,5 +1,8 @@
+@file:Suppress("DEPRECATION")
+
 package eu.magicsk.transi.adapters
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.PorterDuff
 import android.graphics.drawable.AnimatedVectorDrawable
@@ -17,10 +20,7 @@ import eu.magicsk.transi.R
 import eu.magicsk.transi.data.models.MHDTableData
 import eu.magicsk.transi.data.models.MHDTableVehicle
 import eu.magicsk.transi.data.remote.responses.StopsJSON
-import eu.magicsk.transi.util.dpToPx
-import eu.magicsk.transi.util.getLineColor
-import eu.magicsk.transi.util.getLineTextColor
-import eu.magicsk.transi.util.isDarkTheme
+import eu.magicsk.transi.util.*
 import io.socket.client.IO
 import io.socket.client.Socket
 import kotlinx.android.synthetic.main.fragment_main.*
@@ -45,13 +45,33 @@ class MHDTableAdapter(
     private var connected = false
     private var dismissed = false
     private var stopList: StopsJSON = StopsJSON()
+    private var actualStopId = 0
 
     fun putStopList(stops: StopsJSON) {
         stopList.clear()
         stopList.addAll(stops)
     }
 
+    fun startUpdater(activity: Activity) {
+        val thread: Thread = object : Thread() {
+            @SuppressLint("NotifyDataSetChanged")
+            override fun run() {
+                try {
+                    while (!this.isInterrupted) {
+                        sleep(10000)
+                        activity.runOnUiThread {
+                            notifyDataSetChanged()
+                        }
+                    }
+                } catch (e: InterruptedException) {
+                }
+            }
+        }
+        thread.start()
+    }
+
     fun ioConnect(stopId: Int) {
+        actualStopId = stopId
         if (connected) {
             ioDisconnect()
         }
@@ -70,6 +90,7 @@ class MHDTableAdapter(
         socket
             .on(Socket.EVENT_CONNECTING) {
                 activity.runOnUiThread {
+                    activity.MHDTableListConnectInfo?.visibility = View.VISIBLE
                     activity.MHDTableListConnectInfo?.text = activity.getString(R.string.connecting)
                 }
             }
@@ -77,6 +98,7 @@ class MHDTableAdapter(
                 connected = true
                 println("connected")
                 activity.runOnUiThread {
+                    activity.MHDTableListConnectInfo?.visibility = View.GONE
                     activity.MHDTableListConnectInfo?.text = ""
                 }
             }
@@ -84,11 +106,13 @@ class MHDTableAdapter(
                 connected = false
                 println("disconnected")
                 activity.runOnUiThread {
+                    activity.MHDTableListConnectInfo?.visibility = View.VISIBLE
                     activity.MHDTableListConnectInfo?.text = activity.getString(R.string.disconnected)
                 }
             }
             .on(Socket.EVENT_RECONNECTING) {
                 activity.runOnUiThread {
+                    activity.MHDTableListConnectInfo?.visibility = View.VISIBLE
                     activity.MHDTableListConnectInfo?.text = activity.getString(R.string.reconnecting)
                 }
             }
@@ -96,6 +120,7 @@ class MHDTableAdapter(
                 connected = true
                 println("reconnected")
                 activity.runOnUiThread {
+                    activity.MHDTableListConnectInfo?.visibility = View.GONE
                     activity.MHDTableListConnectInfo?.text = ""
                 }
                 socket
@@ -242,7 +267,9 @@ class MHDTableAdapter(
                         activity.MHDTableInfoText?.let { rv ->
                             rv.adapter = adapter
                             ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
-                                override fun onMove(v: RecyclerView, h: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) = false
+                                override fun onMove(v: RecyclerView, h: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) =
+                                    false
+
                                 override fun onSwiped(h: RecyclerView.ViewHolder, dir: Int) {
                                     adapter.removeAt(h.adapterPosition)
                                     rv.visibility = View.GONE
@@ -277,28 +304,28 @@ class MHDTableAdapter(
             val tempList = mutableListOf<MHDTableData>()
             if (TableItemList.size > 0) {
                 val platform = items[0].platform
-                try {
-                    for (i in 0 until itemCount) {
-                        if (TableItemList[i].platform == platform) {
-                            var found = false
-                            for (j in 0 until items.size) {
-                                if (TableItemList[i].Id == items[j].Id) {
-                                    found = true
-                                    items[j].expanded = TableItemList[i].expanded
-                                    TableItemList[i] = items[j]
-                                    items.removeAt(j)
-                                    notifyItemChanged(i)
-                                    break
-                                }
-                            }
-                            if (!found) {
-                                TableItemList.removeAt(i)
-                                notifyItemRemoved(i)
+                val forDelete = ArrayList<Int>()
+                for (i in 0 until itemCount) {
+                    if (TableItemList[i].platform == platform) {
+                        var found = false
+                        for (j in 0 until items.size) {
+                            if (TableItemList[i].Id == items[j].Id) {
+                                found = true
+                                items[j].expanded = TableItemList[i].expanded
+                                TableItemList[i] = items[j]
+                                items.removeAt(j)
+                                notifyItemChanged(i)
+                                break
                             }
                         }
+                        if (!found) {
+                            forDelete.add(i)
+                        }
                     }
-                } catch (e: IndexOutOfBoundsException) {
-                    //shouldn't be like this
+                }
+                for (i in forDelete.size - 1 downTo 0) {
+                    TableItemList.removeAt(forDelete[i])
+                    notifyItemRemoved(i)
                 }
             }
             tempList.addAll(TableItemList)
@@ -417,7 +444,8 @@ class MHDTableAdapter(
 
             // expected departure
             MHDTableListDeparture.text =
-                context.getString(R.string.departureTime).format(SimpleDateFormat("H:mm", Locale.UK).format(current.departureTime))
+                context.getString(R.string.departureTime)
+                    .format(SimpleDateFormat("H:mm", Locale.UK).format(current.departureTime))
 
             // latest stop & delay
             if (current.type == "online") {
@@ -425,20 +453,24 @@ class MHDTableAdapter(
                     current.delay > 0 -> {
                         when {
                             current.delay > 3 -> {
-                                MHDTableListDelayIcon.backgroundTintList = ContextCompat.getColorStateList(context, R.color.delay3)
+                                MHDTableListDelayIcon.backgroundTintList =
+                                    ContextCompat.getColorStateList(context, R.color.delay3)
                             }
                             current.delay > 1 -> {
-                                MHDTableListDelayIcon.backgroundTintList = ContextCompat.getColorStateList(context, R.color.delay2)
+                                MHDTableListDelayIcon.backgroundTintList =
+                                    ContextCompat.getColorStateList(context, R.color.delay2)
                             }
                             else -> {
-                                MHDTableListDelayIcon.backgroundTintList = ContextCompat.getColorStateList(context, R.color.delay1)
+                                MHDTableListDelayIcon.backgroundTintList =
+                                    ContextCompat.getColorStateList(context, R.color.delay1)
                             }
                         }
                         MHDTableListDelayText.text = context.getString(R.string.delay).format(current.delay)
                     }
                     current.delay < 0 -> {
                         MHDTableListDelayIcon.backgroundTintList = ContextCompat.getColorStateList(context, R.color.inAdvance)
-                        MHDTableListDelayText.text = context.getString(R.string.inAdvance).format(current.delay.toString().drop(1))
+                        MHDTableListDelayText.text =
+                            context.getString(R.string.inAdvance).format(current.delay.toString().drop(1))
                     }
                     current.delay == 0 -> {
                         MHDTableListDelayIcon.backgroundTintList = ContextCompat.getColorStateList(context, R.color.onTime)
@@ -448,6 +480,9 @@ class MHDTableAdapter(
                 MHDTableListOnlineInfo.visibility = View.VISIBLE
                 MHDTableListLastStop.visibility = View.VISIBLE
                 MHDTableListLastStop.text = context.getString(R.string.lastStop).format(current.lastStopName)
+
+
+
                 for (i in 0 until TableVehicleInfo.size) {
                     if (TableVehicleInfo[i].issi == current.busID) {
                         val currentVehicle = TableVehicleInfo[i]
@@ -456,14 +491,13 @@ class MHDTableAdapter(
                         val url = "https://imhd.sk/ba/media/$v/${currentVehicle.img.toString().padStart(8, '0')}/$busID"
                         setOnClickListener {
                             if (current.expanded) {
-                                MHDTableListDetailLayout.visibility = View.GONE
+                                MHDTableListDetailLayout.collapse()
                             } else {
-                                println(url)
                                 Glide.with(this)
                                     .load(url)
                                     .into(MHDTableListVehicleImg)
                                 MHDTableListVehicleImg.visibility = View.VISIBLE
-                                MHDTableListDetailLayout.visibility = View.VISIBLE
+                                MHDTableListDetailLayout.expand()
                             }
                             current.expanded = !current.expanded
                         }
@@ -478,14 +512,20 @@ class MHDTableAdapter(
             } else {
                 setOnClickListener {
                     MHDTableListVehicleImg.visibility = View.GONE
-                    MHDTableListDetailLayout.visibility = if (current.expanded) View.GONE else View.VISIBLE
+                    if (current.expanded) MHDTableListDetailLayout.collapse() else MHDTableListDetailLayout.expand()
                     current.expanded = !current.expanded
                 }
                 MHDTableListVehicleText.text = ""
                 MHDTableListOnlineInfo.visibility = View.GONE
                 MHDTableListLastStop.text = context.getString(R.string.offline)
             }
-            MHDTableListDetailLayout.visibility = if (current.expanded) View.VISIBLE else View.GONE
+
+            setOnLongClickListener {
+                tableNotification(actualStopId, current.Id, context)
+                true
+            }
+
+            if (current.expanded) MHDTableListDetailLayout.expand(false) else MHDTableListDetailLayout.collapse(false)
         }
     }
 

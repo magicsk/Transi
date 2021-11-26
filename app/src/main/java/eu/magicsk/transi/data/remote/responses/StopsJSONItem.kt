@@ -2,6 +2,7 @@ package eu.magicsk.transi.data.remote.responses
 
 import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize
+import java.io.Serializable
 
 @Parcelize
 data class StopsJSONItem(
@@ -15,4 +16,4 @@ data class StopsJSONItem(
     val lat: Double,
     val long: Double,
     val platform_labels: PlatformLabels?
-) : Parcelable
+) : Parcelable, Serializable

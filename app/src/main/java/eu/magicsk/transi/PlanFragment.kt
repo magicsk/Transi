@@ -30,7 +30,7 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
         to: String = selectedTrip.to,
         ad: Int = selectedTrip.ad
     ) {
-        selectedTrip = SelectedTrip(time, from, to)
+        selectedTrip = SelectedTrip(time, from, to, ad)
         mainFragment.apply {
             activity?.progressBar_bg?.visibility = View.VISIBLE
             activity?.progressBar_ic?.visibility = View.VISIBLE
@@ -150,11 +150,22 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
                     calendar.get(Calendar.MINUTE),
                     DateFormat.is24HourFormat(context)
                 )
-                selectedTrip.time
                 timePickerDialog.show()
             }
         }
 
+        adPlanBtn.setOnClickListener {
+            val toastText: String
+            if (selectedTrip.ad == 0) {
+                selectedTrip.ad = 1
+                toastText = "arrival"
+            } else {
+                selectedTrip.ad = 0
+                toastText = "departure"
+            }
+            getTrip()
+            Toast.makeText(context, "Set to time of $toastText.", Toast.LENGTH_SHORT).show()
+        }
 
         val typeAheadBundle = Bundle()
         typeAheadBundle.clear()

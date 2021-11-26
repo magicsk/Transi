@@ -9,7 +9,6 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.color.DynamicColors
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -71,9 +70,4 @@ class MainActivity : AppCompatActivity() {
             )
         )
     }
-
-//    override fun onBackPressed() {
-//        super.onBackPressed()
-//        exitProcess(0)
-//    }
 }

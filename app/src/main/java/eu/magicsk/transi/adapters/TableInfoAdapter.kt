@@ -1,8 +1,10 @@
 package eu.magicsk.transi.adapters
 
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.recyclerview.widget.RecyclerView
 import eu.magicsk.transi.R
 import kotlinx.android.synthetic.main.table_info_list.view.*
@@ -29,6 +31,10 @@ class TableInfoAdapter(
         val current = TableInfoList[position]
         holder.itemView.apply {
             MHDTableInfoTextView.text = current
+            setOnClickListener {
+                val customTabsIntent = CustomTabsIntent.Builder()
+                customTabsIntent.build().launchUrl(context,Uri.parse("https://dpb.sk/sk/filter/zmeny-a-obmedzenia"))
+            }
         }
     }
 

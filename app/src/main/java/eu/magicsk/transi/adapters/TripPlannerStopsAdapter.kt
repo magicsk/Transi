@@ -9,16 +9,31 @@ import eu.magicsk.transi.data.remote.responses.Stop
 import kotlinx.android.synthetic.main.trip_planner_list_stops.view.*
 
 class TripPlannerStopsAdapter(
-    private val TripPlannerStopList: MutableList<Stop>
+    private val TripPlannerStopList: MutableList<Stop>,
+    private val onItemClicked: () -> Unit
 ) : RecyclerView.Adapter<TripPlannerStopsAdapter.TripPlannerStopsViewHolder>() {
-    class TripPlannerStopsViewHolder(itemView: View) :
-        RecyclerView.ViewHolder(itemView)
+    class TripPlannerStopsViewHolder(
+        itemView: View,
+        private val onItemClicked: () -> Unit
+    ) :
+        RecyclerView.ViewHolder(itemView), View.OnClickListener {
+        init {
+            itemView.setOnClickListener(this)
+        }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripPlannerStopsViewHolder {
+        override fun onClick(v: View?) {
+            onItemClicked()
+        }
+    }
+
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int
+    ): TripPlannerStopsViewHolder {
         val context = parent.context
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.trip_planner_list_stops, parent, false)
-        return TripPlannerStopsViewHolder(view)
+        return TripPlannerStopsViewHolder(view, onItemClicked)
     }
 
     override fun onBindViewHolder(holder: TripPlannerStopsViewHolder, position: Int) {
@@ -29,7 +44,7 @@ class TripPlannerStopsAdapter(
             TripPlannerListStopZone.text = current.zone
 
             if (current.request) {
-              TripPlannerListStopRequest.visibility = View.VISIBLE
+                TripPlannerListStopRequest.visibility = View.VISIBLE
             } else TripPlannerListStopRequest.visibility = View.GONE
         }
     }
@@ -37,4 +52,6 @@ class TripPlannerStopsAdapter(
     override fun getItemCount(): Int {
         return TripPlannerStopList.size
     }
+
+
 }

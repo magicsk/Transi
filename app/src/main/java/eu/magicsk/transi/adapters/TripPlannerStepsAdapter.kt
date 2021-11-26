@@ -19,10 +19,9 @@ import kotlinx.android.synthetic.main.trip_planner_list_step_transit.view.*
 import kotlinx.android.synthetic.main.trip_planner_list_step_walking.view.*
 
 class TripPlannerStepsAdapter(
-    private val TripPlannerStepList: MutableList<Step>
+    private val TripPlannerStepList: MutableList<Step>,
 ) : RecyclerView.Adapter<TripPlannerStepsAdapter.TripPlannerStepsViewHolder>() {
-    class TripPlannerStepsViewHolder(itemView: View) :
-        RecyclerView.ViewHolder(itemView)
+    class TripPlannerStepsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
     override fun getItemViewType(position: Int): Int {
         return if (TripPlannerStepList[position].type == "TRANSIT") 1 else 0
@@ -88,35 +87,37 @@ class TripPlannerStepsAdapter(
                     TripPlannerListStepLineNum.background = drawable
                     TripPlannerListStepLineNum.text = current.line.number
                     TripPlannerListStepLineArrow.background = arrowDrawable
-                    TripPlannerListStepHeadsign.text = context.getString(R.string.tripHeadsign).format(current.headsign)
+                    TripPlannerListStepHeadsign.text =
+                        context.getString(R.string.tripHeadsign).format(current.headsign)
                     TripPlannerListStepDepartureStop.text = current.departure_stop
                     TripPlannerListStepDepartureTime.text = current.departure_time
                     TripPlannerListStepDuration.text =
-                        context.getString(R.string.tripStepDuration).format(current.num_stops, current.duration)
+                        context.getString(R.string.tripStepDuration, current.num_stops, current.duration)
                     TripPlannerListStepArrivalStop.text = current.arrival_stop
                     TripPlannerListStepArrivalTime.text = current.arrival_time
+                    val stopListContainer = TripPlannerListStepStopListContainer
+                    val durationContainer = TripPlannerListStepDurationContainer
+                    val stopList = TripPlannerListStepStopList
+                    stopList.layoutManager =
+                        LinearLayoutManager(stopList.context, RecyclerView.VERTICAL, false)
+                    val filteredStops: MutableList<Stop> = mutableListOf()
+                    filteredStops.addAll(TripPlannerStepList[position].stops)
+                    filteredStops.removeAt(0)
+                    filteredStops.removeAt(filteredStops.size - 1)
 
-                    setOnClickListener {
-                        val duration = TripPlannerListStepDuration
-                        val stopList = TripPlannerListStepStopList
-
-//                        val reducedStopList = TripPlannerStepList[position].stops as MutableList<Stop>
-//                        reducedStopList.removeAt(0)
-//                        reducedStopList.removeAt(reducedStopList.size-1)
-                        stopList.layoutManager = LinearLayoutManager(stopList.context, RecyclerView.VERTICAL, false)
-                        val filteredStops: MutableList<Stop> = mutableListOf()
-                        filteredStops.addAll(TripPlannerStepList[position].stops)
-                        filteredStops.removeAt(0)
-                        filteredStops.removeAt(filteredStops.size - 1)
-                        stopList.adapter = TripPlannerStopsAdapter(filteredStops)
-
-                        if (duration.visibility == View.VISIBLE) {
-                            duration.visibility = View.GONE
-                            stopList.visibility = View.VISIBLE
+                    fun onListItemClick() {
+                        if (durationContainer.isExpanded) {
+                            durationContainer.collapse()
+                            stopListContainer.expand()
                         } else {
-                            duration.visibility = View.VISIBLE
-                            stopList.visibility = View.GONE
+                            durationContainer.expand()
+                            stopListContainer.collapse()
                         }
+                    }
+
+                    stopList.adapter = TripPlannerStopsAdapter(filteredStops) { onListItemClick() }
+                    setOnClickListener {
+                        onListItemClick()
                     }
                 }
                 "WALKING" -> {

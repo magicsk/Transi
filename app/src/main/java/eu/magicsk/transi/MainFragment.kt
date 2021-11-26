@@ -2,6 +2,8 @@ package eu.magicsk.transi
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.location.Location
@@ -18,16 +20,17 @@ import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.MHDTableAdapter
 import eu.magicsk.transi.adapters.TripPlannerAdapter
-import eu.magicsk.transi.data.remote.responses.*
+import eu.magicsk.transi.data.remote.responses.Route
+import eu.magicsk.transi.data.remote.responses.StopsJSON
+import eu.magicsk.transi.data.remote.responses.StopsJSONItem
+import eu.magicsk.transi.data.remote.responses.TripPlannerJSON
 import eu.magicsk.transi.view_models.StopsListVersionViewModel
 import eu.magicsk.transi.view_models.StopsListViewModel
 import eu.magicsk.transi.view_models.TripPlannerViewModel
 import kotlinx.android.synthetic.main.fragment_main.*
-import kotlinx.android.synthetic.main.fragment_main.view.*
 import kotlinx.android.synthetic.main.fragment_plan.*
 import kotlinx.android.synthetic.main.fragment_search.*
 import java.util.*
-import kotlin.Comparator
 import kotlin.math.*
 
 @AndroidEntryPoint
@@ -42,6 +45,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     var stopList: StopsJSON = StopsJSON()
     private lateinit var sharedPreferences: SharedPreferences
     private var tripHolder = TripPlannerJSON(listOf(), "", 0)
+    private var selectedToStop = 0
     var nearestSwitching: Boolean = true
     var waitingForLocation: Boolean = false
     var selected: StopsJSONItem = StopsJSONItem(
@@ -93,9 +97,51 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         return@Comparator (aDist - bDist).roundToInt()
     }
 
+    private fun createChannel(channelId: String, channelName: String, description: String) {
+        val notificationChannel = NotificationChannel(
+            channelId,
+            channelName,
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            setShowBadge(false)
+        }
+
+        notificationChannel.description = description
+
+        val notificationManager = requireActivity().getSystemService(
+            NotificationManager::class.java
+        )
+        notificationManager.createNotificationChannel(notificationChannel)
+    }
+
     @SuppressLint("MissingPermission")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        createChannel(
+            getString(R.string.table_notification_channel_id),
+            getString(R.string.table_notification_channel_name),
+            getString(R.string.table_notification_channel_description)
+        )
+        createChannel(
+            getString(R.string.trip_planner_notification_channel_id),
+            getString(R.string.trip_planner_notification_channel_name),
+            getString(R.string.trip_planner_notification_channel_description)
+        )
+
+        val savedSelected = savedInstanceState?.getSerializable("selectedStop") as? StopsJSONItem
+        val savedLocation = savedInstanceState?.getParcelable("actualLocation") as? Location
+        val savedNearestSwitching = savedInstanceState?.getBoolean("nearestSwitching")
+        val savedWaitingForLocation = savedInstanceState?.getBoolean("waitingForLocation")
+        val savedTripHolder = savedInstanceState?.getParcelable("tripHolder") as? TripPlannerJSON
+        val savedSelectedToStop = savedInstanceState?.getInt("selectedToStop")
+        if (savedSelected != null) selected = savedSelected
+        if (savedLocation != null) actualLocation = savedLocation
+        if (savedNearestSwitching != null) nearestSwitching = savedNearestSwitching
+        if (savedWaitingForLocation != null) waitingForLocation = savedWaitingForLocation
+//        if (savedTripHolder != null) tripHolder = savedTripHolder
+//        if (savedSelectedToStop != null) selectedToStop = savedSelectedToStop
+
         sharedPreferences = context?.getSharedPreferences("Transi", Context.MODE_PRIVATE)!!
         val savedStopListJson = sharedPreferences.getString("stopList", "")
         activity?.let {
@@ -108,7 +154,8 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                             stopList.addAll(stops)
                             val stopListJson = Gson().toJson(stopList)
                             sharedPreferences.edit().putString("stopList", stopListJson).apply()
-                            sharedPreferences.edit().putString("stopsVersion", stopsVersion.version).apply()
+                            sharedPreferences.edit().putString("stopsVersion", stopsVersion.version)
+                                .apply()
                             actualLocation?.let { l -> locationChange(l) }
                             tableAdapter.putStopList(stopList)
                             stopListBundle.clear()
@@ -175,7 +222,8 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                             sleep(1000)
                             it.runOnUiThread {
                                 val calendar = Calendar.getInstance()
-                                MHDTableActualTime?.text = it.getString(R.string.actualTime).format(
+                                MHDTableActualTime?.text = it.getString(
+                                    R.string.actualTime,
                                     calendar.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0'),
                                     calendar.get(Calendar.MINUTE).toString().padStart(2, '0'),
                                     calendar.get(Calendar.SECOND).toString().padStart(2, '0')
@@ -186,12 +234,12 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                     }
                 }
             }
-            thread.start();
+            thread.start()
+            tableAdapter.startUpdater(it)
         }
     }
 
     fun locationChange(location: Location) {
-        println("location changed")
         actualLocation = location
         if (waitingForLocation) planFragment.getTrip()
         if (stopList.size > 0) {
@@ -200,8 +248,16 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                 val id = selected.id
                 selected = stopList[0]
                 MHDTableStopName?.text = selected.name
-                activity?.positionBtn?.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
-                activity?.positionPlanBtn?.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
+                activity?.positionBtn?.icon = ResourcesCompat.getDrawable(
+                    resources,
+                    R.drawable.ic_my_location,
+                    context?.theme
+                )
+                activity?.positionPlanBtn?.icon = ResourcesCompat.getDrawable(
+                    resources,
+                    R.drawable.ic_my_location,
+                    context?.theme
+                )
                 if (id != selected.id) {
                     tableAdapter.ioDisconnect()
                     tableAdapter.ioConnect(selected.id)
@@ -236,7 +292,11 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                         selected = getStopById(id)
                         MHDTableStopName.text = selected.name
                         activity?.positionBtn?.icon =
-                            ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
+                            ResourcesCompat.getDrawable(
+                                resources,
+                                R.drawable.ic_location_disabled,
+                                context?.theme
+                            )
                         tableAdapter.ioDisconnect()
                         tableAdapter.ioConnect(selected.id)
                     }
@@ -245,22 +305,36 @@ class MainFragment : Fragment(R.layout.fragment_main) {
 
             getLiveData<Int>("selectedToStopId").observe(viewLifecycleOwner) { id ->
                 activity?.apply {
+                    selectedToStop = id
                     val planBundle = stopListBundle
                     planBundle.putInt("selectedToStopId", id)
                     planFragment.arguments = planBundle
                     println("create plan fragment")
                     supportFragmentManager.beginTransaction().apply {
                         replace(R.id.search_barFL, planFragment)
-//                        addToBackStack(null)
+                        commit()
+                    }
+                }
+            }
+
+            if (selectedToStop > 0) {
+                activity?.apply {
+                    val planBundle = stopListBundle
+                    planBundle.putInt("selectedToStopId", id)
+                    planFragment.arguments = planBundle
+                    println("create plan fragment")
+                    supportFragmentManager.beginTransaction().apply {
+                        replace(R.id.search_barFL, planFragment)
                         commit()
                     }
                 }
             }
         }
 
-        if (selected.name != "none") MHDTableStopName.text = selected.name
+        if (selected.html != "none") MHDTableStopName.text = selected.name
         val calendar = Calendar.getInstance()
-        MHDTableActualTime?.text = context?.getString(R.string.actualTime)?.format(
+        MHDTableActualTime?.text = context?.getString(
+            R.string.actualTime,
             calendar.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0'),
             calendar.get(Calendar.MINUTE).toString().padStart(2, '0'),
             calendar.get(Calendar.SECOND).toString().padStart(2, '0')
@@ -271,12 +345,27 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         TripPlannerList.layoutManager = LinearLayoutManager(context)
         TripPlannerList.visibility = if (tripHolder.code == 200) View.VISIBLE else View.GONE
         ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
-            override fun onMove(v: RecyclerView, h: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) = false
+            override fun onMove(
+                v: RecyclerView,
+                h: RecyclerView.ViewHolder,
+                t: RecyclerView.ViewHolder
+            ) = false
+
             override fun onSwiped(h: RecyclerView.ViewHolder, dir: Int) {
                 tripPlannerAdapter.clear()
                 TripPlannerList.visibility = View.GONE
                 tripHolder = TripPlannerJSON(listOf(), "", 0)
             }
         }).attachToRecyclerView(TripPlannerList)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putSerializable("selectedStop", selected)
+        if (actualLocation != null) outState.putParcelable("actualLocation", actualLocation)
+        outState.putParcelable("tripHolder", tripHolder)
+        outState.putInt("selectedToStop", selectedToStop)
+        outState.putBoolean("nearestSwitching", nearestSwitching)
+        outState.putBoolean("waitingForLocation", waitingForLocation)
     }
 }

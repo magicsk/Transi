@@ -10,7 +10,8 @@
         android:id="@+id/contentFL"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/search_barFL"
+        android:elevation="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/search_barFLCard"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -25,14 +26,20 @@
 
     </FrameLayout>
 
-    <FrameLayout
-        android:id="@+id/search_barFL"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/search_barFLCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        app:cardBackgroundColor="?android:navigationBarColor"
+        app:cardElevation="5dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-    </FrameLayout>
+    <FrameLayout
+        android:id="@+id/search_barFL"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+    </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

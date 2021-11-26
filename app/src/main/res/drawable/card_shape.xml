@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
+<shape xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    tools:keep="@drawable/card_shape">
     <solid android:color="#ffffff" />
 
     <padding android:bottom="5dp" android:left="5dp" android:right="5dp" android:top="5dp" />

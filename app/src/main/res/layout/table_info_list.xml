@@ -7,12 +7,12 @@
 
     <TextView
         android:id="@+id/MHDTableInfoTextView"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="15dp"
         android:background="@drawable/round_shape_25"
-        android:backgroundTint="?colorAccent"
-        android:textColor="?colorOnPrimarySurface"
+        android:backgroundTint="?colorMyContainer"
+        android:textColor="?colorOnMyContainer"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"/>
 

@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Transi</string>
 
     <string name="search">Search for stops</string>
@@ -38,5 +38,19 @@
     <string name="connecting">Connecting…</string>
     <string name="reconnecting">Reconnecting…</string>
     <string name="disconnected">Disconnected</string>
-    <string name="home">home</string>
+    <string name="home" tools:keep="@string/home">home</string>
+
+    <string name="table_notification_channel_id">virtual_table_notifier</string>
+    <string name="table_notification_channel_name">Virtual table</string>
+    <string name="table_notification_channel_description">Virtual table notifier</string>
+    <string name="trip_planner_notification_channel_id">trip_planner_notifier</string>
+    <string name="trip_planner_notification_channel_name">Trip planner</string>
+    <string name="trip_planner_notification_channel_description">Trip planner notifier</string>
+
+    <string name="table_notification_title">%1$s ▶ %2$s %3$s</string>
+    <string name="table_notification_body">Expected departure: %1$s&lt;br>Last stop: %2$s&lt;br>%3$s    %4$s</string>
+    <string name="table_notification_body_offline">Expected departure: %1$s&lt;br>Last stop: %2$s&lt;br>offline</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="trip_notification_title">%1$s ▶ %2$s</string>
+    <string name="trip_notification_body">%1$s (%2$s)</string>
 </resources>

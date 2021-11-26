@@ -11,6 +11,7 @@ plugins {
 android {
     signingConfigs {
         create("release") {
+
         }
     }
     compileSdk = 31
@@ -20,7 +21,7 @@ android {
         minSdk = 28
         targetSdk = 31
         versionCode = 1
-        versionName = "0.9.9"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -29,7 +30,7 @@ android {
     }
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -47,13 +48,14 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.6.0")
+    implementation("androidx.core:core-ktx:1.7.0")
     implementation("androidx.appcompat:appcompat:1.3.1")
-    implementation("com.google.android.material:material:1.5.0-alpha05")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.0")
+    implementation("com.google.android.material:material:1.5.0-beta01")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.2")
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
-    implementation("androidx.preference:preference:1.1.1")
     implementation("androidx.preference:preference-ktx:1.1.1")
+    implementation("androidx.preference:preference-ktx:1.1.1")
+    implementation("androidx.browser:browser:1.3.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.3")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
@@ -73,7 +75,7 @@ dependencies {
     kapt("com.google.dagger:hilt-android-compiler:2.37")
     implementation("androidx.hilt:hilt-lifecycle-viewmodel:1.0.0-alpha03")
     kapt("androidx.hilt:hilt-compiler:1.0.0")
-    implementation("androidx.activity:activity-ktx:1.3.1")
+    implementation("androidx.activity:activity-ktx:1.4.0")
 
     implementation("io.socket:socket.io-client:1.0.0") {
         exclude(group = "org.json", module = "json")
@@ -82,6 +84,7 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.11.0")
     kapt("com.github.bumptech.glide:compiler:4.11.0")
 
-    implementation("com.google.android.gms:play-services-maps:17.0.1")
+    implementation("com.google.android.gms:play-services-maps:18.0.0")
     implementation("com.google.maps.android:android-maps-utils:1.1.0")
+    implementation("net.cachapa.expandablelayout:expandablelayout:2.9.2")
 }

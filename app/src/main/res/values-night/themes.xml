@@ -29,12 +29,14 @@
         <item name="colorPrimaryInverse">@color/md_theme_dark_primaryInverse</item>
         <item name="colorPrimaryVariant">@color/red_700</item>
         <item name="colorSecondaryVariant">@color/secondary_200</item>
+        <item name="colorAccent">?colorPrimary</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">@color/black</item>
         <!-- Customize your theme here. -->
         <item name="android:textColor">?colorOnBackground</item>
         <item name="android:windowBackground">@color/black</item>
-        <item name="colorAccent">?colorPrimary</item>
-        <item name="colorOnPrimarySurface">?colorOnPrimary</item>
+        <item name="colorMyContainer">?colorPrimary</item>
+        <item name="colorOnMyContainer">?colorOnPrimary</item>
+        <item name="colorMyBackground">@color/black</item>
     </style>
 </resources>

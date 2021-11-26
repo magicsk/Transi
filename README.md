@@ -5,12 +5,14 @@ App with list of virtual tables and trip planner for MHD in Bratislava.
 ## Features
 
 ### Future  
-- [ ] Local Trip planner parser
-- [ ] Trip planner trip notification
-- [ ] Trip planner add time arrival departure switch
-- [ ] Table on long press notification
 - [ ] ŽSR table support if possible
-- [ ] Add settings: home a address, default stop
+
+### 1.0.0
+- [x] Trip planner add time arrival departure switch
+- [x] Material You redesign v2
+- [x] Virtual table on long press notification
+- [x] Trip planner trip notification
+- [x] Table info on click launch web with more information
 
 ### 0.9.9
 - [x] Material You dynamic colors support 
@@ -64,6 +66,13 @@ App with list of virtual tables and trip planner for MHD in Bratislava.
 
 ## Bugs
 - [ ] Fix location working only each other start of application
+- [ ] Fix landscape rotation when trip is searched
+
+### 1.0.0
+- [x] Fix duplicates in virtual table
+- [x] Fix expand animation
+- [x] Fix virtual table time remaining (not updating frequently enough)
+- [x] Fix overlapping information about connection
 
 ### 0.9.8
 - [x] Fix typeAhead search not recovering items

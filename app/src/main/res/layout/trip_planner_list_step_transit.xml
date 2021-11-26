@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:layout_marginEnd="10dp"
     android:paddingVertical="5dp"
-    tools:ignore="HardcodedText" >
+    tools:ignore="HardcodedText">
 
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -120,25 +120,36 @@
         android:paddingVertical="3dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/TripPlannerListStepDepartureTime"
-        android:animateLayoutChanges="true"
         app:layout_constraintTop_toBottomOf="@id/TripPlannerListStepDepartureTime">
 
-        <TextView
-            android:id="@+id/TripPlannerListStepDuration"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:fontFamily="@font/roboto_medium"
-            android:paddingHorizontal="20dp"
-            android:text="@string/tripStepDuration"
-            android:textColor="?colorOnSurface"
-            android:textSize="16sp" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/TripPlannerListStepStopList"
+        <net.cachapa.expandablelayout.ExpandableLayout
+            android:id="@+id/TripPlannerListStepDurationContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:visibility="gone" />
+            app:el_expanded="true">
+
+            <TextView
+                android:id="@+id/TripPlannerListStepDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="@font/roboto_medium"
+                android:paddingHorizontal="20dp"
+                android:text="@string/tripStepDuration"
+                android:textColor="?colorOnSurface"
+                android:textSize="16sp" />
+        </net.cachapa.expandablelayout.ExpandableLayout>
+
+        <net.cachapa.expandablelayout.ExpandableLayout
+            android:id="@+id/TripPlannerListStepStopListContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/TripPlannerListStepStopList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </net.cachapa.expandablelayout.ExpandableLayout>
 
     </LinearLayout>
 
@@ -173,8 +184,8 @@
         android:layout_width="20dp"
         android:layout_height="20dp"
         android:layout_marginEnd="10dp"
+        android:background="@drawable/ic_request"
         android:contentDescription="@string/this_is_a_request_stop"
-        android:src="@drawable/ic_request"
         app:layout_constraintBottom_toBottomOf="@id/TripPlannerListStepArrivalTime"
         app:layout_constraintEnd_toStartOf="@id/TripPlannerListStepArrivalZone"
         app:layout_constraintTop_toTopOf="@id/TripPlannerListStepArrivalTime" />
@@ -190,7 +201,6 @@
         android:text="101"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/TripPlannerListStepArrivalTime"
-        />
+        app:layout_constraintTop_toTopOf="@id/TripPlannerListStepArrivalTime" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
