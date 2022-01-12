@@ -534,8 +534,9 @@ class MHDTableAdapter(
                         if (current.expanded) {
                             Glide.with(this)
                                 .load(url)
-                                .onlyRetrieveFromCache(true)
                                 .into(MHDTableListVehicleImg)
+                            MHDTableListVehicleImg.visibility = View.VISIBLE
+                            MHDTableListDetailLayout.expand(false)
                         }
                         MHDTableListVehicleText.text =
                             context.getString(R.string.vehicleText).format(currentVehicle.type, busID)
