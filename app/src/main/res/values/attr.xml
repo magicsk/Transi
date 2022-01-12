@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <attr name="colorMyContainer" format="reference|color" />
-    <attr name="colorOnMyContainer" format="reference|color" />
     <attr name="colorMyBackground" format="reference|color" />
+    <attr name="colorOnMyContainer" format="reference|color" />
 </resources>

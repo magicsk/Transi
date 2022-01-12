@@ -9,6 +9,7 @@ import android.view.inputmethod.InputMethodManager
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.color.MaterialColors
 import eu.magicsk.transi.adapters.TypeAheadAdapter
 import eu.magicsk.transi.data.remote.responses.StopsJSON
 import eu.magicsk.transi.data.remote.responses.StopsJSONItem
@@ -32,6 +33,8 @@ class TypeAheadFragment : Fragment(R.layout.fragment_type_ahead) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        activity?.window?.statusBarColor = MaterialColors.getColor(view, R.attr.colorSurface)
+
         val planFragment =
             try {
                 activity?.supportFragmentManager?.findFragmentById(R.id.search_barFL) as PlanFragment?

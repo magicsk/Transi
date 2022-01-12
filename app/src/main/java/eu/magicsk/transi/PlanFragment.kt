@@ -74,9 +74,10 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
         val navController = findNavController()
         val argId = requireArguments().getInt("selectedToStopId")
         if (argId > 0) {
-            val selectedToStop = mainFragment.getStopById(argId)
-            editTextTo.setText(selectedToStop.name)
-            getTrip(from = "0", to = selectedToStop.value)
+            mainFragment.getStopById(argId)?.let{
+                editTextTo.setText(it.name)
+                getTrip(from = "0", to = it.value)
+            }
         }
 
         if (mainFragment.nearestSwitching) {

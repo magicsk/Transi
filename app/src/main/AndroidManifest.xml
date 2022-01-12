@@ -2,10 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="eu.magicsk.transi">
 
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:name=".TransiApplication"
@@ -27,7 +27,7 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".receivers.MHDTableNotificationReceiver" android:enabled="true"/>
+        <receiver android:name=".receivers.MHDTableCancelNotificationReceiver" android:enabled="true"/>
 
         <meta-data
             android:name="preloaded_fonts"

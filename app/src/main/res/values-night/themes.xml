@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <!-- Base application theme. -->
     <style name="Theme.Transi" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/md_theme_dark_primary</item>
@@ -31,12 +31,12 @@
         <item name="colorSecondaryVariant">@color/secondary_200</item>
         <item name="colorAccent">?colorPrimary</item>
         <!-- Status bar color. -->
-        <item name="android:statusBarColor" tools:targetApi="l">@color/black</item>
+        <item name="android:statusBarColor">@color/black</item>
         <!-- Customize your theme here. -->
         <item name="android:textColor">?colorOnBackground</item>
         <item name="android:windowBackground">@color/black</item>
+        <item name="colorMyBackground">@color/black</item>
         <item name="colorMyContainer">?colorPrimary</item>
         <item name="colorOnMyContainer">?colorOnPrimary</item>
-        <item name="colorMyBackground">@color/black</item>
     </style>
 </resources>

@@ -20,6 +20,7 @@ import eu.magicsk.transi.R
 import eu.magicsk.transi.data.models.MHDTableData
 import eu.magicsk.transi.data.models.MHDTableVehicle
 import eu.magicsk.transi.data.remote.responses.StopsJSON
+import eu.magicsk.transi.data.remote.responses.StopsJSONItem
 import eu.magicsk.transi.util.*
 import io.socket.client.IO
 import io.socket.client.Socket
@@ -32,6 +33,7 @@ import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.*
 
+@SuppressLint("NotifyDataSetChanged")
 class MHDTableAdapter(
     private val TableItemList: MutableList<MHDTableData>,
     private val TableVehicleInfo: MutableList<MHDTableVehicle>,
@@ -47,6 +49,17 @@ class MHDTableAdapter(
     private var stopList: StopsJSON = StopsJSON()
     private var actualStopId = 0
 
+    private fun getStopById(id: Int): StopsJSONItem? {
+        stopList.let {
+            for (i in 0 until stopList.size) {
+                if (id == stopList[i].id) {
+                    return stopList[i]
+                }
+            }
+        }
+        return null
+    }
+
     fun putStopList(stops: StopsJSON) {
         stopList.clear()
         stopList.addAll(stops)
@@ -54,13 +67,23 @@ class MHDTableAdapter(
 
     fun startUpdater(activity: Activity) {
         val thread: Thread = object : Thread() {
-            @SuppressLint("NotifyDataSetChanged")
             override fun run() {
                 try {
                     while (!this.isInterrupted) {
                         sleep(10000)
                         activity.runOnUiThread {
                             notifyDataSetChanged()
+                            if (TableItemList.size < 1) {
+                                activity.runOnUiThread {
+                                    activity.MHDTableListConnectInfo?.visibility = View.VISIBLE
+                                    activity.MHDTableListConnectInfo?.text = activity.getString(R.string.noDepartures)
+                                }
+                            } else {
+                                activity.runOnUiThread {
+                                    activity.MHDTableListConnectInfo?.visibility = View.GONE
+                                    activity.MHDTableListConnectInfo?.text = ""
+                                }
+                            }
                         }
                     }
                 } catch (e: InterruptedException) {
@@ -325,7 +348,7 @@ class MHDTableAdapter(
                 }
                 for (i in forDelete.size - 1 downTo 0) {
                     TableItemList.removeAt(forDelete[i])
-                    notifyItemRemoved(i)
+                    if (i == 0 || i == itemCount - 1) notifyDataSetChanged() else notifyItemRemoved(i)
                 }
             }
             tempList.addAll(TableItemList)
@@ -363,6 +386,13 @@ class MHDTableAdapter(
             }
 
         holder.itemView.apply {
+
+            when (position) {
+                0 -> MHDTableListLayout.setBackgroundResource(R.drawable.round_shape_top_25)
+                (itemCount - 1) -> MHDTableListLayout.setBackgroundResource(R.drawable.round_shape_bottom_25)
+                else -> MHDTableListLayout.setBackgroundResource(R.drawable.rectangle_shape)
+            }
+
             if (rounded) {
                 MHDTableListLineNum.setBackgroundResource(R.drawable.round_shape)
                 if (!current.line.contains("S")) MHDTableListLineNum.setPadding(
@@ -501,27 +531,31 @@ class MHDTableAdapter(
                             }
                             current.expanded = !current.expanded
                         }
-                        Glide.with(this)
-                            .load(url)
-                            .onlyRetrieveFromCache(true)
-                            .into(MHDTableListVehicleImg)
+                        if (current.expanded) {
+                            Glide.with(this)
+                                .load(url)
+                                .onlyRetrieveFromCache(true)
+                                .into(MHDTableListVehicleImg)
+                        }
                         MHDTableListVehicleText.text =
                             context.getString(R.string.vehicleText).format(currentVehicle.type, busID)
                     }
                 }
             } else {
                 setOnClickListener {
-                    MHDTableListVehicleImg.visibility = View.GONE
                     if (current.expanded) MHDTableListDetailLayout.collapse() else MHDTableListDetailLayout.expand()
                     current.expanded = !current.expanded
                 }
                 MHDTableListVehicleText.text = ""
+                MHDTableListVehicleImg.visibility = View.GONE
                 MHDTableListOnlineInfo.visibility = View.GONE
                 MHDTableListLastStop.text = context.getString(R.string.offline)
             }
 
             setOnLongClickListener {
-                tableNotification(actualStopId, current.Id, context)
+                getStopById(actualStopId)?.let {
+                    tableNotification(it, current.Id, context)
+                }
                 true
             }
 

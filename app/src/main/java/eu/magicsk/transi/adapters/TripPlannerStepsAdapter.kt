@@ -20,8 +20,18 @@ import kotlinx.android.synthetic.main.trip_planner_list_step_walking.view.*
 
 class TripPlannerStepsAdapter(
     private val TripPlannerStepList: MutableList<Step>,
+    private val onItemLongClick: () -> Unit
 ) : RecyclerView.Adapter<TripPlannerStepsAdapter.TripPlannerStepsViewHolder>() {
-    class TripPlannerStepsViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+    class TripPlannerStepsViewHolder(itemView: View, private val onItemLongClick: () -> Unit) :
+        RecyclerView.ViewHolder(itemView), View.OnLongClickListener {
+            init {
+                itemView.setOnLongClickListener(this)
+            }
+            override fun onLongClick(v: View?): Boolean {
+                onItemLongClick()
+                return true
+            }
+    }
 
     override fun getItemViewType(position: Int): Int {
         return if (TripPlannerStepList[position].type == "TRANSIT") 1 else 0
@@ -35,7 +45,7 @@ class TripPlannerStepsAdapter(
         } else {
             inflater.inflate(R.layout.trip_planner_list_step_walking, parent, false)
         }
-        return TripPlannerStepsViewHolder(view)
+        return TripPlannerStepsViewHolder(view, onItemLongClick)
     }
 
     override fun onBindViewHolder(holder: TripPlannerStepsViewHolder, position: Int) {
@@ -115,7 +125,7 @@ class TripPlannerStepsAdapter(
                         }
                     }
 
-                    stopList.adapter = TripPlannerStopsAdapter(filteredStops) { onListItemClick() }
+                    stopList.adapter = TripPlannerStopsAdapter(filteredStops, onItemLongClick) { onListItemClick() }
                     setOnClickListener {
                         onListItemClick()
                     }

@@ -6,6 +6,15 @@ App with list of virtual tables and trip planner for MHD in Bratislava.
 
 ### Future  
 - [ ] ŽSR table support if possible
+- [ ] Map direction button
+- [ ] Offline timetables
+- [ ] IDSBK trip planner
+- [ ] Virtual table on swipe gesture for notification and share
+
+### 1.0.5
+- [x] Material You redesign v3
+- [x] Info in virtual table when there are no departures
+- [x] Share trip or vehicle via button in notifications
 
 ### 1.0.0
 - [x] Trip planner add time arrival departure switch
@@ -66,7 +75,14 @@ App with list of virtual tables and trip planner for MHD in Bratislava.
 
 ## Bugs
 - [ ] Fix location working only each other start of application
-- [ ] Fix landscape rotation when trip is searched
+
+### 1.0.5
+- [x] Fix landscape rotation when trip is searched
+- [x] Fix sometimes table notification not removed after bus leave stop
+- [x] Fix crash on notification create
+- [x] Fix crash on onPause while trip planned
+- [x] Fix trip notification title is "from Stop to null" if last step is walking 
+- [x] Fix clickable area for trip notification
 
 ### 1.0.0
 - [x] Fix duplicates in virtual table

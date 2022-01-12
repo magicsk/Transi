@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import eu.magicsk.transi.util.cancelTableNotification
 
-class MHDTableNotificationReceiver : BroadcastReceiver()  {
+class MHDTableCancelNotificationReceiver : BroadcastReceiver()  {
     override fun onReceive(context: Context, intent: Intent) {
         cancelTableNotification(context)
     }

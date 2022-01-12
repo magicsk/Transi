@@ -43,9 +43,9 @@
     <color name="md_theme_dark_errorContainer">#930006</color>
     <color name="md_theme_dark_onError">#680003</color>
     <color name="md_theme_dark_onErrorContainer">#FFDAD4</color>
-    <color name="md_theme_dark_background">#201A19</color>
+    <color name="md_theme_dark_background">#262222</color>
     <color name="md_theme_dark_onBackground">#ECDFDE</color>
-    <color name="md_theme_dark_surface">#201A19</color>
+    <color name="md_theme_dark_surface">#221c1b</color>
     <color name="md_theme_dark_onSurface">#ECDFDE</color>
     <color name="md_theme_dark_surfaceVariant">#524342</color>
     <color name="md_theme_dark_onSurfaceVariant">#D7C1BF</color>

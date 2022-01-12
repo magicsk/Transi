@@ -10,15 +10,21 @@ import kotlinx.android.synthetic.main.trip_planner_list_stops.view.*
 
 class TripPlannerStopsAdapter(
     private val TripPlannerStopList: MutableList<Stop>,
+    private val onItemLongClick: () -> Unit,
     private val onItemClicked: () -> Unit
 ) : RecyclerView.Adapter<TripPlannerStopsAdapter.TripPlannerStopsViewHolder>() {
     class TripPlannerStopsViewHolder(
         itemView: View,
+        private val onItemLongClick: () -> Unit,
         private val onItemClicked: () -> Unit
     ) :
         RecyclerView.ViewHolder(itemView), View.OnClickListener {
         init {
             itemView.setOnClickListener(this)
+            itemView.setOnLongClickListener {
+                onItemLongClick()
+                true
+            }
         }
 
         override fun onClick(v: View?) {
@@ -33,7 +39,7 @@ class TripPlannerStopsAdapter(
         val context = parent.context
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.trip_planner_list_stops, parent, false)
-        return TripPlannerStopsViewHolder(view, onItemClicked)
+        return TripPlannerStopsViewHolder(view,  onItemLongClick, onItemClicked)
     }
 
     override fun onBindViewHolder(holder: TripPlannerStopsViewHolder, position: Int) {

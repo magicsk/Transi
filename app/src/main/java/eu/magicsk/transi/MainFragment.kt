@@ -10,12 +10,14 @@ import android.location.Location
 import android.os.Bundle
 import android.view.View
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.color.MaterialColors
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.MHDTableAdapter
@@ -35,7 +37,7 @@ import kotlin.math.*
 
 @AndroidEntryPoint
 class MainFragment : Fragment(R.layout.fragment_main) {
-    private val tripPlannerAdapter = TripPlannerAdapter(mutableListOf())
+    val tripPlannerAdapter = TripPlannerAdapter(mutableListOf())
     val searchFragment = SearchFragment()
     private val planFragment = PlanFragment()
     private val stopListBundle = Bundle()
@@ -61,7 +63,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         null
     )
 
-    fun getStopById(id: Int): StopsJSONItem {
+    fun getStopById(id: Int): StopsJSONItem? {
         stopList.let {
             for (i in 0 until stopList.size) {
                 if (id == stopList[i].id) {
@@ -69,7 +71,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                 }
             }
         }
-        return selected
+        return null
     }
 
     val tableAdapter: MHDTableAdapter = MHDTableAdapter(mutableListOf(), mutableListOf())
@@ -139,8 +141,8 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         if (savedLocation != null) actualLocation = savedLocation
         if (savedNearestSwitching != null) nearestSwitching = savedNearestSwitching
         if (savedWaitingForLocation != null) waitingForLocation = savedWaitingForLocation
-//        if (savedTripHolder != null) tripHolder = savedTripHolder
-//        if (savedSelectedToStop != null) selectedToStop = savedSelectedToStop
+        if (savedTripHolder != null) tripHolder = savedTripHolder
+        if (savedSelectedToStop != null) selectedToStop = savedSelectedToStop
 
         sharedPreferences = context?.getSharedPreferences("Transi", Context.MODE_PRIVATE)!!
         val savedStopListJson = sharedPreferences.getString("stopList", "")
@@ -177,15 +179,16 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                     tableAdapter.putStopList(stopList)
                     stopListBundle.clear()
                     stopListBundle.putSerializable("stopsList", stopList)
-                    val searchBundle = stopListBundle
-                    searchBundle.putBoolean("nearestSwitching", nearestSwitching)
-                    searchFragment.arguments = searchBundle
-                    println("create search fragment")
-                    activity?.supportFragmentManager?.beginTransaction()?.apply {
-                        replace(R.id.search_barFL, searchFragment)
-                        commit()
+                    if (TripPlannerList?.isVisible == false) {
+                        val searchBundle = stopListBundle
+                        searchBundle.putBoolean("nearestSwitching", nearestSwitching)
+                        searchFragment.arguments = searchBundle
+                        println("create search fragment")
+                        activity?.supportFragmentManager?.beginTransaction()?.apply {
+                            replace(R.id.search_barFL, searchFragment)
+                            commit()
+                        }
                     }
-
                 }
             }
             tableAdapter.ioObservers(it)
@@ -205,7 +208,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                                 dialog.cancel()
                             }
                         val errorAlert = errorAlertBuilder.create()
-
+                        println("this error ${trip.status}")
                         when (trip.code) {
                             400 -> errorAlert.setMessage(getString(R.string.error400))
                             404 -> errorAlert.setMessage(getString(R.string.error404))
@@ -278,6 +281,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        activity?.window?.statusBarColor = MaterialColors.getColor(view, R.attr.colorMyBackground)
         activity?.editText?.clearFocus()
         activity?.editTextFrom?.clearFocus()
         activity?.editTextTo?.clearFocus()
@@ -289,7 +293,9 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                 getLiveData<String>("origin").observe(viewLifecycleOwner) { origin ->
                     if (origin != "editTextTo") {
                         nearestSwitching = false
-                        selected = getStopById(id)
+                        getStopById(id)?.let {
+                            selected = it
+                        }
                         MHDTableStopName.text = selected.name
                         activity?.positionBtn?.icon =
                             ResourcesCompat.getDrawable(
@@ -299,33 +305,6 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                             )
                         tableAdapter.ioDisconnect()
                         tableAdapter.ioConnect(selected.id)
-                    }
-                }
-            }
-
-            getLiveData<Int>("selectedToStopId").observe(viewLifecycleOwner) { id ->
-                activity?.apply {
-                    selectedToStop = id
-                    val planBundle = stopListBundle
-                    planBundle.putInt("selectedToStopId", id)
-                    planFragment.arguments = planBundle
-                    println("create plan fragment")
-                    supportFragmentManager.beginTransaction().apply {
-                        replace(R.id.search_barFL, planFragment)
-                        commit()
-                    }
-                }
-            }
-
-            if (selectedToStop > 0) {
-                activity?.apply {
-                    val planBundle = stopListBundle
-                    planBundle.putInt("selectedToStopId", id)
-                    planFragment.arguments = planBundle
-                    println("create plan fragment")
-                    supportFragmentManager.beginTransaction().apply {
-                        replace(R.id.search_barFL, planFragment)
-                        commit()
                     }
                 }
             }
@@ -357,6 +336,23 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                 tripHolder = TripPlannerJSON(listOf(), "", 0)
             }
         }).attachToRecyclerView(TripPlannerList)
+
+        if (!TripPlannerList.isVisible) {
+            findNavController().currentBackStackEntry?.savedStateHandle?.getLiveData<Int>("selectedToStopId")
+                ?.observe(viewLifecycleOwner) { id ->
+                    activity?.apply {
+                        selectedToStop = id
+                        val planBundle = stopListBundle
+                        planBundle.putInt("selectedToStopId", id)
+                        planFragment.arguments = planBundle
+                        println("create plan fragment")
+                        supportFragmentManager.beginTransaction().apply {
+                            replace(R.id.search_barFL, planFragment)
+                            commit()
+                        }
+                    }
+                }
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

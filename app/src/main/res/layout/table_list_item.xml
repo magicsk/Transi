@@ -4,15 +4,14 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <com.google.android.material.card.MaterialCardView
+    <androidx.cardview.widget.CardView
         style="?attr/materialCardViewFilledStyle"
         android:id="@+id/MHDTableListLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="10dp"
-        android:layout_marginBottom="7dp"
+        android:layout_marginBottom="3dp"
         app:cardBackgroundColor="?colorSurface"
-        app:cardCornerRadius="25dp"
         app:cardElevation="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -107,6 +106,8 @@
                 android:id="@+id/MHDTableListDetailLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                app:el_parallax="0.5"
+                app:el_duration="500"
                 app:layout_constraintTop_toBottomOf="@id/MHDTableListLineNumLayout">
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -223,5 +224,5 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
             </net.cachapa.expandablelayout.ExpandableLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
-    </com.google.android.material.card.MaterialCardView>
+    </androidx.cardview.widget.CardView>
 </androidx.constraintlayout.widget.ConstraintLayout>

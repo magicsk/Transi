@@ -6,11 +6,24 @@
         <entry key="app/src/main/res/drawable/ic_bus_clock.xml" value="0.3695" />
         <entry key="app/src/main/res/drawable/ic_directions.xml" value="0.4895" />
         <entry key="app/src/main/res/drawable/ic_launcher_foreground.xml" value="0.4895" />
+        <entry key="app/src/main/res/drawable/ic_more.xml" value="0.37" />
+        <entry key="app/src/main/res/drawable/rectangle_shape.xml" value="0.263" />
+        <entry key="app/src/main/res/drawable/round_shape_15.xml" value="0.355" />
+        <entry key="app/src/main/res/drawable/round_shape_25.xml" value="0.343" />
+        <entry key="app/src/main/res/drawable/round_shape_bottom_25.xml" value="0.263" />
+        <entry key="app/src/main/res/drawable/round_shape_top_25.xml" value="0.343" />
+        <entry key="app/src/main/res/drawable/rounded_shape.xml" value="0.343" />
         <entry key="app/src/main/res/layout-land/fragment_main.xml" value="0.33994708994708994" />
+        <entry key="app/src/main/res/layout/activity_main.xml" value="0.43931159420289856" />
         <entry key="app/src/main/res/layout/fragment_main.xml" value="0.5348958333333333" />
         <entry key="app/src/main/res/layout/fragment_map.xml" value="0.16197916666666667" />
         <entry key="app/src/main/res/layout/fragment_plan.xml" value="0.534375" />
+        <entry key="app/src/main/res/layout/fragment_search.xml" value="0.20516304347826086" />
         <entry key="app/src/main/res/layout/fragment_settings.xml" value="0.33" />
+        <entry key="app/src/main/res/layout/fragment_type_ahead.xml" value="0.3734375" />
+        <entry key="app/src/main/res/layout/stops_list_item.xml" value="0.43931159420289856" />
+        <entry key="app/src/main/res/layout/table_info_list.xml" value="0.359375" />
+        <entry key="app/src/main/res/layout/table_list_item.xml" value="0.5140388768898488" />
         <entry key="app/src/main/res/layout/trip_planner_list.xml" value="0.16197916666666667" />
         <entry key="app/src/main/res/menu/menu.xml" value="0.3692708333333333" />
       </map>

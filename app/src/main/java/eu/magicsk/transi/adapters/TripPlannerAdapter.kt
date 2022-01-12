@@ -1,6 +1,7 @@
 package eu.magicsk.transi.adapters
 
 import android.app.NotificationManager
+import android.content.Context
 import android.text.Html
 import android.view.LayoutInflater
 import android.view.View
@@ -38,6 +39,42 @@ class TripPlannerAdapter(
         }
     }
 
+    private fun onLongClick(current: Route, context: Context) {
+        val steps = current.steps
+        val from = if (steps[0].departure_stop != "") steps[0].departure_stop else steps[1].departure_stop
+        val to = if (steps[steps.size - 1].arrival_stop != "") steps[steps.size - 1].arrival_stop else steps[steps.size - 2].arrival_stop
+        val notificationManager = context.getSystemService(NotificationManager::class.java) as NotificationManager
+        println(from)
+        println(to)
+        val title = context.getString(R.string.trip_notification_title, from, to)
+        println(title)
+        var bigBody = ""
+        for (i in steps.indices) {
+            val step = steps[i]
+            bigBody += if (step.type == "TRANSIT") {
+                "<b>${step.line.number}</b> ▶ <b>${step.headsign}</b><br>\t\t\t${step.departure_time} ${step.departure_stop}<br>\t\t\t${step.arrival_time} ${step.arrival_stop}"
+            } else {
+                "\t\t\t\t🚶\t\t<b>${step.text.replace("zo štartu ", "")}</b>"
+            }
+            if (i != steps.size - 1) bigBody += "<br>"
+        }
+        val shareBody = context.getString(R.string.trip_share_body, title, bigBody)
+
+
+        notificationManager.sendNotification(
+            title,
+            context.getString(R.string.trip_notification_body, current.duration, current.arrival_departure_time),
+            Html.fromHtml(bigBody, Html.FROM_HTML_MODE_LEGACY),
+            Html.fromHtml(shareBody, Html.FROM_HTML_MODE_LEGACY),
+            true,
+            context.getString(R.string.trip_planner_notification_channel_id),
+            1,
+            false,
+            context,
+            shareAction = true
+        )
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripPlannerViewHolder {
         val context = parent.context
         val inflater = LayoutInflater.from(context)
@@ -53,32 +90,14 @@ class TripPlannerAdapter(
             TableListItems.layoutManager =
                 LinearLayoutManager(TableListItems.context, RecyclerView.VERTICAL, false)
             TableListItems.adapter =
-                TripPlannerStepsAdapter(TripPlannerItemList[position].steps as MutableList<Step>)
-            setOnLongClickListener {
-                val steps = current.steps
-                val from = if (steps[0].departure_stop != null) steps[0].departure_stop else steps[1].departure_stop
-                val notificationManager = context.getSystemService(NotificationManager::class.java) as NotificationManager
-                var bigBody = ""
-                for (i in steps.indices) {
-                    val step = steps[i]
-                    bigBody += if (step.type == "TRANSIT") {
-                        "<b>${step.line.number}</b> ▶ <b>${step.headsign}</b><br>\t${step.departure_time} ${step.departure_stop}<br>\t${step.arrival_time} ${step.arrival_stop}"
-                    } else {
-                        "🚶\t${step.text}"
-                    }
-                    if (i != steps.size-1) bigBody += "<br>"
+                TripPlannerStepsAdapter(TripPlannerItemList[position].steps as MutableList<Step>) {
+                    onLongClick(
+                        current,
+                        context
+                    )
                 }
-                notificationManager.sendNotification(
-                    context.getString(R.string.trip_notification_title, from, steps[steps.size - 1].arrival_stop),
-                    context.getString(R.string.trip_notification_body, current.duration, current.arrival_departure_time),
-                    Html.fromHtml(bigBody, Html.FROM_HTML_MODE_LEGACY),
-                    true,
-                    context.getString(R.string.trip_planner_notification_channel_id),
-                    1,
-                    false,
-                    cancelAction = false,
-                    context
-                )
+            setOnLongClickListener {
+                onLongClick(current, context)
                 true
             }
         }
