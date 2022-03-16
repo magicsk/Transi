@@ -158,7 +158,7 @@ class MapFragment : SupportMapFragment() {
                     println("not PlanFragment")
                     null
                 }
-            navController.backStack.forEach {
+            navController.backQueue.forEach {
                 it.savedStateHandle.apply {
                     remove<Int>("selectedToStopId")
                     set("selectedStopId", stopInfo?.id)

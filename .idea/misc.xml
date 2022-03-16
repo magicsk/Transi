@@ -5,7 +5,9 @@
       <map>
         <entry key="app/src/main/res/drawable/ic_bus_clock.xml" value="0.3695" />
         <entry key="app/src/main/res/drawable/ic_directions.xml" value="0.4895" />
-        <entry key="app/src/main/res/drawable/ic_launcher_foreground.xml" value="0.4895" />
+        <entry key="app/src/main/res/drawable/ic_launcher_background.xml" value="0.276" />
+        <entry key="app/src/main/res/drawable/ic_launcher_foreground.xml" value="0.33" />
+        <entry key="app/src/main/res/drawable/ic_launcher_monochrome.xml" value="0.1975" />
         <entry key="app/src/main/res/drawable/ic_more.xml" value="0.37" />
         <entry key="app/src/main/res/drawable/rectangle_shape.xml" value="0.263" />
         <entry key="app/src/main/res/drawable/round_shape_15.xml" value="0.355" />
@@ -26,6 +28,8 @@
         <entry key="app/src/main/res/layout/table_list_item.xml" value="0.5140388768898488" />
         <entry key="app/src/main/res/layout/trip_planner_list.xml" value="0.16197916666666667" />
         <entry key="app/src/main/res/menu/menu.xml" value="0.3692708333333333" />
+        <entry key="app/src/main/res/mipmap-anydpi/ic_launcher.xml" value="0.276" />
+        <entry key="app/src/main/res/mipmap-anydpi/ic_launcher_round.xml" value="0.276" />
       </map>
     </option>
   </component>
@@ -37,7 +41,10 @@
       <item index="3" class="java.lang.String" itemvalue="dagger.hilt.android.HiltAndroidApp" />
     </list>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="Android Studio default JDK" project-jdk-type="JavaSDK">
+  <component name="FrameworkDetectionExcludesConfiguration">
+    <file type="web" url="file://$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="Android API 32, Tiramisu preview Platform" project-jdk-type="Android SDK">
     <output url="file://$PROJECT_DIR$/build/classes" />
   </component>
   <component name="ProjectType">

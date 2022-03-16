@@ -1,7 +1,6 @@
 package eu.magicsk.transi
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.graphics.drawable.AnimatedVectorDrawable
@@ -14,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.fragment.findNavController
 import eu.magicsk.transi.data.models.SelectedTrip
+import eu.magicsk.transi.util.simpleErrorAlert
 import kotlinx.android.synthetic.main.fragment_main.*
 import kotlinx.android.synthetic.main.fragment_plan.*
 import java.util.*
@@ -35,18 +35,11 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
             activity?.progressBar_bg?.visibility = View.VISIBLE
             activity?.progressBar_ic?.visibility = View.VISIBLE
             if ((to == "" || from == "") || (to == "0" && from == "0")) {
-                val errorAlertBuilder = AlertDialog.Builder(activity)
-                errorAlertBuilder.setTitle(getString(R.string.ops))
-                    .setPositiveButton("OK") { dialog, _ ->
-                        dialog.cancel()
-                    }
-                val errorAlert = errorAlertBuilder.create()
-                errorAlert.setMessage(getString(R.string.error400))
-                errorAlert.show()
+                activity?.let { simpleErrorAlert(it, getString(R.string.ops), getString(R.string.error400)) }
             } else {
                 if ((to == "0" || from == "0") && actualLocation == null) {
                     waitingForLocation = true
-                } else {
+                } else if (actualLocation != null) {
                     val lat = actualLocation!!.latitude
                     val long = actualLocation!!.longitude
                     tripViewModel.getTrip(
@@ -55,6 +48,8 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
                         if (to == "0") "c$lat,$long" else to,
                         ad
                     )
+                } else {
+                    activity?.let { simpleErrorAlert(it, getString(R.string.ops), getString(R.string.error400)) }
                 }
             }
         }
@@ -67,14 +62,13 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
         mainFragment = navHostFragment.childFragmentManager.fragments[0] as MainFragment
     }
 
-    @SuppressLint("RestrictedApi")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         val navController = findNavController()
         val argId = requireArguments().getInt("selectedToStopId")
         if (argId > 0) {
-            mainFragment.getStopById(argId)?.let{
+            mainFragment.getStopById(argId)?.let {
                 editTextTo.setText(it.name)
                 getTrip(from = "0", to = it.value)
             }
@@ -104,7 +98,7 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
         }
 
         backBtn.setOnClickListener {
-            if (navController.backStack.size > 2) navController.popBackStack()
+            if (navController.backQueue.size > 2) navController.popBackStack()
             activity?.supportFragmentManager?.beginTransaction()?.apply {
                 replace(R.id.search_barFL, mainFragment.searchFragment)
                 commit()
@@ -175,7 +169,7 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
         editTextFrom.setOnFocusChangeListener { _, b ->
             typeAheadBundle.putString("origin", "editTextFrom")
             if (b) {
-                if (navController.backStack.size > 2) navController.popBackStack()
+                if (navController.backQueue.size > 2) navController.popBackStack()
                 navController.navigate(
                     R.id.action_mainFragment_to_typeAheadFragment,
                     typeAheadBundle,
@@ -194,7 +188,7 @@ class PlanFragment : Fragment(R.layout.fragment_plan) {
         editTextTo.setOnFocusChangeListener { _, b ->
             typeAheadBundle.putString("origin", "editTextTo")
             if (b) {
-                if (navController.backStack.size > 2) navController.popBackStack()
+                if (navController.backQueue.size > 2) navController.popBackStack()
                 navController.navigate(
                     R.id.action_mainFragment_to_typeAheadFragment,
                     typeAheadBundle,

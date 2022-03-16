@@ -304,7 +304,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                                 context?.theme
                             )
                         tableAdapter.ioDisconnect()
-                        tableAdapter.ioConnect(selected.id)
+//                        tableAdapter.ioConnect(selected.id)
                     }
                 }
             }
@@ -322,7 +322,8 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         MHDTableList.layoutManager = LinearLayoutManager(context)
         TripPlannerList.adapter = tripPlannerAdapter
         TripPlannerList.layoutManager = LinearLayoutManager(context)
-        TripPlannerList.visibility = if (tripHolder.code == 200) View.VISIBLE else View.GONE
+        println(tripHolder)
+        TripPlannerList.visibility = if (tripHolder.code == 200 && tripHolder.routes.isNotEmpty()) View.VISIBLE else View.GONE
         ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
             override fun onMove(
                 v: RecyclerView,

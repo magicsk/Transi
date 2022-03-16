@@ -46,14 +46,9 @@ fun cancelTableNotification(context: Context) {
     tableNotificationActive = false
     val notificationManager = context.getSystemService(NotificationManager::class.java) as NotificationManager
     notificationManager.cancel(TABLE_NOTIFICATION_ID)
-    socket.off(Socket.EVENT_CONNECT)
-    socket.off(Socket.EVENT_DISCONNECT)
-    socket.off(Socket.EVENT_RECONNECTING)
-    socket.off(Socket.EVENT_RECONNECT)
-    socket.off("tabs")
-    socket.disconnect()
-    connected = false
+    socket.off()
     socket.close()
+    connected = false
     wakeLock?.release()
 }
 
@@ -63,16 +58,14 @@ fun startNotificationUpdater(context: Context) {
             try {
                 while (!this.isInterrupted) {
                     sleep(10000)
-                    println(tableNotificationActive)
-                    println(lastInfo)
-                    if (tableNotificationActive) {
+                    if (tableNotificationActive && connected) {
                         sendTableNotification(lastInfo, context, true)
                     } else {
                         val notificationManager = context.getSystemService(NotificationManager::class.java) as NotificationManager
                         notificationManager.cancel(TABLE_NOTIFICATION_ID)
                     }
                 }
-            } catch (e: InterruptedException) {
+            } catch (_: InterruptedException) {
             }
         }
     }
@@ -95,11 +88,7 @@ fun tableNotification(stop: StopsJSONItem, connectionId: Long, context: Context)
     tabArgs.put(0, stop.id)
     tabArgs.put(1, "*")
     if (observersInitialized) {
-        socket.off(Socket.EVENT_CONNECT)
-        socket.off(Socket.EVENT_DISCONNECT)
-        socket.off(Socket.EVENT_RECONNECTING)
-        socket.off(Socket.EVENT_RECONNECT)
-        socket.off("tabs")
+        socket.off()
     }
     socket
         .on(Socket.EVENT_CONNECT) {
@@ -113,6 +102,12 @@ fun tableNotification(stop: StopsJSONItem, connectionId: Long, context: Context)
         }
         .on(Socket.EVENT_RECONNECTING) {
             sendTableNotification(lastInfo, context, true, "Reconnecting")
+        }
+        .on(Socket.EVENT_RECONNECT_ERROR) {
+            sendTableNotification(lastInfo, context, true, "Reconnect error")
+        }
+        .on(Socket.EVENT_RECONNECT_FAILED) {
+            sendTableNotification(lastInfo, context, true, "Reconnect failed")
         }
         .on(Socket.EVENT_RECONNECT) {
             connected = true

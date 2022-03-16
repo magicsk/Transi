@@ -70,23 +70,22 @@ class MHDTableAdapter(
             override fun run() {
                 try {
                     while (!this.isInterrupted) {
-                        sleep(10000)
+                        sleep(5000)
                         activity.runOnUiThread {
                             notifyDataSetChanged()
                             if (TableItemList.size < 1) {
-                                activity.runOnUiThread {
+                                if (activity.MHDTableListConnectInfo?.visibility == View.GONE) {
                                     activity.MHDTableListConnectInfo?.visibility = View.VISIBLE
                                     activity.MHDTableListConnectInfo?.text = activity.getString(R.string.noDepartures)
                                 }
                             } else {
                                 activity.runOnUiThread {
                                     activity.MHDTableListConnectInfo?.visibility = View.GONE
-                                    activity.MHDTableListConnectInfo?.text = ""
                                 }
                             }
                         }
                     }
-                } catch (e: InterruptedException) {
+                } catch (_: InterruptedException) {
                 }
             }
         }
@@ -122,7 +121,6 @@ class MHDTableAdapter(
                 println("connected")
                 activity.runOnUiThread {
                     activity.MHDTableListConnectInfo?.visibility = View.GONE
-                    activity.MHDTableListConnectInfo?.text = ""
                 }
             }
             .on(Socket.EVENT_DISCONNECT) {
@@ -144,7 +142,6 @@ class MHDTableAdapter(
                 println("reconnected")
                 activity.runOnUiThread {
                     activity.MHDTableListConnectInfo?.visibility = View.GONE
-                    activity.MHDTableListConnectInfo?.text = ""
                 }
                 socket
                     .emit("tabStart", tabArgs)
@@ -268,6 +265,7 @@ class MHDTableAdapter(
                         platform.add(item)
                     }
                     activity.runOnUiThread {
+                        activity.MHDTableListConnectInfo?.visibility = View.GONE
                         addItems(platform)
                     }
                 }
@@ -310,7 +308,6 @@ class MHDTableAdapter(
     }
 
     fun ioDisconnect() {
-        socket.disconnect()
         socket.close()
         val size = TableItemList.size
         clearList()
@@ -502,7 +499,7 @@ class MHDTableAdapter(
                         MHDTableListDelayText.text =
                             context.getString(R.string.inAdvance).format(current.delay.toString().drop(1))
                     }
-                    current.delay == 0 -> {
+                    else -> {
                         MHDTableListDelayIcon.backgroundTintList = ContextCompat.getColorStateList(context, R.color.onTime)
                         MHDTableListDelayText.text = context.getString(R.string.onTime)
                     }
