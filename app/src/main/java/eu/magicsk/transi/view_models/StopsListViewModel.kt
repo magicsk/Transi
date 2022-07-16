@@ -21,7 +21,7 @@ class StopsListViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val stops = repository.getStops()
-            stopsLiveData.value = stops.data
+            stopsLiveData.value = stops.data!!
         }
     }
 }

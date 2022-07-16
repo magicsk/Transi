@@ -13,10 +13,14 @@
     <string name="actual_position">Actual position</string>
     <string name="back">Back</string>
 
+    <string name="tripPlanner">Trip Planner</string>
+    <string name="tripPlannerTitle">%1$s ▶ %2$s</string>
     <string name="walking_directions">walking directions</string>
-    <string name="tripTime">(%1$s)</string>
-    <string name="tripHeadsign"> ▶ %1$s</string>
-    <string name="tripStepDuration">%1$s stops, %2$s</string>
+    <string name="tripDurationH">%1$s h %2$s min</string>
+    <string name="tripDuration">%1$s min</string>
+    <string name="tripTime">(%1$s-%2$s)</string>
+    <string name="tripHeadsign">%1$s</string>
+    <string name="tripStepDuration">%1$d stops, %2$s min</string>
 
     <string name="error">Error</string>
     <string name="error400">One of given inputs is invalid!</string>
@@ -26,15 +30,17 @@
 
     <string name="picture_of_vehicle">Picture of vehicle</string>
     <string name="stuck">Stuck</string>
+    <string name="ac">AC</string>
     <string name="offline">Offline</string>
     <string name="onTime">on time</string>
     <string name="inAdvance">%1$s min in advance</string>
     <string name="delay">%1$s min delay</string>
     <string name="vehicleText">%1$s #%2$s</string>
-    <string name="lastStop">Last stop: %1$s</string>
+    <string name="lastStop">%1$s</string>
     <string name="departureTime">Expected departure: %1$s</string>
     <string name="this_is_a_request_stop">This is a request stop.</string>
 
+    <string name="loading">Loading…</string>
     <string name="connecting">Connecting…</string>
     <string name="reconnecting">Reconnecting…</string>
     <string name="disconnected">Disconnected</string>
@@ -56,6 +62,8 @@
     <string name="dismiss">Dismiss</string>
     <string name="share">Share</string>
     <string name="trip_notification_title">%1$s ▶ %2$s</string>
-    <string name="trip_notification_body">%1$s (%2$s)</string>
+    <string name="trip_notification_body">%1$s (%2$s-%3$s)</string>
     <string name="trip_share_body">%1$s&lt;br>&lt;br>%2$s</string>
+<!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

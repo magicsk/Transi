@@ -11,14 +11,13 @@ import androidx.core.app.NotificationCompat
 import androidx.core.text.buildSpannedString
 import eu.magicsk.transi.MainActivity
 import eu.magicsk.transi.R
+import eu.magicsk.transi.data.models.MHDTable
 import eu.magicsk.transi.data.models.MHDTableData
-import eu.magicsk.transi.data.models.MHDTableVehicle
 import eu.magicsk.transi.data.remote.responses.StopsJSONItem
 import eu.magicsk.transi.receivers.MHDTableCancelNotificationReceiver
 import io.socket.client.IO
 import io.socket.client.Socket
 import org.json.JSONArray
-import org.json.JSONException
 import org.json.JSONObject
 import java.net.URI
 import java.text.SimpleDateFormat
@@ -26,7 +25,7 @@ import java.util.*
 
 
 private const val TABLE_NOTIFICATION_ID = 0
-private val vehicleInfo = mutableListOf<MHDTableVehicle>()
+private val mhdTable = MHDTable()
 private var thread: Thread = Thread()
 private val uri: URI = URI.create("https://imhd.sk/")
 private val options = IO.Options()
@@ -98,16 +97,7 @@ fun tableNotification(stop: StopsJSONItem, connectionId: Long, context: Context)
         }
         .on(Socket.EVENT_DISCONNECT) {
             connected = false
-            sendTableNotification(lastInfo, context, false, "Disconnected")
-        }
-        .on(Socket.EVENT_RECONNECTING) {
             sendTableNotification(lastInfo, context, true, "Reconnecting")
-        }
-        .on(Socket.EVENT_RECONNECT_ERROR) {
-            sendTableNotification(lastInfo, context, true, "Reconnect error")
-        }
-        .on(Socket.EVENT_RECONNECT_FAILED) {
-            sendTableNotification(lastInfo, context, true, "Reconnect failed")
         }
         .on(Socket.EVENT_RECONNECT) {
             connected = true
@@ -117,136 +107,22 @@ fun tableNotification(stop: StopsJSONItem, connectionId: Long, context: Context)
                 .emit("infoStart")
         }
         .on("tabs") {
-            println("new notification tabs")
-            val data = JSONObject(it[0].toString())
-            val keys = data.keys()
-            while (keys.hasNext()) {
-                val platform = mutableListOf<MHDTableData>()
-                val key = keys.next()
-                val tabs = data.getJSONObject(key).getJSONArray("tab")
-                for (i in 0 until tabs.length()) {
-                    val item = MHDTableData(
-                        try {
-                            tabs.getJSONObject(i).getLong("i")
-                        } catch (e: JSONException) {
-                            0
-                        },
-                        try {
-                            tabs.getJSONObject(i).getString("linka")
-                        } catch (e: JSONException) {
-                            "Err"
-                        },
-                        key,
-                        try {
-                            tabs.getJSONObject(i).getString("issi")
-                        } catch (e: JSONException) {
-                            "offline"
-                        },
-                        try {
-                            tabs.getJSONObject(i).getString("cielStr")
-                        } catch (e: JSONException) {
-                            try {
-                                tabs.getJSONObject(i).getString("konecnaZstr")
-                            } catch (e: JSONException) {
-                                "Error"
-                            }
-                        },
-                        try {
-                            tabs.getJSONObject(i).getLong("cas")
-                        } catch (e: JSONException) {
-                            0
-                        },
-                        try {
-                            tabs.getJSONObject(i).getInt("casDelta")
-                        } catch (e: JSONException) {
-                            0
-                        },
-                        try {
-                            tabs.getJSONObject(i).getString("typ")
-                        } catch (e: JSONException) {
-                            "cp"
-                        },
-                        try {
-                            tabs.getJSONObject(i).getInt("tuZidx")
-                        } catch (e: JSONException) {
-                            -1
-                        },
-                        try {
-                            tabs.getJSONObject(i).getInt("predoslaZidx")
-                        } catch (e: JSONException) {
-                            -1
-                        },
-                        try {
-                            tabs.getJSONObject(i).getString("predoslaZstr")
-                                .replace("Bratislava, ", "")
-                        } catch (e: JSONException) {
-                            "none"
-                        },
-                        try {
-                            tabs.getJSONObject(i).getBoolean("uviaznute")
-                        } catch (e: JSONException) {
-                            false
-                        },
-                        false
-                    )
-                    platform.add(item)
+            mhdTable.addTabs(JSONObject(it[0].toString()))
+            var exists = false
+            for (platform in mhdTable.tabs) {
+                if (platform.Id == connectionId) {
+                    tableNotificationActive = true
+                    exists = sendTableNotification(platform, context)
                 }
-                var exists = false
-                for (i in 0 until platform.size) {
-                    val item = platform[i]
-                    if (item.Id == connectionId) {
-                        tableNotificationActive = true
-                        exists = sendTableNotification(item, context)
-                    }
-                }
-                if (platform.size > 0) {
-                    if (!exists && lastInfo.platform == platform[0].platform) {
-                        cancelTableNotification(context)
-                    }
+            }
+            if (mhdTable.tabs.size > 0) {
+                if (!exists && lastInfo.platform == mhdTable.tabs[0].platform) {
+                    cancelTableNotification(context)
                 }
             }
         }
         .on("vInfo") {
-            val data = JSONObject(it[0].toString())
-            val keys = data.keys()
-            val item = MHDTableVehicle(
-                try {
-                    data.getInt(keys.next())
-                } catch (e: JSONException) {
-                    0
-                },
-                try {
-                    data.getInt(keys.next())
-                } catch (e: JSONException) {
-                    0
-                },
-                try {
-                    data.getInt(keys.next())
-                } catch (e: JSONException) {
-                    0
-                },
-                try {
-                    data.getInt(keys.next())
-                } catch (e: JSONException) {
-                    0
-                },
-                try {
-                    data.getInt(keys.next())
-                } catch (e: JSONException) {
-                    0
-                },
-                try {
-                    data.getString(keys.next())
-                } catch (e: JSONException) {
-                    "error"
-                },
-                try {
-                    data.getString(keys.next())
-                } catch (e: JSONException) {
-                    "error"
-                },
-            )
-            vehicleInfo.add(item)
+            mhdTable.addVehicleInfo(JSONObject(it[0].toString()))
         }
     socket.connect()
 }
@@ -290,9 +166,9 @@ fun sendTableNotification(
     val stuckText = if (item.stuck) "STUCK!" else ""
 
     var vehicleID = ""
-    for (i in 0 until vehicleInfo.size) {
-        if (vehicleInfo[i].issi == item.busID) {
-            val currentVehicle = vehicleInfo[i]
+    for (i in 0 until mhdTable.vehicleInfo.size) {
+        if (mhdTable.vehicleInfo[i].issi == item.busID) {
+            val currentVehicle = mhdTable.vehicleInfo[i]
             val busID = item.busID.drop(2)
             vehicleID = context.getString(R.string.vehicleText).format(currentVehicle.type, busID)
         }

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navigationTripPlanner"
+        android:icon="@drawable/ic_trip_planner"
+        android:title="Trip planner"/>
+
+    <item
+        android:id="@+id/navigationTable"
+        android:icon="@drawable/ic_bus_clock"
+        android:title="Table"/>
+
+    <item
+        android:id="@+id/navigationTimetable"
+        android:icon="@drawable/ic_bus"
+        android:title="Timetables"/>
+
+</menu>

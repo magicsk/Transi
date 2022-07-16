@@ -1,5 +1,10 @@
 package eu.magicsk.transi.data.models
 
+import android.os.Parcelable
+import kotlinx.android.parcel.Parcelize
+import java.io.Serializable
+
+@Parcelize
 data class MHDTableVehicle(
     val id: Int,
     val lf: Int,
@@ -8,4 +13,5 @@ data class MHDTableVehicle(
     val imgt: Int,
     val type: String,
     val issi: String,
-)
+    val train: String?,
+): Parcelable, Serializable

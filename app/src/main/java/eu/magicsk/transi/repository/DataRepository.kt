@@ -2,20 +2,53 @@ package eu.magicsk.transi.repository
 
 import dagger.hilt.android.scopes.ActivityScoped
 import eu.magicsk.transi.data.remote.ApiRequests
+import eu.magicsk.transi.data.remote.ImhdRequests
 import eu.magicsk.transi.data.remote.responses.StopsJSON
 import eu.magicsk.transi.data.remote.responses.StopsVersion
-import eu.magicsk.transi.data.remote.responses.TripPlannerJSON
 import eu.magicsk.transi.util.Resource
 import javax.inject.Inject
 
 @ActivityScoped
 class DataRepository @Inject constructor(
-    private val api: ApiRequests
+    private val api: ApiRequests,
+    private val imhdApi: ImhdRequests
 ) {
-    suspend fun getTrip(time: Long, from: String, to: String, ad: Int): Resource<TripPlannerJSON> {
+
+    suspend fun getTrip(
+        v: Int,
+        from: String,
+        to: String,
+        date: String,
+        time: String,
+        arrivalDeparture: Int,
+        features: String,
+        preference: Int,
+        moreTimeForTransfer: Int,
+        transportType: String,
+        rate: String,
+        carriers: String,
+        service: String,
+        format: Int
+    ): Resource<String> {
         val response = try {
-            api.getTrip(time, from, to, ad)
-        } catch(e: Exception) {
+            imhdApi.getTrip(
+                v,
+                from,
+                to,
+                date,
+                time,
+                arrivalDeparture,
+                features,
+                preference,
+                moreTimeForTransfer,
+                transportType,
+                rate,
+                carriers,
+                service,
+                format
+            )
+        } catch (e: Exception) {
+            println(e)
             return Resource.Error("An unknown error occurred.")
         }
         return Resource.Success(response)
@@ -24,7 +57,7 @@ class DataRepository @Inject constructor(
     suspend fun getStops(): Resource<StopsJSON> {
         val response = try {
             api.getStops()
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             return Resource.Error("An unknown error occurred.")
         }
         return Resource.Success(response)
@@ -33,7 +66,7 @@ class DataRepository @Inject constructor(
     suspend fun getStopsVersion(): Resource<StopsVersion> {
         val response = try {
             api.getStopsVersion()
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             return Resource.Error("An unknown error occurred.")
         }
         return Resource.Success(response)

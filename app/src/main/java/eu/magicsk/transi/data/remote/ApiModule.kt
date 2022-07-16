@@ -7,6 +7,7 @@ import dagger.hilt.components.SingletonComponent
 import eu.magicsk.transi.repository.DataRepository
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.scalars.ScalarsConverterFactory
 import javax.inject.Singleton
 
 @Module
@@ -16,8 +17,9 @@ object ApiModule {
     @Singleton
     @Provides
     fun provideRepository(
-        api: ApiRequests
-    ) = DataRepository(api)
+        api: ApiRequests,
+        imhdApi: ImhdRequests
+    ) = DataRepository(api, imhdApi)
 
     @Singleton
     @Provides
@@ -27,5 +29,15 @@ object ApiModule {
             .baseUrl("https://api.magicsk.eu/")
             .build()
             .create(ApiRequests::class.java)
+    }
+
+    @Singleton
+    @Provides
+    fun provideImhdApi(): ImhdRequests {
+        return Retrofit.Builder()
+            .addConverterFactory(ScalarsConverterFactory.create())
+            .baseUrl("https://imhd.sk/ba/api/")
+            .build()
+            .create(ImhdRequests::class.java)
     }
 }

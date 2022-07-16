@@ -1,6 +1,5 @@
 package eu.magicsk.transi.view_models
 
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,8 +14,8 @@ class StopsListVersionViewModel @Inject constructor(
     private val repository: DataRepository
 ) : ViewModel() {
 
-    private val stopsVersionLiveData = MutableLiveData<StopsVersion>()
-    val stopsVersion: LiveData<StopsVersion> = stopsVersionLiveData
+    private val stopsVersionLiveData = MutableLiveData<StopsVersion?>()
+    val stopsVersion: MutableLiveData<StopsVersion?> = stopsVersionLiveData
 
     init {
         viewModelScope.launch {

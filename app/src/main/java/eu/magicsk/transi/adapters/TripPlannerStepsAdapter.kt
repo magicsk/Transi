@@ -5,136 +5,181 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.core.view.setPadding
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewbinding.ViewBinding
 import eu.magicsk.transi.R
-import eu.magicsk.transi.data.remote.responses.Step
-import eu.magicsk.transi.data.remote.responses.Stop
-import eu.magicsk.transi.util.dpToPx
-import eu.magicsk.transi.util.getLineColor
-import eu.magicsk.transi.util.getLineTextColor
-import eu.magicsk.transi.util.isDarkTheme
-import kotlinx.android.synthetic.main.trip_planner_list_step_transit.view.*
-import kotlinx.android.synthetic.main.trip_planner_list_step_walking.view.*
+import eu.magicsk.transi.databinding.TripPlannerListStepTransitBinding
+import eu.magicsk.transi.databinding.TripPlannerListStepWalkingBinding
+import eu.magicsk.transi.util.*
 
 class TripPlannerStepsAdapter(
-    private val TripPlannerStepList: MutableList<Step>,
+    private val TripPlannerStepList: MutableList<TripPart>,
     private val onItemLongClick: () -> Unit
 ) : RecyclerView.Adapter<TripPlannerStepsAdapter.TripPlannerStepsViewHolder>() {
-    class TripPlannerStepsViewHolder(itemView: View, private val onItemLongClick: () -> Unit) :
-        RecyclerView.ViewHolder(itemView), View.OnLongClickListener {
-            init {
-                itemView.setOnLongClickListener(this)
-            }
-            override fun onLongClick(v: View?): Boolean {
-                onItemLongClick()
-                return true
-            }
+    class TripPlannerStepsViewHolder(val binding: ViewBinding, private val onItemLongClick: () -> Unit) :
+        RecyclerView.ViewHolder(binding.root), View.OnLongClickListener {
+        init {
+            itemView.setOnLongClickListener(this)
+        }
+
+        override fun onLongClick(v: View?): Boolean {
+            onItemLongClick()
+            return true
+        }
     }
 
+    private var _binding: ViewBinding? = null
+    private val binding get() = _binding!!
+
     override fun getItemViewType(position: Int): Int {
-        return if (TripPlannerStepList[position].type == "TRANSIT") 1 else 0
+        return TripPlannerStepList[position].type
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripPlannerStepsViewHolder {
-        val context = parent.context
-        val inflater = LayoutInflater.from(context)
-        val view = if (viewType == 1) {
-            inflater.inflate(R.layout.trip_planner_list_step_transit, parent, false)
+        _binding = if (viewType == 1) {
+            TripPlannerListStepTransitBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         } else {
-            inflater.inflate(R.layout.trip_planner_list_step_walking, parent, false)
+            TripPlannerListStepWalkingBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         }
-        return TripPlannerStepsViewHolder(view, onItemLongClick)
+
+        return TripPlannerStepsViewHolder(binding, onItemLongClick)
     }
 
+    @Suppress("USELESS_CAST")
     override fun onBindViewHolder(holder: TripPlannerStepsViewHolder, position: Int) {
         val current = TripPlannerStepList[position]
-        holder.itemView.apply {
-            when (current.type) {
-                "TRANSIT" -> {
+        holder.binding.apply {
+            val context = root.context
+            val resources = root.resources
+            when (this) {
+                is TripPlannerListStepWalkingBinding -> {
+                    val bindingB = this as TripPlannerListStepWalkingBinding
+                    println(current.arrival?.stop?.name)
+                    println(current.departure?.stop?.name)
+                    if (current.arrival?.stop?.name == current.departure?.stop?.name && itemCount > position + 1) {
+                        val platform = TripPlannerStepList[position + 1].stops.first().platform
+                        if (platform != null) {
+                            bindingB.TripPlannerListStepWalkingText.text = "${current.duration} min to platform $platform"
+                        } else {
+                            bindingB.TripPlannerListStepWalkingText.text =
+                                "${current.duration} min transfer between platforms"
+                        }
+
+                    } else if (current.arrival?.stop?.name == "") {
+                        bindingB.TripPlannerListStepWalkingText.text = "${current.duration} min to the destination"
+                    } else {
+                        bindingB.TripPlannerListStepWalkingText.text = "${current.duration} min to ${current.arrival?.stop?.name}"
+                    }
+                    bindingB.TripPlannerListStepWalkingText.isSelected = true
+                }
+
+                else -> {
+                    val bindingA = this as TripPlannerListStepTransitBinding
+                    val line = current.line!!
                     val rounded =
                         try {
-                            current.line.number.contains("S") || current.line.number.toInt() < 10
+                            line.contains("S") || line.toInt() < 10
                         } catch (e: NumberFormatException) {
                             false
                         }
                     if (rounded) {
-                        TripPlannerListStepLineNum.setBackgroundResource(R.drawable.round_shape)
-                        if (!current.line.number.contains("S")) TripPlannerListStepLineNum.setPadding(
+                        bindingA.TripPlannerListStepLineNum.setBackgroundResource(R.drawable.round_shape)
+                        if (!line.contains("S")) bindingA.TripPlannerListStepLineNum.setPadding(
                             12f.dpToPx(context),
                             5f.dpToPx(context),
                             12f.dpToPx(context),
                             5f.dpToPx(context)
                         ) else {
-                            TripPlannerListStepLineNum.setPadding(5f.dpToPx(context))
+                            bindingA.TripPlannerListStepLineNum.setPadding(5f.dpToPx(context))
                         }
                     } else {
-                        TripPlannerListStepLineNum.setBackgroundResource(R.drawable.rounded_shape)
+                        bindingA.TripPlannerListStepLineNum.setBackgroundResource(R.drawable.rounded_shape)
                     }
-                    val drawable = TripPlannerListStepLineNum.background
+                    val drawable = bindingA.TripPlannerListStepLineNum.background
                     drawable.setColorFilter(
                         ContextCompat.getColor(
                             context,
-                            getLineColor(current.line.number, isDarkTheme(resources))
+                            getLineColor(line, isDarkTheme(resources))
                         ), PorterDuff.Mode.SRC
                     )
-                    TripPlannerListStepLineNum.setTextColor(
+                    bindingA.TripPlannerListStepLineNum.setTextColor(
                         ContextCompat.getColor(
                             context,
-                            getLineTextColor(current.line.number)
+                            getLineTextColor(line)
                         )
                     )
 
-                    val arrowDrawable = TripPlannerListStepLineArrow.background
+                    val arrowDrawable = bindingA.TripPlannerListStepLineArrow.background
                     arrowDrawable.setColorFilter(
                         ContextCompat.getColor(
                             context,
-                            getLineColor(current.line.number, isDarkTheme(resources))
+                            getLineColor(line, isDarkTheme(resources))
                         ), PorterDuff.Mode.SRC
                     )
 
-                    TripPlannerListStepLineNum.background = drawable
-                    TripPlannerListStepLineNum.text = current.line.number
-                    TripPlannerListStepLineArrow.background = arrowDrawable
-                    TripPlannerListStepHeadsign.text =
+                    val departureStop = current.departure!!.stop
+                    val arrivalStop = current.arrival!!.stop
+
+                    bindingA.TripPlannerListStepLineNum.background = drawable
+                    bindingA.TripPlannerListStepLineNum.text = line
+                    bindingA.TripPlannerListStepLineArrow.background = arrowDrawable
+                    bindingA.TripPlannerListStepHeadsign.text =
                         context.getString(R.string.tripHeadsign).format(current.headsign)
-                    TripPlannerListStepDepartureStop.text = current.departure_stop
-                    TripPlannerListStepDepartureTime.text = current.departure_time
-                    TripPlannerListStepDuration.text =
-                        context.getString(R.string.tripStepDuration, current.num_stops, current.duration)
-                    TripPlannerListStepArrivalStop.text = current.arrival_stop
-                    TripPlannerListStepArrivalTime.text = current.arrival_time
-                    val stopListContainer = TripPlannerListStepStopListContainer
-                    val durationContainer = TripPlannerListStepDurationContainer
-                    val stopList = TripPlannerListStepStopList
+                    bindingA.TripPlannerListStepHeadsign.isSelected = true
+                    bindingA.TripPlannerListStepDepartureTime.text = departureStop.time
+                    bindingA.TripPlannerListStepDepartureStop.text = departureStop.name
+                    bindingA.TripPlannerListStepDepartureStop.isSelected = true
+                    bindingA.TripPlannerListStepDepartureRequest.isVisible = departureStop.request
+                    bindingA.TripPlannerListStepDepartureZone.text = departureStop.zone
+                    bindingA.TripPlannerListStepDuration.text =
+                        context.getString(R.string.tripStepDuration, current.stops.size, current.duration) //TODO: hours
+                    bindingA.TripPlannerListStepArrivalTime.text = arrivalStop.time
+                    bindingA.TripPlannerListStepArrivalStop.text = arrivalStop.name
+                    bindingA.TripPlannerListStepArrivalStop.isSelected = true
+                    bindingA.TripPlannerListStepArrivalRequest.isVisible = arrivalStop.request
+                    bindingA.TripPlannerListStepArrivalZone.text = arrivalStop.zone
+                    val stopListContainer = bindingA.TripPlannerListStepStopListContainer
+                    val durationContainer = bindingA.TripPlannerListStepDurationContainer
+                    val stopList = bindingA.TripPlannerListStepStopList
                     stopList.layoutManager =
                         LinearLayoutManager(stopList.context, RecyclerView.VERTICAL, false)
-                    val filteredStops: MutableList<Stop> = mutableListOf()
-                    filteredStops.addAll(TripPlannerStepList[position].stops)
-                    filteredStops.removeAt(0)
-                    filteredStops.removeAt(filteredStops.size - 1)
 
-                    fun onListItemClick() {
-                        if (durationContainer.isExpanded) {
-                            durationContainer.collapse()
-                            stopListContainer.expand()
-                        } else {
-                            durationContainer.expand()
-                            stopListContainer.collapse()
+                    when (current.stops.size) {
+                        0 -> {
+                            durationContainer.collapse(false)
+                            stopListContainer.collapse(false)
+                        }
+
+                        1 -> {
+                            durationContainer.collapse(false)
+                            stopListContainer.expand(false)
+                        }
+
+                        else -> {
+                            durationContainer.expand(false)
+                            stopListContainer.collapse(false)
                         }
                     }
 
-                    stopList.adapter = TripPlannerStopsAdapter(filteredStops, onItemLongClick) { onListItemClick() }
-                    setOnClickListener {
+                    fun onListItemClick() {
+                        if (current.stops.size > 1) {
+                            if (durationContainer.isExpanded) {
+                                durationContainer.collapse()
+                                stopListContainer.expand()
+                            } else {
+                                durationContainer.expand()
+                                stopListContainer.collapse()
+                            }
+                        }
+                    }
+
+                    stopList.adapter = TripPlannerStopsAdapter(current.stops, onItemLongClick) { onListItemClick() }
+                    root.setOnClickListener {
                         onListItemClick()
                     }
-                }
-                "WALKING" -> {
-                    TripPlannerListStepWalkingText.text = current.text
-                }
-                else -> {
-                    TripPlannerListStepWalkingText.text = context.getString(R.string.error)
                 }
             }
         }

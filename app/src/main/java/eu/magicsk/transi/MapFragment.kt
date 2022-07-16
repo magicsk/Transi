@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.DrawableCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -24,27 +25,23 @@ import com.google.maps.android.clustering.ClusterManager
 import com.google.maps.android.clustering.view.DefaultClusterRenderer
 import eu.magicsk.transi.data.remote.responses.StopsJSON
 import eu.magicsk.transi.data.remote.responses.StopsJSONItem
-import kotlinx.android.synthetic.main.fragment_plan.*
-import kotlinx.android.synthetic.main.fragment_search.*
+import eu.magicsk.transi.util.isDarkTheme
+import eu.magicsk.transi.view_models.MainViewModel
+import eu.magicsk.transi.view_models.TripPlannerViewModel
 
 class MapFragment : SupportMapFragment() {
-
     private lateinit var stopsList: StopsJSON
     private lateinit var origin: String
     private val placesList = arrayListOf<Place>()
 
     object BitmapHelper {
         fun vectorToBitmap(
-            context: Context,
-            @DrawableRes id: Int,
-            @ColorInt color: Int
+            context: Context, @DrawableRes id: Int, @ColorInt color: Int
         ): BitmapDescriptor {
-            val vectorDrawable = ResourcesCompat.getDrawable(context.resources, id, null)
-                ?: return BitmapDescriptorFactory.defaultMarker()
+            val vectorDrawable =
+                ResourcesCompat.getDrawable(context.resources, id, null) ?: return BitmapDescriptorFactory.defaultMarker()
             val bitmap = Bitmap.createBitmap(
-                vectorDrawable.intrinsicWidth,
-                vectorDrawable.intrinsicHeight,
-                Bitmap.Config.ARGB_8888
+                vectorDrawable.intrinsicWidth, vectorDrawable.intrinsicHeight, Bitmap.Config.ARGB_8888
             )
             val canvas = Canvas(bitmap)
             vectorDrawable.setBounds(0, 0, canvas.width, canvas.height)
@@ -56,29 +53,21 @@ class MapFragment : SupportMapFragment() {
 
 
     class PlaceRenderer(
-        context: Context,
-        map: GoogleMap,
-        clusterManager: ClusterManager<Place>
+        context: Context, map: GoogleMap, clusterManager: ClusterManager<Place>
     ) : DefaultClusterRenderer<Place>(context, map, clusterManager) {
         private val markerIcon: BitmapDescriptor by lazy {
             val color = ContextCompat.getColor(
-                context,
-                R.color.md_theme_light_primary
+                context, R.color.md_theme_light_primary
             )
             BitmapHelper.vectorToBitmap(
-                context,
-                R.drawable.ic_marker,
-                color
+                context, R.drawable.ic_marker, color
             )
         }
 
         override fun onBeforeClusterItemRendered(
-            item: Place,
-            markerOptions: MarkerOptions
+            item: Place, markerOptions: MarkerOptions
         ) {
-            markerOptions.title(item.name)
-                .position(item.latLng)
-                .icon(markerIcon)
+            markerOptions.title(item.name).position(item.latLng).icon(markerIcon)
         }
 
         override fun onClusterItemRendered(clusterItem: Place, marker: Marker) {
@@ -97,14 +86,11 @@ class MapFragment : SupportMapFragment() {
         val id: Int,
         val latLng: LatLng,
     ) : ClusterItem {
-        override fun getPosition(): LatLng =
-            latLng
+        override fun getPosition(): LatLng = latLng
 
-        override fun getTitle(): String =
-            name
+        override fun getTitle(): String = name
 
-        override fun getSnippet(): String =
-            html
+        override fun getSnippet(): String = html
     }
 
 
@@ -115,14 +101,7 @@ class MapFragment : SupportMapFragment() {
         stopsList.forEach { stop ->
             if (stop.id != 0) placesList.add(
                 Place(
-                    stop.station_id,
-                    stop.name,
-                    stop.html,
-                    stop.url,
-                    stop.value,
-                    stop.type,
-                    stop.id,
-                    LatLng(stop.lat, stop.long)
+                    stop.station_id, stop.name, stop.html, stop.url, stop.value, stop.type, stop.id, LatLng(stop.lat, stop.long)
                 )
             )
         }
@@ -138,48 +117,33 @@ class MapFragment : SupportMapFragment() {
     @SuppressLint("RestrictedApi")
     private fun addMarkers(googleMap: GoogleMap) {
         val clusterManager = ClusterManager<Place>(activity, googleMap)
-        clusterManager.renderer =
-            context?.let {
-                PlaceRenderer(
-                    it,
-                    googleMap,
-                    clusterManager
-                )
-            }
+        clusterManager.renderer = context?.let {
+            PlaceRenderer(
+                it, googleMap, clusterManager
+            )
+        }
 
         // Set custom info window adapter
         clusterManager.markerCollection.setOnInfoWindowClickListener { marker ->
             val stopInfo = marker.title?.let { getItem(it) }
-            val navController = findNavController()
-            val planFragment =
-                try {
-                    activity?.supportFragmentManager?.findFragmentById(R.id.search_barFL) as PlanFragment?
-                } catch (e: ClassCastException) {
-                    println("not PlanFragment")
-                    null
-                }
-            navController.backQueue.forEach {
-                it.savedStateHandle.apply {
-                    remove<Int>("selectedToStopId")
-                    set("selectedStopId", stopInfo?.id)
-                    set("origin", origin)
-                }
-            }
+            val mainViewModel = ViewModelProvider(requireActivity()).get(MainViewModel::class.java)
+            val tripPlannerViewModel = ViewModelProvider(requireActivity()).get(TripPlannerViewModel::class.java)
             stopInfo?.let { stop ->
                 when (origin) {
                     "editTextFrom" -> {
-                        activity?.editTextFrom?.setText(stop.name)
-                        planFragment?.getTrip(from = stop.value)
+                        activity?.supportFragmentManager?.popBackStack("tripTypeAhead", 1)
+                        tripPlannerViewModel.setSelectedFromStop(stop)
                     }
                     "editTextTo" -> {
-                        activity?.editTextTo?.setText(stop.name)
-                        planFragment?.getTrip(to = stop.value)
+                        activity?.supportFragmentManager?.popBackStack("tripTypeAhead", 1)
+                        tripPlannerViewModel.setSelectedToStop(stop)
                     }
-                    else -> activity?.editText?.setText(stop.name)
+                    else -> {
+                        activity?.supportFragmentManager?.popBackStack("typeAhead", 1)
+                        mainViewModel.setSelectedStop(stop)
+                    }
                 }
             }
-            navController.popBackStack()
-            navController.popBackStack()
         }
 
         clusterManager.addItems(placesList)
@@ -194,33 +158,29 @@ class MapFragment : SupportMapFragment() {
     @SuppressLint("MissingPermission")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val locationManager =
-            activity?.getSystemService(AppCompatActivity.LOCATION_SERVICE) as LocationManager
+        val bounds = LatLngBounds.builder()
+        stopsList.forEach {
+            if (it.id != 0) bounds.include(LatLng(it.lat, it.long))
+        }
+        val locationManager = activity?.getSystemService(AppCompatActivity.LOCATION_SERVICE) as LocationManager
         val actualLocation = locationManager.getLastKnownLocation(
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                LocationManager.FUSED_PROVIDER else LocationManager.GPS_PROVIDER
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) LocationManager.FUSED_PROVIDER else LocationManager.GPS_PROVIDER
         )
         findNavController().previousBackStackEntry?.savedStateHandle
         getMapAsync { googleMap ->
-            googleMap.setMapStyle(MapStyleOptions(resources.getString(R.string.style_json)))
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 50))
+            if (isDarkTheme(resources)) googleMap.setMapStyle(MapStyleOptions(resources.getString(R.string.style_json)))
             googleMap.uiSettings.isMapToolbarEnabled = false
             googleMap.setOnMapLoadedCallback {
                 googleMap.isMyLocationEnabled = true
-                val bounds = LatLngBounds.builder()
-                stopsList.forEach {
-                    if (it.id != 0) bounds.include(LatLng(it.lat, it.long))
-                }
                 if (actualLocation != null) {
                     googleMap.animateCamera(
                         CameraUpdateFactory.newLatLngZoom(
                             LatLng(
-                                actualLocation.latitude,
-                                actualLocation.longitude
+                                actualLocation.latitude, actualLocation.longitude
                             ), 16f
                         )
                     )
-                } else {
-                    googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 50))
                 }
             }
             addMarkers(googleMap)

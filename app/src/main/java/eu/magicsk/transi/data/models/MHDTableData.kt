@@ -1,5 +1,10 @@
 package eu.magicsk.transi.data.models
 
+import android.os.Parcelable
+import kotlinx.android.parcel.Parcelize
+import java.io.Serializable
+
+@Parcelize
 data class MHDTableData(
     val Id: Long,
     val line: String,
@@ -14,4 +19,4 @@ data class MHDTableData(
     val lastStopName: String,
     val stuck: Boolean,
     var expanded: Boolean
-)
+): Parcelable, Serializable

@@ -3,22 +3,22 @@ package eu.magicsk.transi.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
-import eu.magicsk.transi.R
-import eu.magicsk.transi.data.remote.responses.Stop
-import kotlinx.android.synthetic.main.trip_planner_list_stops.view.*
+import eu.magicsk.transi.databinding.TripPlannerListStopsBinding
+import eu.magicsk.transi.util.TripStop
 
 class TripPlannerStopsAdapter(
-    private val TripPlannerStopList: MutableList<Stop>,
+    private val TripPlannerStopList: MutableList<TripStop>,
     private val onItemLongClick: () -> Unit,
     private val onItemClicked: () -> Unit
 ) : RecyclerView.Adapter<TripPlannerStopsAdapter.TripPlannerStopsViewHolder>() {
     class TripPlannerStopsViewHolder(
-        itemView: View,
+        val binding: TripPlannerListStopsBinding,
         private val onItemLongClick: () -> Unit,
         private val onItemClicked: () -> Unit
     ) :
-        RecyclerView.ViewHolder(itemView), View.OnClickListener {
+        RecyclerView.ViewHolder(binding.root), View.OnClickListener {
         init {
             itemView.setOnClickListener(this)
             itemView.setOnLongClickListener {
@@ -31,33 +31,29 @@ class TripPlannerStopsAdapter(
             onItemClicked()
         }
     }
+    private var _binding: TripPlannerListStopsBinding? = null
+    private val binding get() = _binding!!
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
     ): TripPlannerStopsViewHolder {
-        val context = parent.context
-        val inflater = LayoutInflater.from(context)
-        val view = inflater.inflate(R.layout.trip_planner_list_stops, parent, false)
-        return TripPlannerStopsViewHolder(view,  onItemLongClick, onItemClicked)
+        _binding = TripPlannerListStopsBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return TripPlannerStopsViewHolder(binding, onItemLongClick, onItemClicked)
     }
 
     override fun onBindViewHolder(holder: TripPlannerStopsViewHolder, position: Int) {
         val current = TripPlannerStopList[position]
-        holder.itemView.apply {
+        holder.binding.apply {
             TripPlannerListStopTime.text = current.time
-            TripPlannerListStopName.text = current.stop
+            TripPlannerListStopName.text = current.name
+            TripPlannerListStopName.isSelected = true
             TripPlannerListStopZone.text = current.zone
-
-            if (current.request) {
-                TripPlannerListStopRequest.visibility = View.VISIBLE
-            } else TripPlannerListStopRequest.visibility = View.GONE
+            TripPlannerListStopRequest.isVisible = current.request
         }
     }
 
     override fun getItemCount(): Int {
         return TripPlannerStopList.size
     }
-
-
 }

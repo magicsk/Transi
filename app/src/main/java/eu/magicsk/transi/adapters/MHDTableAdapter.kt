@@ -9,23 +9,24 @@ import android.graphics.drawable.AnimatedVectorDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.isVisible
 import androidx.core.view.setPadding
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import eu.magicsk.transi.R
+import eu.magicsk.transi.data.models.MHDTable
 import eu.magicsk.transi.data.models.MHDTableData
-import eu.magicsk.transi.data.models.MHDTableVehicle
 import eu.magicsk.transi.data.remote.responses.StopsJSON
 import eu.magicsk.transi.data.remote.responses.StopsJSONItem
+import eu.magicsk.transi.databinding.TableListItemBinding
 import eu.magicsk.transi.util.*
 import io.socket.client.IO
 import io.socket.client.Socket
-import kotlinx.android.synthetic.main.fragment_main.*
-import kotlinx.android.synthetic.main.table_list_item.view.*
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -34,20 +35,21 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @SuppressLint("NotifyDataSetChanged")
-class MHDTableAdapter(
-    private val TableItemList: MutableList<MHDTableData>,
-    private val TableVehicleInfo: MutableList<MHDTableVehicle>,
-) : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>() {
-    class MHDTableViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>() {
+    class MHDTableViewHolder(val binding: TableListItemBinding) : RecyclerView.ViewHolder(binding.root)
 
+    private var _binding: TableListItemBinding? = null
+    private val binding get() = _binding!!
     private val uri: URI = URI.create("https://imhd.sk/")
     private val options = IO.Options()
     private val socket: Socket = IO.socket(uri, options)
     private val tabArgs = JSONArray()
-    private var connected = false
-    private var dismissed = false
+    var connected = false
+    var dismissed = false
     private var stopList: StopsJSON = StopsJSON()
     private var actualStopId = 0
+    private val mhdTable = MHDTable()
+    private var updateTimeStamp = 0L
 
     private fun getStopById(id: Int): StopsJSONItem? {
         stopList.let {
@@ -70,17 +72,21 @@ class MHDTableAdapter(
             override fun run() {
                 try {
                     while (!this.isInterrupted) {
-                        sleep(5000)
+                        sleep(5100)
                         activity.runOnUiThread {
-                            notifyDataSetChanged()
-                            if (TableItemList.size < 1) {
-                                if (activity.MHDTableListConnectInfo?.visibility == View.GONE) {
-                                    activity.MHDTableListConnectInfo?.visibility = View.VISIBLE
-                                    activity.MHDTableListConnectInfo?.text = activity.getString(R.string.noDepartures)
+                            if (System.currentTimeMillis() - updateTimeStamp > 15000) {
+                                notifyDataSetChanged()
+                                updateTimeStamp = System.currentTimeMillis()
+                            }
+                            val connectInfo = activity.findViewById<TextView>(R.id.MHDTableListConnectInfo)
+                            if (mhdTable.sortedTabs.size < 1) {
+                                if (connectInfo?.visibility == View.GONE) {
+                                    connectInfo.visibility = View.VISIBLE
+                                    connectInfo.text = activity.getString(R.string.noDepartures)
                                 }
                             } else {
                                 activity.runOnUiThread {
-                                    activity.MHDTableListConnectInfo?.visibility = View.GONE
+                                    connectInfo?.visibility = View.GONE
                                 }
                             }
                         }
@@ -109,165 +115,53 @@ class MHDTableAdapter(
     }
 
     fun ioObservers(activity: Activity) {
+        val connectInfo = activity.findViewById<TextView>(R.id.MHDTableListConnectInfo)
         socket
             .on(Socket.EVENT_CONNECTING) {
                 activity.runOnUiThread {
-                    activity.MHDTableListConnectInfo?.visibility = View.VISIBLE
-                    activity.MHDTableListConnectInfo?.text = activity.getString(R.string.connecting)
+                    connectInfo?.visibility = View.VISIBLE
+                    connectInfo?.text = activity.getString(R.string.connecting)
                 }
             }
             .on(Socket.EVENT_CONNECT) {
                 connected = true
                 println("connected")
                 activity.runOnUiThread {
-                    activity.MHDTableListConnectInfo?.visibility = View.GONE
+                    connectInfo?.visibility = View.GONE
                 }
             }
             .on(Socket.EVENT_DISCONNECT) {
                 connected = false
                 println("disconnected")
                 activity.runOnUiThread {
-                    activity.MHDTableListConnectInfo?.visibility = View.VISIBLE
-                    activity.MHDTableListConnectInfo?.text = activity.getString(R.string.disconnected)
+                    connectInfo?.visibility = View.VISIBLE
+                    connectInfo?.text = activity.getString(R.string.disconnected)
                 }
             }
             .on(Socket.EVENT_RECONNECTING) {
                 activity.runOnUiThread {
-                    activity.MHDTableListConnectInfo?.visibility = View.VISIBLE
-                    activity.MHDTableListConnectInfo?.text = activity.getString(R.string.reconnecting)
+                    connectInfo?.visibility = View.VISIBLE
+                    connectInfo?.text = activity.getString(R.string.reconnecting)
                 }
             }
             .on(Socket.EVENT_RECONNECT) {
                 connected = true
                 println("reconnected")
                 activity.runOnUiThread {
-                    activity.MHDTableListConnectInfo?.visibility = View.GONE
+                    connectInfo?.visibility = View.GONE
                 }
                 socket
                     .emit("tabStart", tabArgs)
                     .emit("infoStart")
             }
             .on("vInfo") {
-                val data = JSONObject(it[0].toString())
-                val keys = data.keys()
-                val item = MHDTableVehicle(
-                    try {
-                        data.getInt(keys.next())
-                    } catch (e: JSONException) {
-                        0
-                    },
-                    try {
-                        data.getInt(keys.next())
-                    } catch (e: JSONException) {
-                        0
-                    },
-                    try {
-                        data.getInt(keys.next())
-                    } catch (e: JSONException) {
-                        0
-                    },
-                    try {
-                        data.getInt(keys.next())
-                    } catch (e: JSONException) {
-                        0
-                    },
-                    try {
-                        data.getInt(keys.next())
-                    } catch (e: JSONException) {
-                        0
-                    },
-                    try {
-                        data.getString(keys.next())
-                    } catch (e: JSONException) {
-                        "error"
-                    },
-                    try {
-                        data.getString(keys.next())
-                    } catch (e: JSONException) {
-                        "error"
-                    },
-                )
-                TableVehicleInfo.add(item)
+                mhdTable.addVehicleInfo(JSONObject(it[0].toString()))
             }
             .on("tabs") {
-                println("new tabs")
-                val data = JSONObject(it[0].toString())
-                val keys = data.keys()
-                while (keys.hasNext()) {
-                    val platform: MutableList<MHDTableData> = mutableListOf()
-                    val key = keys.next()
-                    val tabs = data.getJSONObject(key).getJSONArray("tab")
-                    for (i in 0 until tabs.length()) {
-                        val item = MHDTableData(
-                            try {
-                                tabs.getJSONObject(i).getLong("i")
-                            } catch (e: JSONException) {
-                                0
-                            },
-                            try {
-                                tabs.getJSONObject(i).getString("linka")
-                            } catch (e: JSONException) {
-                                "Err"
-                            },
-                            key,
-                            try {
-                                tabs.getJSONObject(i).getString("issi")
-                            } catch (e: JSONException) {
-                                "offline"
-                            },
-                            try {
-                                tabs.getJSONObject(i).getString("cielStr")
-                            } catch (e: JSONException) {
-                                try {
-                                    tabs.getJSONObject(i).getString("konecnaZstr")
-                                } catch (e: JSONException) {
-                                    "Error"
-                                }
-                            },
-                            try {
-                                tabs.getJSONObject(i).getLong("cas")
-                            } catch (e: JSONException) {
-                                0
-                            },
-                            try {
-                                tabs.getJSONObject(i).getInt("casDelta")
-                            } catch (e: JSONException) {
-                                0
-                            },
-                            try {
-                                tabs.getJSONObject(i).getString("typ")
-                            } catch (e: JSONException) {
-                                "cp"
-                            },
-                            try {
-                                tabs.getJSONObject(i).getInt("tuZidx")
-                            } catch (e: JSONException) {
-                                -1
-                            },
-                            try {
-                                tabs.getJSONObject(i).getInt("predoslaZidx")
-                            } catch (e: JSONException) {
-                                -1
-                            },
-                            try {
-                                tabs.getJSONObject(i).getString("predoslaZstr")
-                                    .replace("Bratislava, ", "")
-                            } catch (e: JSONException) {
-                                "none"
-                            },
-                            try {
-                                tabs.getJSONObject(i).getBoolean("uviaznute")
-                            } catch (e: JSONException) {
-                                false
-                            },
-                            false
-                        )
-                        platform.add(item)
-                    }
-                    activity.runOnUiThread {
-                        activity.MHDTableListConnectInfo?.visibility = View.GONE
-                        addItems(platform)
-                    }
+                updateTimeStamp = System.currentTimeMillis()
+                activity.runOnUiThread {
+                    connectInfo?.visibility = View.GONE
+                    addItems(mhdTable.addTabs(JSONObject(it[0].toString())))
                 }
             }
             .on("iText") {
@@ -285,7 +179,7 @@ class MHDTableAdapter(
                 activity.runOnUiThread {
                     if (infos != "" && !dismissed) {
                         val adapter = TableInfoAdapter(mutableListOf(infos))
-                        activity.MHDTableInfoText?.let { rv ->
+                        activity.findViewById<RecyclerView>(R.id.MHDTableInfoText)?.let { rv ->
                             rv.adapter = adapter
                             ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
                                 override fun onMove(v: RecyclerView, h: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) =
@@ -301,7 +195,7 @@ class MHDTableAdapter(
                             rv.visibility = View.VISIBLE
                         }
                     } else {
-                        activity.MHDTableInfoText?.visibility = View.GONE
+                        activity.findViewById<RecyclerView>(R.id.MHDTableInfoText)?.visibility = View.GONE
                     }
                 }
             }
@@ -309,66 +203,115 @@ class MHDTableAdapter(
 
     fun ioDisconnect() {
         socket.close()
-        val size = TableItemList.size
+        val size = mhdTable.sortedTabs.size
         clearList()
         notifyItemRangeRemoved(0, size)
     }
 
     private fun clearList() {
-        TableItemList.clear()
+        mhdTable.sortedTabs.clear()
         notifyItemRangeRemoved(0, itemCount)
     }
 
     private fun addItems(items: MutableList<MHDTableData>) {
-        if (items.size > 0) {
-            val tempList = mutableListOf<MHDTableData>()
-            if (TableItemList.size > 0) {
-                val platform = items[0].platform
-                val forDelete = ArrayList<Int>()
-                for (i in 0 until itemCount) {
-                    if (TableItemList[i].platform == platform) {
-                        var found = false
-                        for (j in 0 until items.size) {
-                            if (TableItemList[i].Id == items[j].Id) {
-                                found = true
-                                items[j].expanded = TableItemList[i].expanded
-                                TableItemList[i] = items[j]
-                                items.removeAt(j)
-                                notifyItemChanged(i)
-                                break
-                            }
-                        }
-                        if (!found) {
-                            forDelete.add(i)
-                        }
-                    }
-                }
-                for (i in forDelete.size - 1 downTo 0) {
-                    TableItemList.removeAt(forDelete[i])
-                    if (i == 0 || i == itemCount - 1) notifyDataSetChanged() else notifyItemRemoved(i)
-                }
+        val newData = mutableListOf<MHDTableData>()
+        val platforms = mutableSetOf<String>()
+        val toRemove = mutableSetOf<Int>()
+        newData.addAll(items)
+        newData.forEach { platforms.add(it.platform) }
+
+        fun findInList(item: MHDTableData): MHDTableData? {
+            newData.forEach {
+                if (it.Id == item.Id) return it
             }
-            tempList.addAll(TableItemList)
-            TableItemList.addAll(items)
-            TableItemList.sortBy { x -> x.departureTime }
-            for (i in TableItemList.size - 1 downTo tempList.size) {
-                notifyItemInserted(i)
-            }
-            for (i in 0 until tempList.size) {
-                if (TableItemList[i] != tempList[i]) notifyItemChanged(i)
+            return null
+        }
+
+        // update
+        mhdTable.sortedTabs.forEachIndexed { index, existing ->
+            if (platforms.contains(existing.platform)) {
+                val updated = findInList(existing)
+                if (updated != null) {
+                    updated.expanded = existing.expanded
+                    mhdTable.sortedTabs[index] = updated
+                    notifyItemChanged(index)
+                    newData.remove(updated)
+                } else {
+                    toRemove.add(index)
+                }
             }
         }
+
+        // remove
+        toRemove.forEach {
+            mhdTable.sortedTabs.removeAt(it)
+            notifyItemRemoved(it)
+        }
+
+        // add new
+        val sorted = mutableListOf<MHDTableData>()
+        sorted.addAll(mhdTable.sortedTabs)
+        sorted.addAll(newData)
+        sorted.sortBy { x -> x.departureTime }
+        sorted.forEachIndexed { index, item ->
+            if (!mhdTable.sortedTabs.contains(item)) {
+                mhdTable.sortedTabs.add(index, item)
+                notifyItemInserted(index)
+            }
+        }
+        if (sorted != mhdTable.sortedTabs) {
+            mhdTable.sortedTabs.sortBy { x -> x.departureTime }
+            notifyDataSetChanged()
+        }
+
+
+//        if (items.isNotEmpty()) {
+//            val tempList = mutableListOf<MHDTableData>()
+//            if (mhdTable.sortedTabs.isNotEmpty()) {
+//                val platform = items[0].platform
+//                val forDelete = ArrayList<Int>()
+//                for (i in 0 until itemCount) {
+//                    if (mhdTable.sortedTabs[i].platform == platform) {
+//                        var found = false
+//                        for (j in 0 until items.size) {
+//                            if (mhdTable.sortedTabs[i].Id == items[j].Id) {
+//                                found = true
+//                                items[j].expanded = mhdTable.sortedTabs[i].expanded
+//                                mhdTable.sortedTabs[i] = items[j]
+//                                items.removeAt(j)
+//                                notifyItemChanged(i)
+//                                break
+//                            }
+//                        }
+//                        if (!found) {
+//                            forDelete.add(i)
+//                        }
+//                    }
+//                }
+//                for (i in forDelete.size - 1 downTo 0) {
+//                    mhdTable.sortedTabs.removeAt(forDelete[i])
+//                    if (i == 0 || i == itemCount - 1) notifyDataSetChanged() else notifyItemRemoved(i)
+//                }
+//            }
+//            tempList.addAll(mhdTable.sortedTabs)
+//            mhdTable.sortedTabs.addAll(items)
+//            mhdTable.sortedTabs.sortBy { x -> x.departureTime }
+//            for (i in mhdTable.sortedTabs.size - 1 downTo tempList.size) {
+//                notifyItemInserted(i)
+//            }
+//            for (i in 0 until tempList.size) {
+//                if (mhdTable.sortedTabs[i] != tempList[i]) notifyItemChanged(i)
+//            }
+//        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MHDTableViewHolder {
-        val context = parent.context
-        val inflater = LayoutInflater.from(context)
-        val view = inflater.inflate(R.layout.table_list_item, parent, false)
-        return MHDTableViewHolder(view)
+        _binding = TableListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return MHDTableViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: MHDTableViewHolder, position: Int) {
-        val current = TableItemList[position]
+        val current = mhdTable.sortedTabs[position]
         val mins =
             (current.departureTime - System.currentTimeMillis()).toDouble() / 60000
         val hours = SimpleDateFormat("H:mm", Locale.UK).format(current.departureTime)
@@ -382,8 +325,9 @@ class MHDTableAdapter(
                 false
             }
 
-        holder.itemView.apply {
-
+        holder.binding.apply {
+            val context = root.context
+            val resources = root.resources
             when (position) {
                 0 -> MHDTableListLayout.setBackgroundResource(R.drawable.round_shape_top_25)
                 (itemCount - 1) -> MHDTableListLayout.setBackgroundResource(R.drawable.round_shape_bottom_25)
@@ -420,6 +364,7 @@ class MHDTableAdapter(
             MHDTableListLineNum.background = drawable
             MHDTableListLineNum.text = current.line
             MHDTableListHeadsign.text = current.headsign
+            MHDTableListHeadsign.isSelected = true
 
             // time left for departure
             if (timeText == "now" || timeText == "nowo") {
@@ -438,24 +383,23 @@ class MHDTableAdapter(
             }
 
             // platform label
-            if (stopList.size > 1) {
-                for (i in 0 until stopList.size) {
-                    val currentStopId = tabArgs.getInt(0)
-                    if (currentStopId == stopList[i].id) {
-                        if (stopList[i].platform_labels != null) {
-                            stopList[i].platform_labels?.forEach { platformLabel ->
-                                if (current.platform.replace(
-                                        "${currentStopId}.",
-                                        ""
-                                    ) == platformLabel.id
-                                ) {
-                                    MHDTableListPlatform.visibility = View.VISIBLE
-                                    MHDTableListPlatform.text = platformLabel.label
-                                }
+            stopList.forEach { item ->
+                val currentStopId = tabArgs.getInt(0)
+                if (currentStopId == item.id) {
+                    if (item.platform_labels != null) {
+                        item.platform_labels.forEach { platformLabel ->
+                            if (current.platform.replace(
+                                    "${currentStopId}.",
+                                    ""
+                                ) == platformLabel.id
+                            ) {
+                                MHDTableListPlatform.visibility = View.VISIBLE
+                                MHDTableListPlatform.text = platformLabel.label
                             }
-                        } else {
-                            MHDTableListPlatform.visibility = View.GONE
                         }
+                    } else {
+                        MHDTableListPlatform.visibility = View.GONE
+                        MHDTableListPlatform.text = ""
                     }
                 }
             }
@@ -483,10 +427,12 @@ class MHDTableAdapter(
                                 MHDTableListDelayIcon.backgroundTintList =
                                     ContextCompat.getColorStateList(context, R.color.delay3)
                             }
+
                             current.delay > 1 -> {
                                 MHDTableListDelayIcon.backgroundTintList =
                                     ContextCompat.getColorStateList(context, R.color.delay2)
                             }
+
                             else -> {
                                 MHDTableListDelayIcon.backgroundTintList =
                                     ContextCompat.getColorStateList(context, R.color.delay1)
@@ -494,11 +440,13 @@ class MHDTableAdapter(
                         }
                         MHDTableListDelayText.text = context.getString(R.string.delay).format(current.delay)
                     }
+
                     current.delay < 0 -> {
                         MHDTableListDelayIcon.backgroundTintList = ContextCompat.getColorStateList(context, R.color.inAdvance)
                         MHDTableListDelayText.text =
                             context.getString(R.string.inAdvance).format(current.delay.toString().drop(1))
                     }
+
                     else -> {
                         MHDTableListDelayIcon.backgroundTintList = ContextCompat.getColorStateList(context, R.color.onTime)
                         MHDTableListDelayText.text = context.getString(R.string.onTime)
@@ -509,18 +457,17 @@ class MHDTableAdapter(
                 MHDTableListLastStop.text = context.getString(R.string.lastStop).format(current.lastStopName)
 
 
-
-                for (i in 0 until TableVehicleInfo.size) {
-                    if (TableVehicleInfo[i].issi == current.busID) {
-                        val currentVehicle = TableVehicleInfo[i]
-                        val busID = current.busID.drop(2)
+                for (i in 0 until mhdTable.vehicleInfo.size) {
+                    if (mhdTable.vehicleInfo[i].issi == current.busID) {
+                        val currentVehicle = mhdTable.vehicleInfo[i]
+                        val busID = currentVehicle.train ?: current.busID.drop(2)
                         val v = if (currentVehicle.imgt == 0) "vm" else "vs"
                         val url = "https://imhd.sk/ba/media/$v/${currentVehicle.img.toString().padStart(8, '0')}/$busID"
-                        setOnClickListener {
+                        root.setOnClickListener {
                             if (current.expanded) {
                                 MHDTableListDetailLayout.collapse()
                             } else {
-                                Glide.with(this)
+                                Glide.with(this.root)
                                     .load(url)
                                     .into(MHDTableListVehicleImg)
                                 MHDTableListVehicleImg.visibility = View.VISIBLE
@@ -529,7 +476,7 @@ class MHDTableAdapter(
                             current.expanded = !current.expanded
                         }
                         if (current.expanded) {
-                            Glide.with(this)
+                            Glide.with(this.root)
                                 .load(url)
                                 .into(MHDTableListVehicleImg)
                             MHDTableListVehicleImg.visibility = View.VISIBLE
@@ -537,20 +484,22 @@ class MHDTableAdapter(
                         }
                         MHDTableListVehicleText.text =
                             context.getString(R.string.vehicleText).format(currentVehicle.type, busID)
+                        MHDTableListAC.isVisible = currentVehicle.ac == 1
                     }
                 }
             } else {
-                setOnClickListener {
+                root.setOnClickListener {
                     if (current.expanded) MHDTableListDetailLayout.collapse() else MHDTableListDetailLayout.expand()
                     current.expanded = !current.expanded
                 }
                 MHDTableListVehicleText.text = ""
                 MHDTableListVehicleImg.visibility = View.GONE
                 MHDTableListOnlineInfo.visibility = View.GONE
+                MHDTableListAC.visibility = View.GONE
                 MHDTableListLastStop.text = context.getString(R.string.offline)
             }
 
-            setOnLongClickListener {
+            root.setOnLongClickListener {
                 getStopById(actualStopId)?.let {
                     tableNotification(it, current.Id, context)
                 }
@@ -562,6 +511,6 @@ class MHDTableAdapter(
     }
 
     override fun getItemCount(): Int {
-        return TableItemList.size
+        return mhdTable.sortedTabs.size
     }
 }

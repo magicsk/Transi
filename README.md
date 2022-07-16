@@ -76,7 +76,7 @@ App with list of virtual tables and trip planner for MHD in Bratislava.
 ## Bugs
 - [ ] Fix location working only each other start of application
 - [ ] Fix table list item style if only one
-- [ ] Fix disappearing tripplanner info
+- [ ] Fix disappearing trip planner info
 
 ### 1.0.5
 - [x] Fix landscape rotation when trip is searched
@@ -104,7 +104,7 @@ App with list of virtual tables and trip planner for MHD in Bratislava.
 - [X] Fix Table items duplication
 
 ### 0.9.3
-- [x] Fix nearest switching icon change on stop selection
+- [x] Fix the nearest switching icon change on stop selection
 
 ### 0.9.2
 - [x] Fix onLocationChanged and stop changed crash

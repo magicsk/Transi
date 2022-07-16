@@ -131,4 +131,7 @@
 <!--    original default color-->
     <color name="ldefault_original" tools:keep="@color/ldefault_original">#FFc5c6c6</color>
     <color name="ldefault">#FF52595c</color>
+
+    <color name="ic_launcher_foreground">#000000</color>
+    <color name="ic_launcher_background">#FFFFFF</color>
 </resources>

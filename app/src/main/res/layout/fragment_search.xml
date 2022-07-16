@@ -4,41 +4,4 @@
     android:layout_height="wrap_content"
     android:layout_width="match_parent">
 
-    <EditText
-        android:background="@drawable/round_shape_15"
-        android:hint="@string/search"
-        android:id="@+id/editText"
-        android:inputType="textNoSuggestions"
-        android:layout_height="wrap_content"
-        android:layout_width="0dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginVertical="10dp"
-        android:lines="1"
-        android:paddingVertical="10dp"
-        android:paddingHorizontal="15dp"
-        android:singleLine="true"
-        android:transitionName="original_editText"
-        android:selectAllOnFocus="true"
-        android:autofillHints="none"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/positionBtn"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <com.google.android.material.button.MaterialButton
-        android:layout_height="55dp"
-        android:layout_width="45dp"
-        android:contentDescription="@string/enable_disable_switching_table_for_nearest_stop"
-        android:id="@+id/positionBtn"
-        android:layout_marginHorizontal="5dp"
-        android:padding="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/editText"
-        app:layout_constraintTop_toTopOf="parent"
-        app:icon="@drawable/ic_location_search"
-        app:iconGravity="textStart"
-        app:strokeColor="@android:color/transparent"
-        style="@style/Widget.Material3.Button.IconButton"/>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

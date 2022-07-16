@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -7,11 +8,11 @@
     tools:context=".MainActivity">
 
     <FrameLayout
-        android:id="@+id/contentFL"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:elevation="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/search_barFLCard"
+        android:id="@+id/nav_host_fragment"
+        app:layout_constraintBottom_toTopOf="@id/navView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -22,24 +23,21 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:defaultNavHost="true"
-            app:navGraph="@navigation/nav_graph" />
+            app:navGraph="@navigation/nav_graph"/>
 
     </FrameLayout>
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/search_barFLCard"
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/navView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardBackgroundColor="?android:navigationBarColor"
-        app:cardElevation="5dp"
+        android:outlineProvider="none"
+        android:layout_marginStart="0dp"
+        android:layout_marginEnd="0dp"
+        android:background="?android:attr/windowBackground"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-    <FrameLayout
-        android:id="@+id/search_barFL"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-    </androidx.cardview.widget.CardView>
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:menu="@menu/bottom_nav_menu"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
@@ -47,7 +48,7 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent"/>
             </androidx.constraintlayout.widget.ConstraintLayout>
 
             <TextView
@@ -55,15 +56,18 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="5dp"
-                android:ellipsize="marquee"
                 android:fontFamily="@font/roboto_medium"
-                android:lines="1"
+                android:singleLine="true"
                 android:text="Example"
                 android:textSize="18sp"
+                android:ellipsize="marquee"
+                android:fadingEdge="horizontal"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:scrollHorizontally="true"
                 app:layout_constraintBottom_toBottomOf="@id/MHDTableListLineNumLayout"
                 app:layout_constraintEnd_toStartOf="@id/MHDTableListTime"
                 app:layout_constraintStart_toEndOf="@id/MHDTableListLineNumLayout"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"/>
 
             <TextView
                 android:id="@+id/MHDTableListTime"
@@ -76,7 +80,9 @@
                 android:textSize="12sp"
                 app:layout_constraintBottom_toBottomOf="@id/MHDTableListLineNumLayout"
                 app:layout_constraintEnd_toStartOf="@id/MHDTableListStuck"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"/>
+
+
 
             <ImageView
                 android:id="@+id/MHDTableListStuck"
@@ -87,7 +93,7 @@
                 android:contentDescription="@string/stuck"
                 app:layout_constraintBottom_toBottomOf="@id/MHDTableListLineNumLayout"
                 app:layout_constraintEnd_toStartOf="@id/MHDTableListPlatform"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"/>
 
             <TextView
                 android:id="@+id/MHDTableListPlatform"
@@ -100,128 +106,150 @@
                 android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="@id/MHDTableListLineNumLayout"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"/>
 
             <net.cachapa.expandablelayout.ExpandableLayout
                 android:id="@+id/MHDTableListDetailLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:el_parallax="0.5"
-                app:el_duration="500"
+                app:el_duration="300"
+                app:el_expanded="true"
                 app:layout_constraintTop_toBottomOf="@id/MHDTableListLineNumLayout">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="15dp"
-                android:layout_marginEnd="10dp">
-
-                <ImageView
-                    android:id="@+id/MHDTableListVehicleImg"
-                    android:layout_width="0dp"
-                    android:layout_height="0dp"
-                    android:layout_marginEnd="15dp"
-                    android:adjustViewBounds="true"
-                    android:contentDescription="@string/picture_of_vehicle"
-                    android:scaleType="fitStart"
-                    app:layout_constraintBottom_toTopOf="@id/MHDTableListVehicleText"
-                    app:layout_constraintEnd_toStartOf="@id/MHDTableListDeparture"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-                <TextView
-                    android:id="@+id/MHDTableListVehicleText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/vehicleText"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent" />
-
-                <TextView
-                    android:id="@+id/MHDTableListDeparture"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/departureTime"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-                <TextView
-                    android:id="@+id/MHDTableListLastStop"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
-                    android:text="@string/lastStop"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/MHDTableListDeparture" />
-
                 <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/MHDTableListOnlineInfo"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/MHDTableListLastStop">
+                    android:layout_marginTop="15dp"
+                    android:layout_marginEnd="10dp">
 
                     <ImageView
-                        android:id="@+id/MHDTableListDelayIcon"
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
-                        android:layout_marginEnd="5dp"
-                        android:background="@drawable/round_shape"
-                        android:backgroundTint="@color/black"
-                        android:contentDescription="@string/stuck"
-                        app:layout_constraintBottom_toBottomOf="@id/MHDTableListDelayText"
-                        app:layout_constraintEnd_toStartOf="@id/MHDTableListDelayText"
-                        app:layout_constraintTop_toTopOf="@id/MHDTableListDelayText" />
+                        android:id="@+id/MHDTableListVehicleImg"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_marginEnd="10dp"
+                        android:adjustViewBounds="true"
+                        android:contentDescription="@string/picture_of_vehicle"
+                        android:scaleType="fitStart"
+                        app:layout_constraintBottom_toTopOf="@id/MHDTableListVehicleText"
+                        app:layout_constraintEnd_toStartOf="@id/MHDTableListDeparture"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"/>
 
                     <TextView
-                        android:id="@+id/MHDTableListDelayText"
+                        android:id="@+id/MHDTableListVehicleText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/vehicleText"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"/>
+
+                    <ImageView
+                        android:id="@+id/MHDTableListAC"
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_marginStart="6dp"
+                        android:layout_marginTop="1dp"
+                        android:background="@drawable/ic_ac_unit"
+                        android:contentDescription="@string/ac"
+                        android:visibility="visible"
+                        app:layout_constraintBottom_toBottomOf="@id/MHDTableListVehicleText"
+                        app:layout_constraintStart_toEndOf="@id/MHDTableListVehicleText"
+                        app:layout_constraintTop_toTopOf="@id/MHDTableListVehicleText"/>
+
+                    <TextView
+                        android:id="@+id/MHDTableListDeparture"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/departureTime"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"/>
+                    <ImageView
+                        android:id="@+id/MHDTableListStopIcon"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginEnd="5dp"
+                        android:background="@drawable/ic_stop"
+                        android:contentDescription="@string/stuck"
+                        app:layout_constraintTop_toTopOf="@id/MHDTableListLastStop"
+                        app:layout_constraintBottom_toBottomOf="@id/MHDTableListLastStop"
+                        app:layout_constraintEnd_toStartOf="@id/MHDTableListLastStop"/>
+                    <TextView
+                        android:id="@+id/MHDTableListLastStop"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"
-                        android:text="@string/delay"
-                        app:layout_constraintEnd_toStartOf="@id/MHDTableListStuckInfo"
-                        app:layout_constraintTop_toTopOf="parent" />
+                        android:text="@string/lastStop"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toBottomOf="@id/MHDTableListDeparture"/>
 
                     <androidx.constraintlayout.widget.ConstraintLayout
-                        android:id="@+id/MHDTableListStuckInfo"
+                        android:id="@+id/MHDTableListOnlineInfo"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent">
-
-
-                        <TextView
-                            android:id="@+id/MHDTableListStuckSpacer"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="5dp"
-                            app:layout_constraintEnd_toEndOf="@id/MHDTableListStuckIcon"
-                            app:layout_constraintEnd_toStartOf="@id/MHDTableListStuckIcon"
-                            app:layout_constraintTop_toTopOf="@id/MHDTableListStuckIcon" />
+                        app:layout_constraintTop_toBottomOf="@id/MHDTableListLastStop">
 
                         <ImageView
-                            android:id="@+id/MHDTableListStuckIcon"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
+                            android:id="@+id/MHDTableListDelayIcon"
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
                             android:layout_marginEnd="5dp"
-                            android:background="@drawable/ic_warning"
+                            android:background="@drawable/round_shape"
+                            android:backgroundTint="@color/black"
                             android:contentDescription="@string/stuck"
-                            app:layout_constraintBottom_toBottomOf="@id/MHDTableListStuckText"
-                            app:layout_constraintEnd_toStartOf="@id/MHDTableListStuckText"
-                            app:layout_constraintTop_toTopOf="@id/MHDTableListStuckText" />
+                            app:layout_constraintBottom_toBottomOf="@id/MHDTableListDelayText"
+                            app:layout_constraintEnd_toStartOf="@id/MHDTableListDelayText"
+                            app:layout_constraintTop_toTopOf="@id/MHDTableListDelayText"/>
 
                         <TextView
-                            android:id="@+id/MHDTableListStuckText"
+                            android:id="@+id/MHDTableListDelayText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="5dp"
-                            android:text="@string/stuck"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
+                            android:text="@string/delay"
+                            app:layout_constraintEnd_toStartOf="@id/MHDTableListStuckInfo"
+                            app:layout_constraintTop_toTopOf="parent"/>
 
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:id="@+id/MHDTableListStuckInfo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent">
+
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="5dp"
+                                app:layout_constraintEnd_toEndOf="@id/MHDTableListStuckIcon"
+                                app:layout_constraintEnd_toStartOf="@id/MHDTableListStuckIcon"
+                                app:layout_constraintTop_toTopOf="@id/MHDTableListStuckIcon"/>
+
+                            <ImageView
+                                android:id="@+id/MHDTableListStuckIcon"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_marginEnd="5dp"
+                                android:background="@drawable/ic_warning"
+                                android:contentDescription="@string/stuck"
+                                app:layout_constraintBottom_toBottomOf="@id/MHDTableListStuckText"
+                                app:layout_constraintEnd_toStartOf="@id/MHDTableListStuckText"
+                                app:layout_constraintTop_toTopOf="@id/MHDTableListStuckText"/>
+
+                            <TextView
+                                android:id="@+id/MHDTableListStuckText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="5dp"
+                                android:text="@string/stuck"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintTop_toTopOf="parent"/>
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
                     </androidx.constraintlayout.widget.ConstraintLayout>
                 </androidx.constraintlayout.widget.ConstraintLayout>
-            </androidx.constraintlayout.widget.ConstraintLayout>
             </net.cachapa.expandablelayout.ExpandableLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>

@@ -3,4 +3,6 @@
     <attr name="colorMyContainer" format="reference|color" />
     <attr name="colorMyBackground" format="reference|color" />
     <attr name="colorOnMyContainer" format="reference|color" />
+    <attr name="icLauncherForeground" format="reference|color" />
+    <attr name="icLauncherBackground" format="reference|color" />
 </resources>

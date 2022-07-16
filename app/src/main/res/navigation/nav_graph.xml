@@ -1,23 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/nav_graph"
-    app:startDestination="@id/mainFragment">
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            xmlns:tools="http://schemas.android.com/tools"
+            app:startDestination="@id/navigationTable">
 
     <fragment
-        android:id="@+id/mainFragment"
+        android:id="@+id/navigationTable"
         android:name="eu.magicsk.transi.MainFragment"
-        android:label="MainFragment" >
-        <action
-            android:id="@+id/action_mainFragment_to_typeAheadFragment"
-            app:destination="@id/typeAheadFragment"/>
-        <argument
-            android:name="stopList"
-            app:argType="eu.magicsk.transi.data.remote.responses.StopsJSON"/>
+        android:label="MainFragment"
+        tools:layout="@layout/fragment_main">
     </fragment>
+    <fragment
+        android:id="@+id/navigationTripPlanner"
+        android:name="eu.magicsk.transi.TripPlannerFragment"
+        android:label="TripPlannerFragment"
+        tools:layout="@layout/fragment_trip_planner">
+    </fragment>
+    <fragment
+        android:id="@+id/navigationTimetable"
+        android:name="eu.magicsk.transi.TimetableFragment"
+        android:label="TimetableFragment"
+        tools:layout="@layout/fragment_timetable"/>
     <fragment
         android:id="@+id/typeAheadFragment"
         android:name="eu.magicsk.transi.TypeAheadFragment"
-        android:label="TypeAheadFragment" >
+        android:label="TypeAheadFragment"
+        tools:layout="@layout/fragment_type_ahead">
         <argument
             android:name="stopsList"
             app:argType="eu.magicsk.transi.data.remote.responses.StopsJSON"/>
@@ -28,7 +36,8 @@
     <fragment
         android:id="@+id/mapFragment"
         android:name="eu.magicsk.transi.MapFragment"
-        android:label="MapFragment">
+        android:label="MapFragment"
+        tools:layout="@layout/fragment_map">
         <argument
             android:name="stopsList"
             app:argType="eu.magicsk.transi.data.remote.responses.StopsJSON"/>
