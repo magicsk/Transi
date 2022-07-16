@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "813131035627",
+    "project_id": "transi-a207a",
+    "storage_bucket": "transi-a207a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:813131035627:android:7c3a738c03fbffb4a55fae",
+        "android_client_info": {
+          "package_name": "eu.magicsk.transi"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "813131035627-7tlc1hj0hujbg5i9fc77q3qkd7m3jub6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "eu.magicsk.transi",
+            "certificate_hash": "5c5fe7e262c2df8c317b8a8a8129cf0055d952fb"
+          }
+        },
+        {
+          "client_id": "813131035627-ve5gempecchkb6kpeljsj66vpjt968qv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5EEzF56VHBmxuyAvjTZLsSTjOpq8jJYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "813131035627-ve5gempecchkb6kpeljsj66vpjt968qv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -137,20 +137,13 @@ fun sendTableNotification(
     val notificationManager = context.getSystemService(NotificationManager::class.java) as NotificationManager
     val mins = (item.departureTime - System.currentTimeMillis()).toDouble() / 60000
     val hours = SimpleDateFormat("H:mm", Locale.UK).format(item.departureTime)
+    val o = if (item.type == "online") "" else "~"
     val time =
         when {
-            mins > 60 -> "at $hours"
-            mins < 0 -> "now"
-            mins < 1 -> "<1 min"
-            else -> "${mins.toInt()} min"
-        }
-    val timeText =
-        when {
-            item.type == "online" && mins < 0 -> time
-            item.type == "online" -> "in $time"
-            mins > 60 -> "at ~$hours"
-            mins < 0 -> "~now"
-            else -> "in ~$time"
+            mins > 60 -> "at ${o}$hours"
+            mins < 0 -> "${o}now"
+            mins < 1 -> "in ${o}<1 min"
+            else -> "in ${o}${mins.toInt()} min"
         }
     val formattedDeparture = SimpleDateFormat("H:mm", Locale.UK).format(item.departureTime)
     val delayText = when {
@@ -175,7 +168,7 @@ fun sendTableNotification(
     }
 
     val notificationTitle =
-        connectionInfo ?: context.getString(R.string.table_notification_title, item.line, item.headsign, timeText)
+        connectionInfo ?: context.getString(R.string.table_notification_title, item.line, item.headsign, time)
 
     val notificationSubtitle = if (item.type == "online") {
         context.getString(R.string.lastStop, item.lastStopName)

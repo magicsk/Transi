@@ -1,5 +1,7 @@
 plugins {
     id("com.android.application")
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
     id("dagger.hilt.android.plugin")
     id("kotlin-android")
     id("kotlin-kapt")
@@ -99,4 +101,9 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:18.0.2")
     implementation("com.google.maps.android:android-maps-utils:2.3.0")
     implementation("net.cachapa.expandablelayout:expandablelayout:2.9.2")
+
+    implementation(platform("com.google.firebase:firebase-bom:30.3.0"))
+    implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-crashlytics-ktx")
+
 }

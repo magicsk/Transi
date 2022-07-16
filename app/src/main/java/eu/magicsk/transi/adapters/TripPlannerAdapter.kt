@@ -1,6 +1,8 @@
 package eu.magicsk.transi.adapters
 
+import android.app.NotificationManager
 import android.content.Context
+import android.text.Html
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -8,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import eu.magicsk.transi.R
 import eu.magicsk.transi.databinding.TripPlannerListBinding
 import eu.magicsk.transi.util.Trip
-import eu.magicsk.transi.util.TripPart
+import eu.magicsk.transi.util.sendNotification
 
 class TripPlannerAdapter(
     var TripPlannerItemList: MutableList<Trip>,
@@ -38,70 +40,37 @@ class TripPlannerAdapter(
     }
 
     private fun onLongClick(
-        parts: MutableList<TripPart>,
-        departure: String,
-        arrival: String,
-        duration: String,
+        current: Trip,
         context: Context
     ) {
-//        val inputFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-//        val timeFormat = DateTimeFormatter.ofPattern("HH:mm")
-//        val notificationManager = context.getSystemService(NotificationManager::class.java) as NotificationManager
-//        val title = context.getString(R.string.trip_notification_title, from, to)
-//        var bigBody = ""
-//        parts.forEachIndexed { i, part ->
-//            val stops = part.getJSONArray("stops")
-//            bigBody += if (part.getString("type") == "\uD83D\uDEB6") {
-//                val arrivalStop = stops.getJSONObject(0).getString("name")
-//                val destinationStop = stops.getJSONObject(stops.size()).getString("name")
-//                if (arrivalStop == destinationStop && parts.size > i + 1
-//                ) {
-//                    val nextStop = parts[i + 1].getJSONArray("stops").getJSONObject(0)
-//                    try {
-//                        val platform = nextStop.getString("label")
-//                        "\t\t\t\t\uD83D\uDEB6\t\t<b>${duration.minute} min to platform $platform</b>"
-//                    } catch (e: JSONException) {
-//                        "\t\t\t\t\uD83D\uDEB6\t\t<b>${duration.minute} min transfer between platforms</b>"
-//                    }
-//                } else if (destinationStop == "") {
-//                    "\t\t\t\t\uD83D\uDEB6\t\t<b>${duration.minute} min to the destination</b>"
-//                } else {
-//                    "\t\t\t\t\uD83D\uDEB6\t\t<b>${duration.minute} min to $destinationStop</b>"
-//                }
-//            } else {
-//                val line = part.getJSONArray("line").getString(1)
-//                val departure = LocalDateTime.parse(part.getJSONObject("departure").getString("date").split(".")[0], inputFormat)
-//                val arrival = LocalDateTime.parse(part.getJSONObject("arrival").getString("date").split(".")[0], inputFormat)
-//                val duration = LocalDateTime.ofEpochSecond(
-//                    arrival.toEpochSecond(ZoneOffset.UTC) - departure.toEpochSecond(ZoneOffset.UTC),
-//                    0,
-//                    ZoneOffset.UTC
-//                )
-//                "<b>${line}</b> ▶ <b>${part.getString("destination")}</b><br>\t\t\t${departure.format(timeFormat)} ${
-//                    stops.getJSONObject(
-//                        0
-//                    ).getString("name")
-//                }<br>\t\t\t${arrival.format(timeFormat)} ${stops.getJSONObject(stops.size()).getString("name")}"
-//            }
-//            if (i != parts.size - 1) bigBody += "<br>"
-//        }
-//        val shareBody = context.getString(R.string.trip_share_body, title, bigBody)
-//        val durationText = if (duration.hour > 0) context.getString(R.string.tripDurationH)
-//            .format(duration.hour, duration.minute) else context.getString(R.string.tripDuration).format(duration.minute)
-//
-//
-//        notificationManager.sendNotification(
-//            title,
-//            context.getString(R.string.trip_notification_body, durationText, arrival, departure),
-//            Html.fromHtml(bigBody, Html.FROM_HTML_MODE_LEGACY),
-//            Html.fromHtml(shareBody, Html.FROM_HTML_MODE_LEGACY),
-//            true,
-//            context.getString(R.string.trip_planner_notification_channel_id),
-//            1,
-//            false,
-//            context,
-//            shareAction = true
-//        )
+        val notificationManager = context.getSystemService(NotificationManager::class.java) as NotificationManager
+        println(from)
+        val title = context.getString(R.string.trip_notification_title, from, to)
+        var bigBody = ""
+        current.parts.forEachIndexed { i, part ->
+            part.apply {
+                bigBody += if (type == 0) {
+                    "\uD83D\uDEB6\t\t<b>${message}</b>"
+                } else {
+                    "<b>${line}</b> ▶ <b>${headsign}</b><br>\t\t\t${departure?.time} ${departure?.stop?.name}<br>\t\t\t${arrival?.time} ${arrival?.stop?.name}"
+                }
+                if (i != current.parts.size - 1) bigBody += "<br>"
+            }
+        }
+        val shareBody = context.getString(R.string.trip_share_body, title, bigBody)
+
+        notificationManager.sendNotification(
+            title,
+            context.getString(R.string.trip_notification_body, current.duration, current.departure, current.arrival),
+            Html.fromHtml(bigBody, Html.FROM_HTML_MODE_LEGACY),
+            Html.fromHtml(shareBody, Html.FROM_HTML_MODE_LEGACY),
+            true,
+            context.getString(R.string.trip_planner_notification_channel_id),
+            1,
+            false,
+            context,
+            shareAction = true
+        )
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripPlannerViewHolder {
@@ -120,19 +89,13 @@ class TripPlannerAdapter(
             TableListItems.adapter =
                 TripPlannerStepsAdapter(current.parts) {
                     onLongClick(
-                        current.parts,
-                        current.departure,
-                        current.arrival,
-                        current.duration,
+                        current,
                         context
                     )
                 }
             root.setOnLongClickListener {
                 onLongClick(
-                    current.parts,
-                    current.departure,
-                    current.arrival,
-                    current.duration,
+                    current,
                     context
                 )
                 true

@@ -25,8 +25,8 @@ import eu.magicsk.transi.data.models.SelectedTrip
 import eu.magicsk.transi.data.remote.responses.StopsJSON
 import eu.magicsk.transi.databinding.FragmentTripPlannerBinding
 import eu.magicsk.transi.util.Trip
-import eu.magicsk.transi.util.TripPlannerJsonParser
 import eu.magicsk.transi.util.simpleErrorAlert
+import eu.magicsk.transi.util.tripPlannerJsonParser
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TripPlannerViewModel
 import java.util.*
@@ -142,7 +142,7 @@ class TripPlannerFragment : Fragment() {
                     activity?.findViewById<LinearLayout>(R.id.progressBar_bg)?.isVisible = false
                     activity?.findViewById<ProgressBar>(R.id.progressBar_ic)?.isVisible = false
                     println(trip)
-                    val parsedTrip = TripPlannerJsonParser(trip, activity!!, context!!)
+                    val parsedTrip = tripPlannerJsonParser(trip, activity!!, context!!)
                     if (parsedTrip != null) {
                         if (loadingMore) {
                             loadingMore = false

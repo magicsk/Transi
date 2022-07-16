@@ -173,8 +173,8 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                     } catch (e: JSONException) {
                         ""
                     }
-                    if (info != "" && infos != "") infos = "$infos\n\n$info" else if (info != "") infos =
-                        info
+                    if (info != "" && infos != "") infos = "$infos\n\n$info"
+                    else if (info != "") infos = info
                 }
                 activity.runOnUiThread {
                     if (infos != "" && !dismissed) {
@@ -315,9 +315,14 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
         val mins =
             (current.departureTime - System.currentTimeMillis()).toDouble() / 60000
         val hours = SimpleDateFormat("H:mm", Locale.UK).format(current.departureTime)
+        val o = if (current.type == "online") "" else "~"
         val time =
-            if (mins > 60) hours else if (mins < 0) "now" else if (mins < 1) "<1 min" else "${mins.toInt()} min"
-        val timeText = if (current.type == "online") time else if (mins < 0) "nowo" else "~ $time"
+            when {
+                mins > 60 -> "${o}$hours"
+                mins < 0 -> "${o}now"
+                mins < 1 -> "${o}<1 min"
+                else -> "${o}${mins.toInt()} min"
+            }
         val rounded =
             try {
                 current.line.contains("S") || current.line.toInt() < 10
@@ -367,17 +372,17 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
             MHDTableListHeadsign.isSelected = true
 
             // time left for departure
-            if (timeText == "now" || timeText == "nowo") {
+            if (time == "now" || time == "~now") {
                 MHDTableListTime.text = ""
                 MHDTableListTime.textSize = 12f
                 MHDTableListTime.background = ResourcesCompat.getDrawable(
                     resources,
-                    if (timeText == "now") R.drawable.ic_filled_now else R.drawable.ic_outline_now,
+                    if (time == "now") R.drawable.ic_filled_now else R.drawable.ic_outline_now,
                     context?.theme
                 )
                 (MHDTableListTime.background as AnimatedVectorDrawable).start()
             } else {
-                MHDTableListTime.text = timeText
+                MHDTableListTime.text = time
                 MHDTableListTime.textSize = 18f
                 MHDTableListTime.background = null
             }

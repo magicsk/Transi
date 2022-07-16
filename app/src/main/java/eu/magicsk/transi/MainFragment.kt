@@ -10,10 +10,7 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isVisible
@@ -120,6 +117,7 @@ class MainFragment : Fragment() {
             typeAheadBundle.putBoolean("directions", true)
             typeAheadBundle.putString("origin", "editText")
             typeAheadFragment.arguments = typeAheadBundle
+            activity?.findViewById<LinearLayout>(R.id.LoadingOverlay)?.visibility = View.GONE
             binding.MHDTableListConnectInfo.visibility = View.GONE
         }
         mainViewModel.actualLocation.observe(viewLifecycleOwner) { location ->

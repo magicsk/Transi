@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.os.Parcelable
 import eu.magicsk.transi.R
-import kotlinx.android.parcel.Parcelize
+import kotlinx.parcelize.Parcelize
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -31,6 +31,7 @@ data class TripPart(
     val arrival: TripDA?,
     val duration: String?,
     val stops: MutableList<TripStop>,
+    val message: String?
 ) : Parcelable, Serializable
 
 @Parcelize
@@ -48,7 +49,7 @@ data class TripDA(
     val stop: TripStop,
 ) : Parcelable, Serializable
 
-fun TripPlannerJsonParser(data: JSONObject, activity: Activity, context: Context): MutableList<Trip>? {
+fun tripPlannerJsonParser(data: JSONObject, activity: Activity, context: Context): MutableList<Trip>? {
     val timeFormat = DateTimeFormatter.ofPattern("HH:mm")
     val inputFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     try {
@@ -91,65 +92,69 @@ fun TripPlannerJsonParser(data: JSONObject, activity: Activity, context: Context
                         LocalDateTime.parse(currentPart.getJSONObject("departure").getString("date").split(".")[0], inputFormat)
                     val partArrival =
                         LocalDateTime.parse(currentPart.getJSONObject("arrival").getString("date").split(".")[0], inputFormat)
-                    val partDuration = LocalDateTime.ofEpochSecond(
+                    val partDurationRaw = LocalDateTime.ofEpochSecond(
                         partArrival.toEpochSecond(ZoneOffset.UTC) - partDeparture.toEpochSecond(ZoneOffset.UTC),
                         0,
                         ZoneOffset.UTC
                     )
+                    val partDuration =
+                        if (partDurationRaw.minute > 59) "${partDurationRaw.hour} h ${partDurationRaw.minute}" else partDurationRaw.minute.toString()
                     val stops = currentPart.getJSONArray("stops")
-                    val departureStop = stops.getJSONObject(0)
-                    val arrivalStop = stops.getJSONObject(stops.size())
+                    val departureStopJson = stops.getJSONObject(0)
+                    val arrivalStopJson = stops.getJSONObject(stops.size())
+                    fun parsedStop(stopJson: JSONObject, time: LocalDateTime): TripStop {
+                        return TripStop(
+                            time = time.format(timeFormat),
+                            name = stopJson.getString("name"),
+                            zone = try {
+                                stopJson.getJSONObject("fare_zones").keys().next()
+                            } catch (e: JSONException) {
+                                "none"
+                            },
+                            platform = try {
+                                stopJson.getString("label")
+                            } catch (e: JSONException) {
+                                null
+                            },
+                            request = try {
+                                stopJson.getString("request_stop") == "1"
+                            } catch (e: JSONException) {
+                                false
+                            }
+                        )
+                    }
+
+                    val arrivalStop = parsedStop(arrivalStopJson, partArrival)
+                    val departureStop = parsedStop(departureStopJson, partDeparture)
                     val type = currentPart.getString("type") == "\uD83D\uDEB6"
-                    println(partDuration.minute)
+                    val arrivalPlace = if (arrivalStop.name == departureStop.name && j + 1 < parts.length()) {
+                        try {
+                            "to platform ${
+                                parts.getJSONObject(j + 1).getJSONArray("stops").getJSONObject(0).getString("label")
+                            }"
+                        } catch (e: JSONException) {
+                            "transfer between platforms"
+                        }
+                    } else if (arrivalStop.name != "") "to ${arrivalStop.name}" else "to the destination"
+                    val message = "$partDuration min $arrivalPlace"
 
                     val part = TripPart(
                         type = if (type) 0 else 1,
                         line = if (type) null else currentPart.getJSONArray("line").getString(1),
                         headsign = if (type) null else currentPart.getString("destination"),
-                        duration = LocalDateTime.ofEpochSecond(
-                            partArrival.toEpochSecond(ZoneOffset.UTC) - partDuration.toEpochSecond(ZoneOffset.UTC),
-                            0,
-                            ZoneOffset.UTC
-                        ).minute.toString(),
+                        duration = partDuration,
                         departure = if (type) null else TripDA(
                             time = partDeparture.format(timeFormat),
-                            stop = TripStop(
-                                time = partDeparture.format(timeFormat),
-                                name = departureStop.getString("name"),
-                                zone = departureStop.getJSONObject("fare_zones").keys().next(),
-                                platform = try {
-                                    departureStop.getString("label")
-                                } catch (e: JSONException) {
-                                    null
-                                },
-                                request = try {
-                                    departureStop.getString("request_stop") == "1"
-                                } catch (e: JSONException) {
-                                    false
-                                }
-                            )
+                            stop = departureStop
                         ),
                         arrival = if (type) null else TripDA(
                             time = partArrival.format(timeFormat),
-                            stop = TripStop(
-                                time = partArrival.format(timeFormat),
-                                name = arrivalStop.getString("name"),
-                                zone = arrivalStop.getJSONObject("fare_zones").keys().next(),
-                                platform = try {
-                                    arrivalStop.getString("label")
-                                } catch (e: JSONException) {
-                                    null
-                                },
-                                request = try {
-                                    arrivalStop.getString("request_stop") == "1"
-                                } catch (e: JSONException) {
-                                    false
-                                }
-                            )
+                            stop = arrivalStop
                         ),
-                        stops = mutableListOf()
+                        stops = mutableListOf(),
+                        message = message
                     )
-                    for (k in 1 until stops.length()-1) {
+                    for (k in 1 until stops.length() - 1) {
                         val currentStop = stops.getJSONObject(k)
                         val stopsDeparture = try {
                             LocalDateTime.parse(
@@ -162,7 +167,11 @@ fun TripPlannerJsonParser(data: JSONObject, activity: Activity, context: Context
                         val stop = TripStop(
                             time = stopsDeparture.format(timeFormat),
                             name = currentStop.getString("name"),
-                            zone = currentStop.getJSONObject("fare_zones").keys().next(),
+                            zone = try {
+                                currentStop.getJSONObject("fare_zones").keys().next()
+                            } catch (e: JSONException) {
+                                "none"
+                            },
                             platform = try {
                                 currentStop.getString("label")
                             } catch (e: JSONException) {

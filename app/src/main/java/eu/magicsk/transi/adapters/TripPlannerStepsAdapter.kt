@@ -57,22 +57,7 @@ class TripPlannerStepsAdapter(
             when (this) {
                 is TripPlannerListStepWalkingBinding -> {
                     val bindingB = this as TripPlannerListStepWalkingBinding
-                    println(current.arrival?.stop?.name)
-                    println(current.departure?.stop?.name)
-                    if (current.arrival?.stop?.name == current.departure?.stop?.name && itemCount > position + 1) {
-                        val platform = TripPlannerStepList[position + 1].stops.first().platform
-                        if (platform != null) {
-                            bindingB.TripPlannerListStepWalkingText.text = "${current.duration} min to platform $platform"
-                        } else {
-                            bindingB.TripPlannerListStepWalkingText.text =
-                                "${current.duration} min transfer between platforms"
-                        }
-
-                    } else if (current.arrival?.stop?.name == "") {
-                        bindingB.TripPlannerListStepWalkingText.text = "${current.duration} min to the destination"
-                    } else {
-                        bindingB.TripPlannerListStepWalkingText.text = "${current.duration} min to ${current.arrival?.stop?.name}"
-                    }
+                    bindingB.TripPlannerListStepWalkingText.text = current.message
                     bindingB.TripPlannerListStepWalkingText.isSelected = true
                 }
 
