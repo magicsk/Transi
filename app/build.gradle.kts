@@ -9,14 +9,8 @@ plugins {
     id("androidx.navigation.safeargs.kotlin")
     id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
-
+@Suppress("UnstableApiUsage")
 android {
-    signingConfigs {
-        create("release") {
-            storeFile = file("/Users/magic_sk/Development/android/transi.jks")
-            keyAlias = "key0"
-        }
-    }
     compileSdk = 31
 
     defaultConfig {
@@ -24,7 +18,7 @@ android {
         minSdk = 26
         targetSdk = 31
         versionCode = 1
-        versionName = "1.2.0"
+        versionName = project.properties["version"] as String?
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -34,13 +28,12 @@ android {
     }
     buildTypes {
         release {
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             isMinifyEnabled = true
