@@ -1,4 +1,4 @@
-const DEFAULT_CONFIG = {
+module.exports = {
   types: [
     { types: ["feat", "feature"], label: "Features" },
     { types: ["fix", "bugfix"], label: "Bugfixes" },
@@ -19,20 +19,13 @@ const DEFAULT_CONFIG = {
     let text = `\n## ${label}\n`;
 
     commits.forEach((commit) => {
-      const scope = commit.scope ? `**${commit.scope}:** ` : "";
-      text += `- ${scope}${commit.subject}\n`;
+      text += `- ${commit.subject}\n`;
     });
 
     return text;
-  },
-
-  renderNotes: function (notes) {
-    return "";
   },
 
   renderChangelog: function (release, changes) {
     return changes;
   },
 };
-
-module.exports = DEFAULT_CONFIG;
