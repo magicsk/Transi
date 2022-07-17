@@ -30,6 +30,12 @@ jobs:
       run: APK_VERSION=$(./gradlew properties -q | grep "version:" | awk '{print v$2}') &&
             echo "::set-output name=version::$APK_VERSION" &&
             echo "::set-output name=tag::v$APK_VERSION"
+    - name: Build signed apk
+      run: ./gradlew assembleRelease
+        -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/transi.jks
+        -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }}
+        -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }}
+        -Pandroid.injected.signing.key.password=${{ secrets.KEYSTORE_PASSWORD }}
     - name: Create new tag
       if: steps.apk.outputs.tag != steps.previoustag.outputs.tag
       run: git tag ${{ steps.apk.outputs.tag }} && git push --tags && git fetch --tags
@@ -50,12 +56,6 @@ jobs:
         tag_name: ${{ steps.apk.outputs.tag }}
         release_name: Transi ${{ steps.apk.outputs.tag }}
         body: ${{ steps.changelog.outputs.changes }}
-    - name: Build signed apk
-      run: ./gradlew assembleRelease
-            -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/transi.jks 
-            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} 
-            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }}
-            -Pandroid.injected.signing.key.password=${{ secrets.KEYSTORE_PASSWORD }}
     - name: Upload apk
       uses: actions/upload-artifact@v3
       with:
@@ -89,10 +89,10 @@ jobs:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_KEY }}'
       - name: 'Set up Cloud SDK'
         uses: google-github-actions/setup-gcloud@v0
-      - name: Set current project
-        run: gcloud config set project ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: 
       - name: Run Firebase Robo test
-        run: gcloud firebase test android run
+        run: gcloud config set project ${{ secrets.FIREBASE_PROJECT_ID }} && 
+             gcloud firebase test android run
               --app app-release/app-release.apk
               --device model=oriole,version=33,locale=en,orientation=portrait
               --device model=redfin,version=30,locale=en,orientation=landscape
