@@ -12,12 +12,19 @@ class TableInfoAdapter(
 ) : RecyclerView.Adapter<TableInfoAdapter.TableInfoViewHolder>() {
     class TableInfoViewHolder(val binding: TableInfoListBinding) :
         RecyclerView.ViewHolder(binding.root)
+
     private var _binding: TableInfoListBinding? = null
     private val binding get() = _binding!!
 
     fun removeAt(pos: Int) {
         TableInfoList.removeAt(pos)
         notifyItemRemoved(pos)
+    }
+
+    fun add(info: String) {
+        TableInfoList.clear()
+        TableInfoList.add(info)
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TableInfoViewHolder {

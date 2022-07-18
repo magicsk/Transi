@@ -142,7 +142,7 @@ class TripPlannerFragment : Fragment() {
                     activity?.findViewById<LinearLayout>(R.id.progressBar_bg)?.isVisible = false
                     activity?.findViewById<ProgressBar>(R.id.progressBar_ic)?.isVisible = false
                     println(trip)
-                    val parsedTrip = tripPlannerJsonParser(trip, activity!!, context!!)
+                    val parsedTrip = tripPlannerJsonParser(trip, it, context!!)
                     if (parsedTrip != null) {
                         if (loadingMore) {
                             loadingMore = false

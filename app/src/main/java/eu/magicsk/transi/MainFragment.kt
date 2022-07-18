@@ -16,7 +16,9 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.color.MaterialColors
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.MHDTableAdapter
@@ -108,109 +110,124 @@ class MainFragment : Fragment() {
             tableAdapter.startUpdater(this)
         }
 
-        mainViewModel.stopList.observe(viewLifecycleOwner) { stopsJSON ->
-            stopList = stopsJSON
-            tableAdapter.putStopList(stopList)
-            val typeAheadBundle = Bundle()
-            typeAheadBundle.clear()
-            typeAheadBundle.putSerializable("stopsList", stopList)
-            typeAheadBundle.putBoolean("directions", true)
-            typeAheadBundle.putString("origin", "editText")
-            typeAheadFragment.arguments = typeAheadBundle
-            activity?.findViewById<LinearLayout>(R.id.LoadingOverlay)?.visibility = View.GONE
-            binding.MHDTableListConnectInfo.visibility = View.GONE
-        }
-        mainViewModel.actualLocation.observe(viewLifecycleOwner) { location ->
-            actualLocation = location
-            if (location != null && stopList.size > 1 && nearestSwitching && selected != stopList[0]) {
-                val id = selected.id
-                selected = stopList[0]
-                binding.MHDTableStopName?.text = selected.name
-                binding.positionBtn?.icon = ResourcesCompat.getDrawable(
-                    resources, R.drawable.ic_my_location, context?.theme
-                )
-                if (id != selected.id) {
-                    tableAdapter.ioDisconnect()
-                    tableAdapter.ioConnect(selected.id)
-                }
+        binding.apply {
+
+            mainViewModel.stopList.observe(viewLifecycleOwner) { stopsJSON ->
+                stopList = stopsJSON
+                tableAdapter.putStopList(stopList)
+                val typeAheadBundle = Bundle()
+                typeAheadBundle.clear()
+                typeAheadBundle.putSerializable("stopsList", stopList)
+                typeAheadBundle.putBoolean("directions", true)
+                typeAheadBundle.putString("origin", "editText")
+                typeAheadFragment.arguments = typeAheadBundle
+                activity?.findViewById<LinearLayout>(R.id.LoadingOverlay)?.visibility = View.GONE
+                MHDTableListConnectInfo.visibility = View.GONE
             }
-        }
-        mainViewModel.selectedStop.observe(viewLifecycleOwner) { selectedStop ->
-            activity?.window?.statusBarColor = MaterialColors.getColor(view, R.attr.colorMyBackground)
-            selected = selectedStop
-            nearestSwitching = false
-            binding.editText.clearFocus()
-            binding.editText.setText(selected.name)
-            binding.MHDTableStopName.text = selected.name
-            binding.MHDTableStopName.isSelected = true
-            binding.positionBtn.icon = ResourcesCompat.getDrawable(
-                resources, R.drawable.ic_location_disabled, context?.theme
-            )
-            tableAdapter.ioDisconnect()
-            tableAdapter.ioConnect(selected.id)
-        }
-
-        if (nearestSwitching) {
-            if (actualLocation == null) {
-                binding.positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_location_search, context?.theme)
-                (binding.positionBtn.icon as AnimatedVectorDrawable).start()
-            } else binding.positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
-        } else {
-            binding.positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
-        }
-
-        binding.positionBtn.setOnClickListener {
-            if (actualLocation != null || stopList.size < 1) {
-                nearestSwitching = !nearestSwitching
-                if (nearestSwitching) {
-                    binding.positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
+            mainViewModel.actualLocation.observe(viewLifecycleOwner) { location ->
+                actualLocation = location
+                if (location != null && stopList.size > 1 && nearestSwitching && selected != stopList[0]) {
+                    val id = selected.id
                     selected = stopList[0]
-                    binding.MHDTableStopName.text = selected.name
-                    tableAdapter.ioDisconnect()
-                    tableAdapter.ioConnect(selected.id)
-                } else {
-                    binding.positionBtn.icon =
-                        ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
+                    MHDTableStopName?.text = selected.name
+                    positionBtn?.icon = ResourcesCompat.getDrawable(
+                        resources, R.drawable.ic_my_location, context?.theme
+                    )
+                    if (id != selected.id) {
+                        tableAdapter.ioDisconnect()
+                        tableAdapter.ioConnect(selected.id)
+                    }
                 }
-            } else if (actualLocation != null) {
-                Toast.makeText(context, "Actual location not available.", Toast.LENGTH_SHORT).show()
+            }
+            mainViewModel.selectedStop.observe(viewLifecycleOwner) { selectedStop ->
+                activity?.window?.statusBarColor = MaterialColors.getColor(view, R.attr.colorMyBackground)
+                selected = selectedStop
+                nearestSwitching = false
+                editText.clearFocus()
+                editText.setText(selected.name)
+                MHDTableStopName.text = selected.name
+                MHDTableStopName.isSelected = true
+                positionBtn.icon = ResourcesCompat.getDrawable(
+                    resources, R.drawable.ic_location_disabled, context?.theme
+                )
+                tableAdapter.ioDisconnect()
+                tableAdapter.ioConnect(selected.id)
+            }
+
+            if (nearestSwitching) {
+                if (actualLocation == null) {
+                    positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_location_search, context?.theme)
+                    (positionBtn.icon as AnimatedVectorDrawable).start()
+                } else positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
             } else {
-                Toast.makeText(context, "Stop list not available.", Toast.LENGTH_SHORT).show()
+                positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
             }
-        }
 
-        binding.editText.setOnFocusChangeListener { _, b ->
-            if (b) {
-                binding.MHDTable.visibility = View.GONE
-                binding.searchFragmentLayout.visibility = View.VISIBLE
-                activity?.supportFragmentManager?.beginTransaction()?.apply {
-                    replace(R.id.searchFragmentLayout, typeAheadFragment).addToBackStack("typeAhead").commit()
+            positionBtn.setOnClickListener {
+                if (actualLocation != null || stopList.size < 1) {
+                    nearestSwitching = !nearestSwitching
+                    if (nearestSwitching) {
+                        positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
+                        selected = stopList[0]
+                        MHDTableStopName.text = selected.name
+                        tableAdapter.ioDisconnect()
+                        tableAdapter.ioConnect(selected.id)
+                    } else {
+                        positionBtn.icon =
+                            ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
+                    }
+                } else if (actualLocation != null) {
+                    Toast.makeText(context, "Actual location not available.", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Stop list not available.", Toast.LENGTH_SHORT).show()
                 }
             }
-        }
 
-        activity?.supportFragmentManager?.addOnBackStackChangedListener {
-            val fragment = activity?.supportFragmentManager?.findFragmentById(R.id.searchFragmentLayout)
-            if (fragment == null) {
-                activity?.findViewById<EditText>(R.id.editText)?.clearFocus()
-                activity?.findViewById<ConstraintLayout>(R.id.MHDTable)?.isVisible = true
-                activity?.findViewById<FrameLayout>(R.id.searchFragmentLayout)?.isVisible = true
+            editText.setOnFocusChangeListener { _, b ->
+                if (b) {
+                    MHDTable.visibility = View.GONE
+                    searchFragmentLayout.visibility = View.VISIBLE
+                    activity?.supportFragmentManager?.beginTransaction()?.apply {
+                        replace(R.id.searchFragmentLayout, typeAheadFragment).addToBackStack("typeAhead").commit()
+                    }
+                }
+            }
+
+            activity?.supportFragmentManager?.addOnBackStackChangedListener {
+                val fragment = activity?.supportFragmentManager?.findFragmentById(R.id.searchFragmentLayout)
+                if (fragment == null) {
+                    activity?.findViewById<EditText>(R.id.editText)?.clearFocus()
+                    activity?.findViewById<ConstraintLayout>(R.id.MHDTable)?.isVisible = true
+                    activity?.findViewById<FrameLayout>(R.id.searchFragmentLayout)?.isVisible = true
+                }
+            }
+
+            if (selected.html != "none") MHDTableStopName.text = selected.name
+            val calendar = Calendar.getInstance()
+            MHDTableActualTime.text = context?.getString(
+                R.string.actualTime,
+                calendar.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0'),
+                calendar.get(Calendar.MINUTE).toString().padStart(2, '0'),
+                calendar.get(Calendar.SECOND).toString().padStart(2, '0')
+            )
+            MHDTableList.adapter = tableAdapter
+            MHDTableList.layoutManager = LinearLayoutManager(context)
+            MHDTableList.itemAnimator?.changeDuration = 0
+            MHDTableInfoText.adapter = tableInfoAdapter
+            MHDTableInfoText.layoutManager = LinearLayoutManager(context)
+            ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
+                override fun onMove(v: RecyclerView, h: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) =
+                    false
+
+                override fun onSwiped(h: RecyclerView.ViewHolder, dir: Int) {
+                    tableInfoAdapter.removeAt(h.adapterPosition)
+                }
+            }).attachToRecyclerView(MHDTableInfoText)
+            mainViewModel.tableInfo.observe(viewLifecycleOwner) { tableInfo ->
+                println(tableInfo)
+                tableInfoAdapter.add(tableInfo)
             }
         }
-
-        if (selected.html != "none") binding.MHDTableStopName.text = selected.name
-        val calendar = Calendar.getInstance()
-        binding.MHDTableActualTime.text = context?.getString(
-            R.string.actualTime,
-            calendar.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0'),
-            calendar.get(Calendar.MINUTE).toString().padStart(2, '0'),
-            calendar.get(Calendar.SECOND).toString().padStart(2, '0')
-        )
-        binding.MHDTableList.adapter = tableAdapter
-        binding.MHDTableList.layoutManager = LinearLayoutManager(context)
-        binding.MHDTableList.itemAnimator?.changeDuration = 0
-        binding.MHDTableInfoText.adapter = tableInfoAdapter
-        binding.MHDTableInfoText.layoutManager = LinearLayoutManager(context)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

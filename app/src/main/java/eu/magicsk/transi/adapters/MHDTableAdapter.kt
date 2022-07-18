@@ -14,8 +14,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isVisible
 import androidx.core.view.setPadding
-import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import eu.magicsk.transi.R
@@ -25,10 +25,10 @@ import eu.magicsk.transi.data.remote.responses.StopsJSON
 import eu.magicsk.transi.data.remote.responses.StopsJSONItem
 import eu.magicsk.transi.databinding.TableListItemBinding
 import eu.magicsk.transi.util.*
+import eu.magicsk.transi.view_models.MainViewModel
 import io.socket.client.IO
 import io.socket.client.Socket
 import org.json.JSONArray
-import org.json.JSONException
 import org.json.JSONObject
 import java.net.URI
 import java.text.SimpleDateFormat
@@ -112,9 +112,11 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
         socket
             .emit("tabStart", tabArgs)
             .emit("infoStart")
+            .emit("infoStart")
     }
 
     fun ioObservers(activity: Activity) {
+        val mainViewModel = ViewModelProvider(activity as ViewModelStoreOwner).get(MainViewModel::class.java)
         val connectInfo = activity.findViewById<TextView>(R.id.MHDTableListConnectInfo)
         socket
             .on(Socket.EVENT_CONNECTING) {
@@ -165,38 +167,8 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                 }
             }
             .on("iText") {
-                var infos = ""
-                val data = JSONArray(it[0].toString())
-                for (i in 0 until data.length()) {
-                    val info = try {
-                        data.getString(i)
-                    } catch (e: JSONException) {
-                        ""
-                    }
-                    if (info != "" && infos != "") infos = "$infos\n\n$info"
-                    else if (info != "") infos = info
-                }
                 activity.runOnUiThread {
-                    if (infos != "" && !dismissed) {
-                        val adapter = TableInfoAdapter(mutableListOf(infos))
-                        activity.findViewById<RecyclerView>(R.id.MHDTableInfoText)?.let { rv ->
-                            rv.adapter = adapter
-                            ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
-                                override fun onMove(v: RecyclerView, h: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) =
-                                    false
-
-                                override fun onSwiped(h: RecyclerView.ViewHolder, dir: Int) {
-                                    adapter.removeAt(h.adapterPosition)
-                                    rv.visibility = View.GONE
-                                    dismissed = true
-                                }
-                            }).attachToRecyclerView(rv)
-                            rv.layoutManager = LinearLayoutManager(activity)
-                            rv.visibility = View.VISIBLE
-                        }
-                    } else {
-                        activity.findViewById<RecyclerView>(R.id.MHDTableInfoText)?.visibility = View.GONE
-                    }
+                    mainViewModel.setTableInfo(JSONArray(it[0].toString()))
                 }
             }
     }
@@ -263,46 +235,6 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
             mhdTable.sortedTabs.sortBy { x -> x.departureTime }
             notifyDataSetChanged()
         }
-
-
-//        if (items.isNotEmpty()) {
-//            val tempList = mutableListOf<MHDTableData>()
-//            if (mhdTable.sortedTabs.isNotEmpty()) {
-//                val platform = items[0].platform
-//                val forDelete = ArrayList<Int>()
-//                for (i in 0 until itemCount) {
-//                    if (mhdTable.sortedTabs[i].platform == platform) {
-//                        var found = false
-//                        for (j in 0 until items.size) {
-//                            if (mhdTable.sortedTabs[i].Id == items[j].Id) {
-//                                found = true
-//                                items[j].expanded = mhdTable.sortedTabs[i].expanded
-//                                mhdTable.sortedTabs[i] = items[j]
-//                                items.removeAt(j)
-//                                notifyItemChanged(i)
-//                                break
-//                            }
-//                        }
-//                        if (!found) {
-//                            forDelete.add(i)
-//                        }
-//                    }
-//                }
-//                for (i in forDelete.size - 1 downTo 0) {
-//                    mhdTable.sortedTabs.removeAt(forDelete[i])
-//                    if (i == 0 || i == itemCount - 1) notifyDataSetChanged() else notifyItemRemoved(i)
-//                }
-//            }
-//            tempList.addAll(mhdTable.sortedTabs)
-//            mhdTable.sortedTabs.addAll(items)
-//            mhdTable.sortedTabs.sortBy { x -> x.departureTime }
-//            for (i in mhdTable.sortedTabs.size - 1 downTo tempList.size) {
-//                notifyItemInserted(i)
-//            }
-//            for (i in 0 until tempList.size) {
-//                if (mhdTable.sortedTabs[i] != tempList[i]) notifyItemChanged(i)
-//            }
-//        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MHDTableViewHolder {

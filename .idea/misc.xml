@@ -41,7 +41,7 @@
         <entry key="app/src/main/res/layout/fragment_type_ahead.xml" value="0.3734375" />
         <entry key="app/src/main/res/layout/main_toolbar.xml" value="0.5484375" />
         <entry key="app/src/main/res/layout/stops_list_item.xml" value="0.43931159420289856" />
-        <entry key="app/src/main/res/layout/table_info_list.xml" value="0.359375" />
+        <entry key="app/src/main/res/layout/table_info_list.xml" value="0.25" />
         <entry key="app/src/main/res/layout/table_list_item.xml" value="0.5217819213867188" />
         <entry key="app/src/main/res/layout/trip_planner_list.xml" value="0.3918955485026042" />
         <entry key="app/src/main/res/layout/trip_planner_list_step_transit.xml" value="0.3561050415039062" />
