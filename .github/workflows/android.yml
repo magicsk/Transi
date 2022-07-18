@@ -61,7 +61,8 @@ jobs:
       with:
         name: app-release
         path: app/build/outputs/apk/release/app-release.apk
-    - name: Upload release asset 
+    - name: Upload release asset
+      if: steps.apk.outputs.tag != steps.previoustag.outputs.tag
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -75,6 +76,9 @@ jobs:
     name: Run UI tests with Firebase Test Lab
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
 
     steps:
       - uses: actions/checkout@v3
@@ -83,18 +87,18 @@ jobs:
         with:
           name: app-release
       - name: Login to Google Cloud
-        id: 'auth'
-        uses: 'google-github-actions/auth@v0'
+        id: auth
+        uses: google-github-actions/auth@v0
         with:
-          credentials_json: '${{ secrets.FIREBASE_SERVICE_KEY }}'
-      - name: 'Set up Cloud SDK'
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_KEY }}
+      - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v0
-        run: 
-      - name: Run Firebase Robo test
-        run: gcloud config set project ${{ secrets.FIREBASE_PROJECT_ID }} && 
-             gcloud firebase test android run
-              --app app-release/app-release.apk
-              --device model=oriole,version=33,locale=en,orientation=portrait
-              --device model=redfin,version=30,locale=en,orientation=landscape
-              --device model=x1q,version=29,locale=en,orientation=portrait
-              --device model=phoenix_sprout,version=28,locale=en,orientation=portrait
+      - id: gcloud
+        name: Run Firebase Robo test
+        run: gcloud config set project ${{ secrets.FIREBASE_PROJECT_ID }} &&
+          gcloud firebase test android run
+          --app app-release.apk
+          --device model=oriole,version=33,locale=en,orientation=portrait
+          --device model=redfin,version=30,locale=en,orientation=landscape
+          --device model=x1q,version=29,locale=en,orientation=portrait
+          --device model=phoenix_sprout,version=28,locale=en,orientation=portrait
