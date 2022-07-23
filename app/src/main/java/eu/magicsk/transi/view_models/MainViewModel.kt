@@ -13,7 +13,7 @@ class MainViewModel : ViewModel() {
     val stopList = MutableLiveData<StopsJSON>()
     val actualLocation = MutableLiveData<Location>()
     val selectedStop = MutableLiveData<StopsJSONItem>()
-    val tableInfo = MutableLiveData<String>()
+    val tableInfo = MutableLiveData("")
 
     fun setStopList(value: StopsJSON) {
         stopList.value = value
@@ -29,13 +29,14 @@ class MainViewModel : ViewModel() {
     }
 
     fun setTableInfo(value: JSONArray) {
+        tableInfo.value = ""
         for (i in 0 until value.length()) {
             val info = try {
                 value.getString(i)
             } catch (e: JSONException) {
                 ""
             }
-            if (info != "" && tableInfo.value != "") tableInfo.value = "$tableInfo\n\n$info"
+            if (info != "" && tableInfo.value != "") tableInfo.value = "${tableInfo.value}\n\n$info"
             else if (info != "") tableInfo.value = info
         }
     }

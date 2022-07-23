@@ -44,12 +44,11 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
     private val options = IO.Options()
     private val socket: Socket = IO.socket(uri, options)
     private val tabArgs = JSONArray()
-    var connected = false
-    var dismissed = false
     private var stopList: StopsJSON = StopsJSON()
     private var actualStopId = 0
     private val mhdTable = MHDTable()
     private var updateTimeStamp = 0L
+    var connected = false
 
     private fun getStopById(id: Int): StopsJSONItem? {
         stopList.let {

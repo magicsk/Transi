@@ -49,7 +49,6 @@ class MainFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         infoDismissed = savedInstanceState?.get("infoDismissed") as? Boolean ?: infoDismissed
-        tableAdapter.dismissed = infoDismissed
         selected = savedInstanceState?.getSerializable("selectedStop") as? StopsJSONItem ?: selected
         nearestSwitching = savedInstanceState?.getBoolean("nearestSwitching") ?: nearestSwitching
         sharedPreferences = context?.getSharedPreferences("Transi", Context.MODE_PRIVATE)!!
@@ -221,18 +220,17 @@ class MainFragment : Fragment() {
 
                 override fun onSwiped(h: RecyclerView.ViewHolder, dir: Int) {
                     tableInfoAdapter.removeAt(h.adapterPosition)
+                    infoDismissed = false
                 }
             }).attachToRecyclerView(MHDTableInfoText)
             mainViewModel.tableInfo.observe(viewLifecycleOwner) { tableInfo ->
-                println(tableInfo)
-                tableInfoAdapter.add(tableInfo)
+                if (infoDismissed)
+                    tableInfoAdapter.add(tableInfo)
             }
         }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        infoDismissed = tableAdapter.dismissed
-        println("onSave")
         println(infoDismissed)
         outState.putBoolean("infoDismissed", infoDismissed)
         outState.putSerializable("selectedStop", selected)
