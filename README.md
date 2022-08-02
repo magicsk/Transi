@@ -3,6 +3,8 @@
 Native android app with list of virtual tables,
 trip planner and timetables for MHD in Bratislava.
 
+<img src="https://user-images.githubusercontent.com/49265057/182362196-e6a4cfb8-79d5-48f6-b170-466e203b1b38.jpeg" alt="MHDTable" width="300"/>
+
 ## Features
 
 On virtual table you can see actual departures
