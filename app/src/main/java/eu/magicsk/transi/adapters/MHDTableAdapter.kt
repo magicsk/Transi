@@ -29,6 +29,7 @@ import eu.magicsk.transi.view_models.MainViewModel
 import io.socket.client.IO
 import io.socket.client.Socket
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.net.URI
 import java.text.SimpleDateFormat
@@ -99,9 +100,7 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
 
     fun ioConnect(stopId: Int) {
         actualStopId = stopId
-        if (connected) {
-            ioDisconnect()
-        }
+        ioDisconnect()
         println("connecting")
         options.reconnection = true
         options.path = "/rt/sio2"
@@ -156,18 +155,27 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                     .emit("infoStart")
             }
             .on("vInfo") {
-                mhdTable.addVehicleInfo(JSONObject(it[0].toString()))
+                try {
+                    mhdTable.addVehicleInfo(JSONObject(it[0].toString()))
+                } catch (_: JSONException) {
+                }
             }
             .on("tabs") {
                 updateTimeStamp = System.currentTimeMillis()
                 activity.runOnUiThread {
                     connectInfo?.visibility = View.GONE
-                    addItems(mhdTable.addTabs(JSONObject(it[0].toString())))
+                    try {
+                        addItems(mhdTable.addTabs(JSONObject(it[0].toString())))
+                    } catch (_: JSONException) {
+                    }
                 }
             }
             .on("iText") {
                 activity.runOnUiThread {
-                    mainViewModel.setTableInfo(JSONArray(it[0].toString()))
+                    try {
+                        mainViewModel.setTableInfo(JSONArray(it[0].toString()))
+                    } catch (_: JSONException) {
+                    }
                 }
             }
     }

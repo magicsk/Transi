@@ -57,6 +57,7 @@
                 android:id="@+id/MHDTableInfoText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:visibility="gone"
                 app:layout_constraintTop_toBottomOf="@id/MHDTableStopName"/>
 
             <androidx.recyclerview.widget.RecyclerView

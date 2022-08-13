@@ -133,7 +133,6 @@ class MainFragment : Fragment() {
                         resources, R.drawable.ic_my_location, context?.theme
                     )
                     if (id != selected.id) {
-                        tableAdapter.ioDisconnect()
                         tableAdapter.ioConnect(selected.id)
                     }
                 }
@@ -149,7 +148,6 @@ class MainFragment : Fragment() {
                 positionBtn.icon = ResourcesCompat.getDrawable(
                     resources, R.drawable.ic_location_disabled, context?.theme
                 )
-                tableAdapter.ioDisconnect()
                 tableAdapter.ioConnect(selected.id)
             }
 
@@ -169,7 +167,6 @@ class MainFragment : Fragment() {
                         positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
                         selected = stopList[0]
                         MHDTableStopName.text = selected.name
-                        tableAdapter.ioDisconnect()
                         tableAdapter.ioConnect(selected.id)
                     } else {
                         positionBtn.icon =
@@ -220,13 +217,16 @@ class MainFragment : Fragment() {
 
                 override fun onSwiped(h: RecyclerView.ViewHolder, dir: Int) {
                     tableInfoAdapter.removeAt(h.adapterPosition)
-                    infoDismissed = false
+                    infoDismissed = true
                 }
             }).attachToRecyclerView(MHDTableInfoText)
             mainViewModel.tableInfo.observe(viewLifecycleOwner) { tableInfo ->
-                if (infoDismissed)
+                if (!infoDismissed && tableInfo != "") {
                     tableInfoAdapter.add(tableInfo)
+                    MHDTableInfoText.isVisible = true
+                }
             }
+            MHDTableInfoText.isVisible = tableInfoAdapter.itemCount > 0
         }
     }
 

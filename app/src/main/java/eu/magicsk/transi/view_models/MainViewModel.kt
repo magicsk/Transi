@@ -33,7 +33,7 @@ class MainViewModel : ViewModel() {
         for (i in 0 until value.length()) {
             val info = try {
                 value.getString(i)
-            } catch (e: JSONException) {
+            } catch (_: JSONException) {
                 ""
             }
             if (info != "" && tableInfo.value != "") tableInfo.value = "${tableInfo.value}\n\n$info"
