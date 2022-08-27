@@ -6,6 +6,8 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.PorterDuff
 import android.graphics.drawable.AnimatedVectorDrawable
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -49,6 +51,7 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
     private var actualStopId = 0
     private val mhdTable = MHDTable()
     private var updateTimeStamp = 0L
+    private val filterHandler = Handler(Looper.getMainLooper())
     var connected = false
 
     private fun getStopById(id: Int): StopsJSONItem? {
@@ -110,7 +113,6 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
         socket
             .emit("tabStart", tabArgs)
             .emit("infoStart")
-            .emit("infoStart")
     }
 
     fun ioObservers(activity: Activity) {
@@ -118,41 +120,55 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
         val connectInfo = activity.findViewById<TextView>(R.id.MHDTableListConnectInfo)
         socket
             .on(Socket.EVENT_CONNECTING) {
-                activity.runOnUiThread {
-                    connectInfo?.visibility = View.VISIBLE
-                    connectInfo?.text = activity.getString(R.string.connecting)
-                }
+                filterHandler.removeCallbacksAndMessages(null)
+                filterHandler.postDelayed({
+                    activity.runOnUiThread {
+                        connectInfo?.visibility = View.VISIBLE
+                        connectInfo?.text = activity.getString(R.string.connecting)
+                    }
+                }, 100)
             }
             .on(Socket.EVENT_CONNECT) {
                 connected = true
                 println("connected")
                 activity.runOnUiThread {
-                    connectInfo?.visibility = View.GONE
+                    connectInfo?.visibility = View.VISIBLE
+                    connectInfo?.text = activity.getString(R.string.loading)
                 }
             }
             .on(Socket.EVENT_DISCONNECT) {
-                connected = false
-                println("disconnected")
-                activity.runOnUiThread {
-                    connectInfo?.visibility = View.VISIBLE
-                    connectInfo?.text = activity.getString(R.string.disconnected)
-                }
+                filterHandler.removeCallbacksAndMessages(null)
+                filterHandler.postDelayed({
+                    connected = false
+                    println("disconnected")
+                    activity.runOnUiThread {
+                        connectInfo?.visibility = View.VISIBLE
+                        connectInfo?.text = activity.getString(R.string.disconnected)
+                    }
+                }, 100)
             }
             .on(Socket.EVENT_RECONNECTING) {
-                activity.runOnUiThread {
-                    connectInfo?.visibility = View.VISIBLE
-                    connectInfo?.text = activity.getString(R.string.reconnecting)
-                }
+                filterHandler.removeCallbacksAndMessages(null)
+                filterHandler.postDelayed({
+                    activity.runOnUiThread {
+                        connectInfo?.visibility = View.VISIBLE
+                        connectInfo?.text = activity.getString(R.string.reconnecting)
+                    }
+                }, 100)
             }
             .on(Socket.EVENT_RECONNECT) {
-                connected = true
-                println("reconnected")
-                activity.runOnUiThread {
-                    connectInfo?.visibility = View.GONE
-                }
-                socket
-                    .emit("tabStart", tabArgs)
-                    .emit("infoStart")
+                filterHandler.removeCallbacksAndMessages(null)
+                filterHandler.postDelayed({
+                    connected = true
+                    println("reconnected")
+                    activity.runOnUiThread {
+                        connectInfo?.visibility = View.VISIBLE
+                        connectInfo?.text = activity.getString(R.string.loading)
+                    }
+                    socket
+                        .emit("tabStart", tabArgs)
+                        .emit("infoStart")
+                }, 100)
             }
             .on("vInfo") {
                 try {
@@ -163,10 +179,15 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
             .on("tabs") {
                 updateTimeStamp = System.currentTimeMillis()
                 activity.runOnUiThread {
-                    connectInfo?.visibility = View.GONE
                     try {
                         addItems(mhdTable.addTabs(JSONObject(it[0].toString())))
                     } catch (_: JSONException) {
+                    }
+                    if (mhdTable.sortedTabs.size > 1) {
+                        connectInfo?.visibility = View.GONE
+                    } else {
+                        connectInfo.visibility = View.VISIBLE
+                        connectInfo.text = activity.getString(R.string.noDepartures)
                     }
                 }
             }
