@@ -29,9 +29,10 @@
         <entry key="app/src/main/res/drawable/rounded_shape.xml" value="0.343" />
         <entry key="app/src/main/res/layout-land/fragment_main.xml" value="0.33994708994708994" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.1" />
+        <entry key="app/src/main/res/layout/alert_update.xml" value="0.1983392333984375" />
         <entry key="app/src/main/res/layout/bottom_nav_menu.xml" value="0.5473958333333333" />
         <entry key="app/src/main/res/layout/fragment_blank.xml" value="0.19078947368421054" />
-        <entry key="app/src/main/res/layout/fragment_main.xml" value="0.335" />
+        <entry key="app/src/main/res/layout/fragment_main.xml" value="0.165" />
         <entry key="app/src/main/res/layout/fragment_map.xml" value="0.16197916666666667" />
         <entry key="app/src/main/res/layout/fragment_plan.xml" value="0.534375" />
         <entry key="app/src/main/res/layout/fragment_search.xml" value="0.20516304347826086" />

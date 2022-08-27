@@ -10,7 +10,10 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.TextView
+import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isVisible
@@ -82,8 +85,7 @@ class MainFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val mainViewModel = ViewModelProvider(requireActivity()).get(MainViewModel::class.java)
-
+        val mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
         activity?.apply {
             tableAdapter.ioObservers(this)
             val actualTime: Thread = object : Thread() {
@@ -120,7 +122,6 @@ class MainFragment : Fragment() {
                 typeAheadBundle.putBoolean("directions", true)
                 typeAheadBundle.putString("origin", "editText")
                 typeAheadFragment.arguments = typeAheadBundle
-                activity?.findViewById<LinearLayout>(R.id.LoadingOverlay)?.visibility = View.GONE
                 MHDTableListConnectInfo.visibility = View.GONE
             }
             mainViewModel.actualLocation.observe(viewLifecycleOwner) { location ->
@@ -161,7 +162,7 @@ class MainFragment : Fragment() {
             }
 
             positionBtn.setOnClickListener {
-                if (actualLocation != null || stopList.size < 1) {
+                if (actualLocation != null && stopList.isNotEmpty()) {
                     nearestSwitching = !nearestSwitching
                     if (nearestSwitching) {
                         positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
@@ -173,18 +174,23 @@ class MainFragment : Fragment() {
                             ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
                     }
                 } else if (actualLocation != null) {
-                    Toast.makeText(context, "Actual location not available.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context?.getString(R.string.no_location), Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(context, "Stop list not available.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
                 }
             }
 
             editText.setOnFocusChangeListener { _, b ->
                 if (b) {
-                    MHDTable.visibility = View.GONE
-                    searchFragmentLayout.visibility = View.VISIBLE
-                    activity?.supportFragmentManager?.beginTransaction()?.apply {
-                        replace(R.id.searchFragmentLayout, typeAheadFragment).addToBackStack("typeAhead").commit()
+                    if (stopList.isNotEmpty()) {
+                        MHDTable.visibility = View.GONE
+                        searchFragmentLayout.visibility = View.VISIBLE
+                        activity?.supportFragmentManager?.beginTransaction()?.apply {
+                            replace(R.id.searchFragmentLayout, typeAheadFragment).addToBackStack("typeAhead").commit()
+                        }
+                    } else {
+                        editText.clearFocus()
+                        Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
                     }
                 }
             }

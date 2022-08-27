@@ -25,6 +25,7 @@ import eu.magicsk.transi.data.remote.responses.StopsJSON
 import eu.magicsk.transi.data.remote.responses.StopsJSONItem
 import eu.magicsk.transi.databinding.ActivityMainBinding
 import eu.magicsk.transi.view_models.MainViewModel
+import eu.magicsk.transi.view_models.ReleaseInfoViewModel
 import eu.magicsk.transi.view_models.StopsListVersionViewModel
 import eu.magicsk.transi.view_models.StopsListViewModel
 import kotlin.math.*
@@ -37,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private val stopListBundle = Bundle()
     private val stopsViewModel: StopsListViewModel by viewModels()
     private val stopsVersionViewModel: StopsListVersionViewModel by viewModels()
+    private val releaseInfoViewModel: ReleaseInfoViewModel by viewModels()
     private val mainViewModel: MainViewModel by viewModels()
     private lateinit var sharedPreferences: SharedPreferences
     private var _binding: ActivityMainBinding? = null
@@ -130,6 +132,7 @@ class MainActivity : AppCompatActivity() {
         notificationManager.createNotificationChannel(notificationChannel)
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         window?.statusBarColor = MaterialColors.getColor(window.decorView, R.attr.colorMyBackground)
         if (supportFragmentManager.findFragmentById(R.id.tripSearchFragmentLayout) != null) {
@@ -147,6 +150,19 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val versionName = BuildConfig.VERSION_NAME
+        releaseInfoViewModel.releaseInfo.observe(this) { releaseInfo ->
+            val version = releaseInfo?.tag_name
+            if (versionName != version && !version.isNullOrEmpty()) {
+                val updateAlert = UpdateAlert(
+                    version.toString().replace("v", ""),
+                    releaseInfo.body,
+                    releaseInfo.assets[0].browser_download_url
+                )
+                updateAlert.show(supportFragmentManager, "updateAlert")
+            }
+            4
+        }
         _binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)

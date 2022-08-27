@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.Transi" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="colorPrimary">@android:color/system_accent1_500</item>
+        <item name="colorPrimary">@android:color/system_accent1_100</item>
         <item name="colorOnPrimary">@android:color/system_accent1_900</item>
         <item name="colorPrimaryContainer">@android:color/system_accent1_500</item>
         <item name="colorOnPrimaryContainer">@android:color/system_accent1_10</item>

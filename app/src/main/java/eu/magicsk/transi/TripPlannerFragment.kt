@@ -142,7 +142,7 @@ class TripPlannerFragment : Fragment() {
                     activity?.findViewById<LinearLayout>(R.id.progressBar_bg)?.isVisible = false
                     activity?.findViewById<ProgressBar>(R.id.progressBar_ic)?.isVisible = false
                     println(trip)
-                    val parsedTrip = tripPlannerJsonParser(trip, it, context!!)
+                    val parsedTrip = tripPlannerJsonParser(trip, it, requireContext())
                     if (parsedTrip != null) {
                         if (loadingMore) {
                             loadingMore = false
@@ -165,8 +165,8 @@ class TripPlannerFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val mainViewModel = ViewModelProvider(requireActivity()).get(MainViewModel::class.java)
-        val tripPlannerViewModel = ViewModelProvider(requireActivity()).get(TripPlannerViewModel::class.java)
+        val mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
+        val tripPlannerViewModel = ViewModelProvider(requireActivity())[TripPlannerViewModel::class.java]
         binding.apply {
             editTextFrom.clearFocus()
             editTextTo.clearFocus()
@@ -190,7 +190,7 @@ class TripPlannerFragment : Fragment() {
                 if (editTextFrom.text.isNullOrEmpty()) {
                     editTextFrom.setText(context?.getString(R.string.actual_position))
                     selectedTrip.from = "0"
-                    tripPlannerAdapter.setFromTo(newFrom = context!!.getString(R.string.actual_position))
+                    tripPlannerAdapter.setFromTo(newFrom = requireContext().getString(R.string.actual_position))
                 }
             }
             tripPlannerViewModel.clear()
@@ -254,68 +254,100 @@ class TripPlannerFragment : Fragment() {
             }
 
             switchBtn.setOnClickListener {
-                val tempText = editTextFrom.text
-                editTextFrom.text = editTextTo.text
-                editTextTo.text = tempText
-                val tempValue = selectedTrip.to
-                selectedTrip.to = selectedTrip.from
-                selectedTrip.from = tempValue
-                if (selectedTrip.from != "" && selectedTrip.to != "") {
-                    getTrip()
+                if (stopList.isNotEmpty()) {
+                    val tempText = editTextFrom.text
+                    editTextFrom.text = editTextTo.text
+                    editTextTo.text = tempText
+                    val tempValue = selectedTrip.to
+                    selectedTrip.to = selectedTrip.from
+                    selectedTrip.from = tempValue
+                    if (selectedTrip.from != "" && selectedTrip.to != "") {
+                        getTrip()
+                    }
+                } else {
+                    Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
                 }
+
             }
 
             timeDateBtn.setOnClickListener {
-                val datePickerDialog = DatePickerDialog(
-                    requireContext(),
-                    null,
-                    selectedTripCalendar.get(Calendar.YEAR),
-                    selectedTripCalendar.get(Calendar.MONTH) + 1,
-                    selectedTripCalendar.get(Calendar.DAY_OF_MONTH)
-                )
-                datePickerDialog.datePicker.minDate = System.currentTimeMillis() - 86400000
-                datePickerDialog.show()
-                datePickerDialog.setOnDateSetListener { _, year, month, day ->
-                    selectedTripCalendar.set(year, month, day)
-                    val timePickerDialog = TimePickerDialog(
+                if (stopList.isNotEmpty()) {
+                    val datePickerDialog = DatePickerDialog(
                         requireContext(),
-                        timePickerListener,
-                        selectedTripCalendar.get(Calendar.HOUR_OF_DAY),
-                        selectedTripCalendar.get(Calendar.MINUTE),
-                        DateFormat.is24HourFormat(context)
+                        null,
+                        selectedTripCalendar.get(Calendar.YEAR),
+                        selectedTripCalendar.get(Calendar.MONTH) + 1,
+                        selectedTripCalendar.get(Calendar.DAY_OF_MONTH)
                     )
-                    timePickerDialog.show()
+                    datePickerDialog.datePicker.minDate = System.currentTimeMillis() - 86400000
+                    datePickerDialog.show()
+                    datePickerDialog.setOnDateSetListener { _, year, month, day ->
+                        selectedTripCalendar.set(year, month, day)
+                        val timePickerDialog = TimePickerDialog(
+                            requireContext(),
+                            timePickerListener,
+                            selectedTripCalendar.get(Calendar.HOUR_OF_DAY),
+                            selectedTripCalendar.get(Calendar.MINUTE),
+                            DateFormat.is24HourFormat(context)
+                        )
+                        timePickerDialog.show()
+                    }
+                } else {
+                    Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
                 }
             }
 
             adPlanBtn.setOnClickListener {
-                val toastText: String
-                if (selectedTrip.arrivalDeparture == 0) {
-                    selectedTrip.arrivalDeparture = 1
-                    toastText = "arrival"
+                if (stopList.isNotEmpty()) {
+                    val toastText: String
+                    if (selectedTrip.arrivalDeparture == 0) {
+                        selectedTrip.arrivalDeparture = 1
+                        toastText = "arrival"
+                    } else {
+                        selectedTrip.arrivalDeparture = 0
+                        toastText = "departure"
+                    }
+                    getTrip()
+                    Toast.makeText(context, "Set to time of $toastText.", Toast.LENGTH_SHORT).show()
                 } else {
-                    selectedTrip.arrivalDeparture = 0
-                    toastText = "departure"
+                    Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
                 }
-                getTrip()
-                Toast.makeText(context, "Set to time of $toastText.", Toast.LENGTH_SHORT).show()
+
             }
 
             editTextFrom.setOnFocusChangeListener { _, b ->
-                typeAheadFragment.arguments?.putString("origin", "editTextFrom")
-                if (b) openTypeAhead(typeAheadFragment)
+                if (b) {
+                    if (stopList.isNotEmpty()) {
+                        typeAheadFragment.arguments?.putString("origin", "editTextFrom")
+                        openTypeAhead(typeAheadFragment)
+                    } else {
+                        editTextFrom.clearFocus()
+                        Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
 
 
             editTextTo.setOnFocusChangeListener { _, b ->
-                typeAheadFragment.arguments?.putString("origin", "editTextTo")
-                if (b) openTypeAhead(typeAheadFragment)
+                if (b) {
+                    if (stopList.isNotEmpty()) {
+                        typeAheadFragment.arguments?.putString("origin", "editTextTo")
+                        openTypeAhead(typeAheadFragment)
+                    } else {
+                        editTextTo.clearFocus()
+                        Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
 
             timeDateBtn.setOnLongClickListener {
-                selectedTripCalendar = Calendar.getInstance()
-                getTrip(date = "", time = "")
-                Toast.makeText(context, "Changed to current date and time.", Toast.LENGTH_SHORT).show()
+                if (stopList.isNotEmpty()) {
+                    selectedTripCalendar = Calendar.getInstance()
+                    getTrip(date = "", time = "")
+                    Toast.makeText(context, "Changed to current date and time.", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
+                }
                 true
             }
         }
