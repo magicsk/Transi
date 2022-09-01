@@ -7,6 +7,7 @@ import android.location.Location
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -45,6 +46,7 @@ class MainFragment : Fragment() {
     private var nearestSwitching = true
     private var infoDismissed = false
     private val connectionHandler = Handler(Looper.getMainLooper())
+    private var tableState: Parcelable? = null
     private var selected = StopsJSONItem(
         0, "Locating nearest stop…", "none", "/ba/zastavka/Hronsk%C3%A1/b68883", "g94", "bus", 394, 48.13585663, 17.20938683, null
     )
@@ -79,6 +81,10 @@ class MainFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         connectionHandler.removeCallbacksAndMessages(null)
+        if (tableState != null) activity?.findViewById<RecyclerView>(R.id.MHDTableList)?.layoutManager?.onRestoreInstanceState(
+            tableState
+        )
+        println("connection ${tableAdapter.connected} ${tableAdapter.connecting}")
         if (!tableAdapter.connected && !tableAdapter.connecting) {
             tableAdapter.ioConnect(selected.id)
         }
@@ -87,6 +93,7 @@ class MainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
+        mainViewModel.clear()
         activity?.apply {
             tableAdapter.ioAddObservers(this)
             val actualTime: Thread = object : Thread() {
@@ -139,18 +146,20 @@ class MainFragment : Fragment() {
                     }
                 }
             }
-            mainViewModel.selectedStop.observe(viewLifecycleOwner) { selectedStop ->
-                activity?.window?.statusBarColor = MaterialColors.getColor(view, R.attr.colorMyBackground)
-                selected = selectedStop
-                nearestSwitching = false
-                editText.clearFocus()
-                editText.setText(selected.name)
-                MHDTableStopName.text = selected.name
-                MHDTableStopName.isSelected = true
-                positionBtn.icon = ResourcesCompat.getDrawable(
-                    resources, R.drawable.ic_location_disabled, context?.theme
-                )
-                tableAdapter.ioConnect(selected.id)
+            mainViewModel.selectedStop.observe(viewLifecycleOwner) {
+                it?.let { selectedStop ->
+                    activity?.window?.statusBarColor = MaterialColors.getColor(view, R.attr.colorMyBackground)
+                    selected = selectedStop
+                    nearestSwitching = false
+                    editText.clearFocus()
+                    editText.setText(selected.name)
+                    MHDTableStopName.text = selected.name
+                    MHDTableStopName.isSelected = true
+                    positionBtn.icon = ResourcesCompat.getDrawable(
+                        resources, R.drawable.ic_location_disabled, context?.theme
+                    )
+                    tableAdapter.ioConnect(selected.id)
+                }
             }
 
             if (nearestSwitching) {
@@ -237,11 +246,18 @@ class MainFragment : Fragment() {
         }
     }
 
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        tableState = savedInstanceState?.getParcelable("MHDTableAdapter")
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         println(infoDismissed)
         outState.putBoolean("infoDismissed", infoDismissed)
         outState.putSerializable("selectedStop", selected)
         outState.putBoolean("nearestSwitching", nearestSwitching)
+        tableState = activity?.findViewById<RecyclerView>(R.id.MHDTableList)?.layoutManager?.onSaveInstanceState()
+        outState.putParcelable("MHDTableAdapter", tableState)
         super.onSaveInstanceState(outState)
     }
 }

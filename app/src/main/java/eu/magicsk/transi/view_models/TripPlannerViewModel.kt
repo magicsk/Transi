@@ -51,11 +51,9 @@ class TripPlannerViewModel @Inject constructor(
             service,
             format
         )
-        println("Trip response")
-        println(trip)
-        println(trip.message)
-        println(trip.data)
-        tripLiveData.value = JSONObject(trip?.data ?: "")
+        trip.data?.let {
+            tripLiveData.value = JSONObject(it)
+        }
     }
 
     fun setSelectedFromStop(value: StopsJSONItem) {

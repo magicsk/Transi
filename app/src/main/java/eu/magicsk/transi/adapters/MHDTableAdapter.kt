@@ -244,6 +244,11 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
         toRemove.forEach {
             mhdTable.sortedTabs.removeAt(it)
             notifyItemRemoved(it)
+            val size = mhdTable.sortedTabs.size
+            if (size > 0) {
+                notifyItemChanged(0)
+                notifyItemChanged(size - 1)
+            }
         }
 
         // add new

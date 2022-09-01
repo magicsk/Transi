@@ -182,8 +182,7 @@ class MainActivity : AppCompatActivity() {
                 supportFragmentManager.popBackStackImmediate("typeAhead", 1)
                 supportFragmentManager.popBackStackImmediate("tripTypeAhead", 1)
             }
-            NavigationUI.onNavDestinationSelected(item, navController, false)
-//            navController.popBackStack(item.itemId, inclusive = false)
+            NavigationUI.onNavDestinationSelected(item, navController)
             true
         }
 

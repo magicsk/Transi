@@ -12,7 +12,7 @@ class MainViewModel : ViewModel() {
 
     val stopList = MutableLiveData<StopsJSON>()
     val actualLocation = MutableLiveData<Location>()
-    val selectedStop = MutableLiveData<StopsJSONItem>()
+    val selectedStop = MutableLiveData<StopsJSONItem?>()
     val tableInfo = MutableLiveData("")
 
     fun setStopList(value: StopsJSON) {
@@ -39,5 +39,9 @@ class MainViewModel : ViewModel() {
             if (info != "" && tableInfo.value != "") tableInfo.value = "${tableInfo.value}\n\n$info"
             else if (info != "") tableInfo.value = info
         }
+    }
+
+    fun clear() {
+        selectedStop.value = null
     }
 }
