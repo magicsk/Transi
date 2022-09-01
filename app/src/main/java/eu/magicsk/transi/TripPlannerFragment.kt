@@ -2,13 +2,17 @@ package eu.magicsk.transi
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Context
 import android.location.Location
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.Parcelable
 import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
@@ -24,8 +28,8 @@ import eu.magicsk.transi.adapters.TripPlannerAdapter
 import eu.magicsk.transi.data.models.SelectedTrip
 import eu.magicsk.transi.data.remote.responses.StopsJSON
 import eu.magicsk.transi.databinding.FragmentTripPlannerBinding
+import eu.magicsk.transi.util.ErrorAlert
 import eu.magicsk.transi.util.Trip
-import eu.magicsk.transi.util.simpleErrorAlert
 import eu.magicsk.transi.util.tripPlannerJsonParser
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TripPlannerViewModel
@@ -95,7 +99,12 @@ class TripPlannerFragment : Fragment() {
         if (selectedTrip.to != "") {
             activity?.findViewById<ProgressBar>(R.id.progressBar_ic)?.isVisible = true
             if ((to == "" || from == "") || (to == "0" && from == "0")) {
-                activity?.let { simpleErrorAlert(it, getString(R.string.ops), getString(R.string.error400)) }
+                activity?.runOnUiThread {
+                    ErrorAlert(getString(R.string.ops), getString(R.string.error400)).show(
+                        parentFragmentManager,
+                        "error"
+                    )
+                }
             } else {
                 if ((to == "0" || from == "0") && actualLocation == null) {
                     waitingForLocation = true
@@ -119,17 +128,23 @@ class TripPlannerFragment : Fragment() {
                         format
                     )
                 } else {
-                    activity?.let { simpleErrorAlert(it, getString(R.string.ops), getString(R.string.error400)) }
+                    activity?.runOnUiThread {
+                        ErrorAlert(getString(R.string.ops), getString(R.string.error400)).show(
+                            parentFragmentManager,
+                            "error"
+                        )
+                    }
                 }
             }
         }
     }
 
     private fun openTypeAhead(typeAheadFragment: TypeAheadFragment) {
-//        if (navController.backQueue.size > 2) navController.popBackStack()
+        val supportFragmentManager = activity?.supportFragmentManager
+        if ((supportFragmentManager?.backStackEntryCount ?: 0) > 0) supportFragmentManager?.popBackStack("tripTypeAhead", 1)
         binding.TripPlannerList.visibility = View.GONE
         binding.tripSearchFragmentLayout.visibility = View.VISIBLE
-        activity?.supportFragmentManager?.beginTransaction()?.apply {
+        supportFragmentManager?.beginTransaction()?.apply {
             replace(R.id.tripSearchFragmentLayout, typeAheadFragment).addToBackStack("tripTypeAhead").commit()
         }
     }
@@ -142,7 +157,7 @@ class TripPlannerFragment : Fragment() {
                     activity?.findViewById<LinearLayout>(R.id.progressBar_bg)?.isVisible = false
                     activity?.findViewById<ProgressBar>(R.id.progressBar_ic)?.isVisible = false
                     println(trip)
-                    val parsedTrip = tripPlannerJsonParser(trip, it, requireContext())
+                    val parsedTrip = tripPlannerJsonParser(trip, parentFragmentManager, requireContext())
                     if (parsedTrip != null) {
                         if (loadingMore) {
                             loadingMore = false
@@ -198,8 +213,17 @@ class TripPlannerFragment : Fragment() {
                 activity?.window?.statusBarColor = MaterialColors.getColor(view, R.attr.colorMyBackground)
                 if (selectedTrip.from != it?.value && it != null) {
                     editTextFrom.setText(it.name)
-                    getTrip(from = it.value)
                     tripPlannerAdapter.setFromTo(newFrom = it.name)
+                    if (editTextTo.text.isNullOrEmpty()) {
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            editTextTo.requestFocus()
+                        }, 200)
+                    } else {
+                        val im: InputMethodManager? =
+                            activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+                        im?.hideSoftInputFromWindow(view.windowToken, 0)
+                        getTrip(from = it.value)
+                    }
                 }
 
             }
@@ -276,7 +300,7 @@ class TripPlannerFragment : Fragment() {
                         requireContext(),
                         null,
                         selectedTripCalendar.get(Calendar.YEAR),
-                        selectedTripCalendar.get(Calendar.MONTH) + 1,
+                        selectedTripCalendar.get(Calendar.MONTH),
                         selectedTripCalendar.get(Calendar.DAY_OF_MONTH)
                     )
                     datePickerDialog.datePicker.minDate = System.currentTimeMillis() - 86400000
@@ -358,12 +382,10 @@ class TripPlannerFragment : Fragment() {
         listState = savedInstanceState?.getParcelable("tripPlannerAdapter")
         val thar = savedInstanceState?.getParcelableArray("tripHolder") as? Array<Trip>
         tripHolder = thar?.toMutableList() ?: tripHolder
-        println(tripHolder.size)
         selectedTrip = savedInstanceState?.getSerializable("selectedTrip") as? SelectedTrip ?: selectedTrip
     }
 
     override fun onResume() {
-        println("resume")
         super.onResume()
         if (tripHolder.isNotEmpty()) {
             tripPlannerAdapter.addItems(tripHolder)

@@ -78,7 +78,7 @@ class MainFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         connectionHandler.removeCallbacksAndMessages(null)
-        if (!tableAdapter.connected) {
+        if (!tableAdapter.connected && !tableAdapter.connecting) {
             tableAdapter.ioConnect(selected.id)
         }
     }

@@ -6,7 +6,7 @@
     android:layout_height="match_parent">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/UpdateAlertTextContainer"
+        android:id="@+id/AlertTextContainer"
         android:padding="15dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -14,26 +14,26 @@
         app:layout_constraintLeft_toLeftOf="parent">
 
         <TextView
-            android:id="@+id/UpdateAlertTitle"
+            android:id="@+id/AlertTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="@font/roboto_medium"
-            android:text="@string/new_version"
+            android:text="@string/ops"
             android:textSize="24sp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"/>
 
         <TextView
-            android:id="@+id/UpdateAlertText"
+            android:id="@+id/AlertText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="15dp"
-            android:text="changelog text"
-            app:layout_constraintTop_toBottomOf="@id/UpdateAlertTitle"
+            android:text="@string/unknownError"
+            app:layout_constraintTop_toBottomOf="@id/AlertTitle"
             app:layout_constraintStart_toStartOf="parent"/>
 
         <com.google.android.material.progressindicator.LinearProgressIndicator
-            android:id="@+id/UpdateAlertProgress"
+            android:id="@+id/AlertProgress"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:min="0"
@@ -43,27 +43,28 @@
             app:trackCornerRadius="12dp"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/UpdateAlertText"/>
+            app:layout_constraintTop_toBottomOf="@id/AlertText"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <Button
         style="@style/Widget.Material3.Button.TextButton"
-        android:id="@+id/UpdateAlertCancelButton"
+        android:id="@+id/AlertCancelButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/cancel"
+        android:visibility="gone"
         android:layout_marginEnd="5dp"
-        app:layout_constraintTop_toTopOf="@id/UpdateAlertConfirmButton"
-        app:layout_constraintRight_toLeftOf="@id/UpdateAlertConfirmButton"
+        app:layout_constraintTop_toTopOf="@id/AlertConfirmButton"
+        app:layout_constraintRight_toLeftOf="@id/AlertConfirmButton"
     />
 
     <Button
         style="@style/Widget.Material3.Button.TextButton"
-        android:id="@+id/UpdateAlertConfirmButton"
+        android:id="@+id/AlertConfirmButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/update"
-        app:layout_constraintTop_toBottomOf="@id/UpdateAlertTextContainer"
+        android:text="@android:string/ok"
+        app:layout_constraintTop_toBottomOf="@id/AlertTextContainer"
         app:layout_constraintRight_toRightOf="parent"
     />
 

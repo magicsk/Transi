@@ -19,7 +19,6 @@ class TripPlannerViewModel @Inject constructor(
     val selectedFromStop = MutableLiveData<StopsJSONItem?>()
     val selectedToStop = MutableLiveData<StopsJSONItem?>()
     val trip: LiveData<JSONObject?> = tripLiveData
-
     fun getTrip(
         v: Int = 7,
         from: String,
@@ -52,8 +51,11 @@ class TripPlannerViewModel @Inject constructor(
             service,
             format
         )
+        println("Trip response")
+        println(trip)
         println(trip.message)
-        tripLiveData.value = JSONObject(trip.data ?: "")
+        println(trip.data)
+        tripLiveData.value = JSONObject(trip?.data ?: "")
     }
 
     fun setSelectedFromStop(value: StopsJSONItem) {

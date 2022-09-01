@@ -1,4 +1,4 @@
-package eu.magicsk.transi
+package eu.magicsk.transi.util
 
 import android.content.Intent
 import android.net.Uri
@@ -13,7 +13,8 @@ import androidx.core.content.FileProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
-import eu.magicsk.transi.databinding.AlertUpdateBinding
+import eu.magicsk.transi.R
+import eu.magicsk.transi.databinding.AlertBinding
 import io.noties.markwon.Markwon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -25,13 +26,13 @@ import java.net.MalformedURLException
 import java.net.URL
 
 class UpdateAlert(version: String, private val changelog: String, private val downloadUrl: String) : DialogFragment() {
-    private var _binding: AlertUpdateBinding? = null
+    private var _binding: AlertBinding? = null
     private val binding get() = _binding!!
     private val fileName = "eu.magicsk.transi.$version.apk"
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         dialog!!.window?.setBackgroundDrawableResource(R.drawable.round_shape)
-        _binding = AlertUpdateBinding.inflate(inflater, container, false)
+        _binding = AlertBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -44,19 +45,23 @@ class UpdateAlert(version: String, private val changelog: String, private val do
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.apply {
+            AlertTitle.text = context?.getString(R.string.new_version)
+            AlertCancelButton.isVisible = true
+            AlertConfirmButton.text = context?.getString(R.string.update)
             val markwon = context?.let { Markwon.create(it) }
-            markwon?.setMarkdown(UpdateAlertText, changelog)
-            UpdateAlertCancelButton.setOnClickListener {
+            markwon?.setMarkdown(AlertText, changelog)
+
+            AlertCancelButton.setOnClickListener {
                 dismissNow()
             }
-            UpdateAlertConfirmButton.setOnClickListener {
-                UpdateAlertTitle.text = context?.getString(R.string.update_in_progress)
-                UpdateAlertText.text = context?.getString(R.string.downloading)?.format("0%")
-                UpdateAlertProgress.isVisible = true
-                UpdateAlertConfirmButton.isVisible = false
+            AlertConfirmButton.setOnClickListener {
+                AlertTitle.text = context?.getString(R.string.update_in_progress)
+                AlertText.text = context?.getString(R.string.downloading)?.format("0%")
+                AlertProgress.isVisible = true
+                AlertConfirmButton.isVisible = false
                 lifecycleScope.launch(Dispatchers.IO) {
                     try {
-                        UpdateAlertCancelButton.setOnClickListener {
+                        AlertCancelButton.setOnClickListener {
                             dismiss()
                         }
                         val path =
@@ -87,7 +92,7 @@ class UpdateAlert(version: String, private val changelog: String, private val do
                         var lengthOfFile: Int
                         var progress: Float
                         var downloaded = 0f
-                        UpdateAlertCancelButton.setOnClickListener {
+                        AlertCancelButton.setOnClickListener {
                             dismiss()
                             lifecycleScope.launch(Dispatchers.IO) {
                                 connection.disconnect()
@@ -100,19 +105,19 @@ class UpdateAlert(version: String, private val changelog: String, private val do
                             downloaded += lengthOfFile
                             progress = (downloaded * 100 / totalSize)
                             activity?.runOnUiThread {
-                                UpdateAlertText.text = context?.getString(R.string.downloading)?.format("${progress.toInt()}%")
-                                UpdateAlertProgress.progress = progress.toInt()
+                                AlertText.text = context?.getString(R.string.downloading)?.format("${progress.toInt()}%")
+                                AlertProgress.progress = progress.toInt()
                             }
                         }
                         outputStream.close()
                         inputStream.close()
                         activity?.runOnUiThread {
-                            UpdateAlertTitle.text = context?.getString(R.string.update_downloaded)
-                            UpdateAlertText.text = context?.getString(R.string.finish_update)
-                            UpdateAlertConfirmButton.text = context?.getString(R.string.install)
-                            UpdateAlertConfirmButton.isVisible = true
-                            UpdateAlertCancelButton.isVisible = false
-                            UpdateAlertConfirmButton.setOnClickListener {
+                            AlertTitle.text = context?.getString(R.string.update_downloaded)
+                            AlertText.text = context?.getString(R.string.finish_update)
+                            AlertConfirmButton.text = context?.getString(R.string.install)
+                            AlertConfirmButton.isVisible = true
+                            AlertCancelButton.isVisible = false
+                            AlertConfirmButton.setOnClickListener {
                                 lifecycleScope.launch(Dispatchers.IO) {
                                     openNewVersion(outputFile.path)
                                 }

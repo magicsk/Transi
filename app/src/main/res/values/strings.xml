@@ -76,6 +76,4 @@
     <string name="trip_notification_title">%1$s ▶ %2$s</string>
     <string name="trip_notification_body">%1$s (%2$s-%3$s)</string>
     <string name="trip_share_body">%1$s&lt;br>&lt;br>%2$s</string>
-<!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

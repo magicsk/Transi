@@ -17,6 +17,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.NavigationUiSaveStateControl
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.color.MaterialColors
 import com.google.gson.Gson
@@ -24,6 +25,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.data.remote.responses.StopsJSON
 import eu.magicsk.transi.data.remote.responses.StopsJSONItem
 import eu.magicsk.transi.databinding.ActivityMainBinding
+import eu.magicsk.transi.util.UpdateAlert
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.ReleaseInfoViewModel
 import eu.magicsk.transi.view_models.StopsListVersionViewModel
@@ -148,12 +150,13 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    @OptIn(NavigationUiSaveStateControl::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val versionName = BuildConfig.VERSION_NAME
         releaseInfoViewModel.releaseInfo.observe(this) { releaseInfo ->
             val version = releaseInfo?.tag_name
-            if (versionName != version && !version.isNullOrEmpty()) {
+            if (versionName != version.toString().replace("v", "") && !version.isNullOrEmpty()) {
                 val updateAlert = UpdateAlert(
                     version.toString().replace("v", ""),
                     releaseInfo.body,

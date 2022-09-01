@@ -53,6 +53,7 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
     private var updateTimeStamp = 0L
     private val filterHandler = Handler(Looper.getMainLooper())
     var connected = false
+    var connecting = false
 
     private fun getStopById(id: Int): StopsJSONItem? {
         stopList.let {
@@ -102,6 +103,7 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
     }
 
     fun ioConnect(stopId: Int) {
+        connecting = true
         actualStopId = stopId
         ioDisconnect()
         println("connecting")
@@ -120,6 +122,7 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
         val connectInfo = activity.findViewById<TextView>(R.id.MHDTableListConnectInfo)
         socket
             .on(Socket.EVENT_CONNECTING) {
+                connecting = true
                 filterHandler.removeCallbacksAndMessages(null)
                 filterHandler.postDelayed({
                     activity.runOnUiThread {
@@ -129,6 +132,7 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                 }, 100)
             }
             .on(Socket.EVENT_CONNECT) {
+                connecting = false
                 connected = true
                 println("connected")
                 activity.runOnUiThread {
@@ -137,6 +141,7 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                 }
             }
             .on(Socket.EVENT_DISCONNECT) {
+                connecting = false
                 filterHandler.removeCallbacksAndMessages(null)
                 filterHandler.postDelayed({
                     connected = false
@@ -148,6 +153,7 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                 }, 100)
             }
             .on(Socket.EVENT_RECONNECTING) {
+                connecting = true
                 filterHandler.removeCallbacksAndMessages(null)
                 filterHandler.postDelayed({
                     activity.runOnUiThread {
@@ -157,6 +163,7 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                 }, 100)
             }
             .on(Socket.EVENT_RECONNECT) {
+                connecting = false
                 filterHandler.removeCallbacksAndMessages(null)
                 filterHandler.postDelayed({
                     connected = true
@@ -184,7 +191,7 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                     } catch (_: JSONException) {
                     }
                     if (mhdTable.sortedTabs.size > 1) {
-                        connectInfo?.visibility = View.GONE
+                        connectInfo.visibility = View.GONE
                     } else {
                         connectInfo.visibility = View.VISIBLE
                         connectInfo.text = activity.getString(R.string.noDepartures)

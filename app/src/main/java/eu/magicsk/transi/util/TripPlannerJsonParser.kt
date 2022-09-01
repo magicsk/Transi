@@ -1,8 +1,8 @@
 package eu.magicsk.transi.util
 
-import android.app.Activity
 import android.content.Context
 import android.os.Parcelable
+import androidx.fragment.app.FragmentManager
 import eu.magicsk.transi.R
 import kotlinx.parcelize.Parcelize
 import org.json.JSONArray
@@ -49,7 +49,7 @@ data class TripDA(
     val stop: TripStop,
 ) : Parcelable, Serializable
 
-fun tripPlannerJsonParser(data: JSONObject, activity: Activity, context: Context): MutableList<Trip>? {
+fun tripPlannerJsonParser(data: JSONObject, fragmentManager: FragmentManager, context: Context): MutableList<Trip>? {
     val timeFormat = DateTimeFormatter.ofPattern("HH:mm")
     val inputFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     try {
@@ -191,12 +191,12 @@ fun tripPlannerJsonParser(data: JSONObject, activity: Activity, context: Context
             }
             return trips
         } else {
-            simpleErrorAlert(activity, context.getString(R.string.ops), context.getString(R.string.error404))
+            ErrorAlert(context.getString(R.string.ops), context.getString(R.string.error404)).show(fragmentManager, "error")
             return null
         }
     } catch (e: JSONException) {
+        ErrorAlert(context.getString(R.string.ops), context.getString(R.string.unknownError)).show(fragmentManager, "error")
         println(e)
-        simpleErrorAlert(activity, context.getString(R.string.ops), context.getString(R.string.unknownError))
         return null
     }
 }

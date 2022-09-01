@@ -67,6 +67,7 @@ class TypeAheadFragment : Fragment() {
                 "editText" -> {
                     mainViewModel.setSelectedStop(stop)
                     activity?.supportFragmentManager?.popBackStack("typeAhead", 1)
+                    hideVirtualInput(view)
                 }
                 "editTextFrom" -> {
                     tripPlannerViewModel.setSelectedFromStop(stop)
@@ -75,11 +76,11 @@ class TypeAheadFragment : Fragment() {
                 "editTextTo" -> {
                     tripPlannerViewModel.setSelectedToStop(stop)
                     activity?.supportFragmentManager?.popBackStack("tripTypeAhead", 1)
+                    hideVirtualInput(view)
                 }
             }
 
         }
-        hideVirtualInput(view)
     }
 
     private fun onButtonItemClick(view: View, pos: Int) {
