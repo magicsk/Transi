@@ -139,13 +139,19 @@ class TripPlannerFragment : Fragment() {
         }
     }
 
-    private fun openTypeAhead(typeAheadFragment: TypeAheadFragment) {
+    private fun openTypeAhead(typeAheadFragment: TypeAheadFragment, origin: String) {
         val supportFragmentManager = activity?.supportFragmentManager
-        if ((supportFragmentManager?.backStackEntryCount ?: 0) > 0) supportFragmentManager?.popBackStack("tripTypeAhead", 1)
-        binding.TripPlannerList.visibility = View.GONE
-        binding.tripSearchFragmentLayout.visibility = View.VISIBLE
-        supportFragmentManager?.beginTransaction()?.apply {
-            replace(R.id.tripSearchFragmentLayout, typeAheadFragment).addToBackStack("tripTypeAhead").commit()
+        println(supportFragmentManager?.backStackEntryCount)
+        if ((supportFragmentManager?.backStackEntryCount ?: 0) > 0) {
+            supportFragmentManager?.popBackStackImmediate("tripTypeAhead", 1)
+            if (origin == "editTextFrom") binding.editTextFrom.requestFocus() else binding.editTextTo.requestFocus()
+        } else {
+            binding.TripPlannerList.visibility = View.GONE
+            binding.tripSearchFragmentLayout.visibility = View.VISIBLE
+            typeAheadFragment.arguments?.putString("origin", origin)
+            supportFragmentManager?.beginTransaction()?.apply {
+                replace(R.id.tripSearchFragmentLayout, typeAheadFragment).addToBackStack("tripTypeAhead").commit()
+            }
         }
     }
 
@@ -342,8 +348,7 @@ class TripPlannerFragment : Fragment() {
             editTextFrom.setOnFocusChangeListener { _, b ->
                 if (b) {
                     if (stopList.isNotEmpty()) {
-                        typeAheadFragment.arguments?.putString("origin", "editTextFrom")
-                        openTypeAhead(typeAheadFragment)
+                        openTypeAhead(typeAheadFragment, "editTextFrom")
                     } else {
                         editTextFrom.clearFocus()
                         Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
@@ -355,8 +360,8 @@ class TripPlannerFragment : Fragment() {
             editTextTo.setOnFocusChangeListener { _, b ->
                 if (b) {
                     if (stopList.isNotEmpty()) {
-                        typeAheadFragment.arguments?.putString("origin", "editTextTo")
-                        openTypeAhead(typeAheadFragment)
+                        editTextFrom.clearFocus()
+                        openTypeAhead(typeAheadFragment, "editTextTo")
                     } else {
                         editTextTo.clearFocus()
                         Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()

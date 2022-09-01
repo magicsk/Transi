@@ -17,6 +17,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.NavigationUI
+import androidx.navigation.ui.NavigationUiSaveStateControl
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.color.MaterialColors
 import com.google.gson.Gson
@@ -148,6 +150,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
+    @OptIn(NavigationUiSaveStateControl::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val versionName = BuildConfig.VERSION_NAME
@@ -161,7 +165,6 @@ class MainActivity : AppCompatActivity() {
                 )
                 updateAlert.show(supportFragmentManager, "updateAlert")
             }
-            4
         }
         _binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
@@ -173,6 +176,16 @@ class MainActivity : AppCompatActivity() {
             supportFragmentManager.findFragmentById(R.id.navHostFragment) as NavHostFragment
         val navController = navHostFragment.navController
         binding.navView.setupWithNavController(navController)
+        binding.navView.setOnItemSelectedListener { item ->
+            if (supportFragmentManager.backStackEntryCount > 0) {
+                window.statusBarColor = MaterialColors.getColor(view, R.attr.colorMyBackground)
+                supportFragmentManager.popBackStackImmediate("typeAhead", 1)
+                supportFragmentManager.popBackStackImmediate("tripTypeAhead", 1)
+            }
+            NavigationUI.onNavDestinationSelected(item, navController, false)
+//            navController.popBackStack(item.itemId, inclusive = false)
+            true
+        }
 
 
         createChannel(

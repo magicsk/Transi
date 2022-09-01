@@ -28,7 +28,7 @@ import java.net.URL
 class UpdateAlert(version: String, private val changelog: String, private val downloadUrl: String) : DialogFragment() {
     private var _binding: AlertBinding? = null
     private val binding get() = _binding!!
-    private val fileName = "eu.magicsk.transi.$version.apk"
+    private val fileName = "eu.magicsk.transi.$version"
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         dialog!!.window?.setBackgroundDrawableResource(R.drawable.round_shape)

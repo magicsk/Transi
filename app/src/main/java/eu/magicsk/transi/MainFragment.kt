@@ -63,6 +63,7 @@ class MainFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        tableAdapter.ioRemoveObservers()
         super.onDestroyView()
         _binding = null
     }
@@ -87,7 +88,7 @@ class MainFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
         activity?.apply {
-            tableAdapter.ioObservers(this)
+            tableAdapter.ioAddObservers(this)
             val actualTime: Thread = object : Thread() {
                 override fun run() {
                     try {
