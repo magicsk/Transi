@@ -115,6 +115,7 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
     }
 
     fun ioAddObservers(activity: Activity) {
+        socket.off()
         val mainViewModel = ViewModelProvider(activity as ViewModelStoreOwner).get(MainViewModel::class.java)
         val connectInfo = activity.findViewById<TextView>(R.id.MHDTableListConnectInfo)
         socket
@@ -192,10 +193,6 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                     }
                 }
             }
-    }
-
-    fun ioRemoveObservers() {
-        socket.off()
     }
 
     fun ioDisconnect() {

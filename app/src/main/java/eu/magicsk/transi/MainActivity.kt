@@ -18,7 +18,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
-import androidx.navigation.ui.NavigationUiSaveStateControl
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.color.MaterialColors
 import com.google.gson.Gson
@@ -151,7 +150,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    @OptIn(NavigationUiSaveStateControl::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val versionName = BuildConfig.VERSION_NAME

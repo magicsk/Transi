@@ -157,13 +157,13 @@ class TripPlannerFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        activity?.let {
-            tripViewModel.trip.observe(it) { trip ->
+        activity?.apply {
+            tripViewModel.trip.observe(this) { trip ->
                 if (trip != null && (loadingMore || loadingNewTrip)) {
-                    activity?.findViewById<LinearLayout>(R.id.progressBar_bg)?.isVisible = false
-                    activity?.findViewById<ProgressBar>(R.id.progressBar_ic)?.isVisible = false
+                    findViewById<LinearLayout>(R.id.progressBar_bg)?.isVisible = false
+                    findViewById<ProgressBar>(R.id.progressBar_ic)?.isVisible = false
                     println(trip)
-                    val parsedTrip = tripPlannerJsonParser(trip, parentFragmentManager, requireContext())
+                    val parsedTrip = tripPlannerJsonParser(trip, supportFragmentManager, requireContext())
                     if (parsedTrip != null) {
                         if (loadingMore) {
                             loadingMore = false

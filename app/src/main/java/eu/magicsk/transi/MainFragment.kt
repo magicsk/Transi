@@ -65,7 +65,6 @@ class MainFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        tableAdapter.ioRemoveObservers()
         super.onDestroyView()
         _binding = null
     }
@@ -75,7 +74,7 @@ class MainFragment : Fragment() {
         super.onPause()
         connectionHandler.postDelayed({
             tableAdapter.ioDisconnect()
-        }, 60000)
+        }, 30000)
     }
 
     override fun onResume() {
@@ -252,7 +251,6 @@ class MainFragment : Fragment() {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        println(infoDismissed)
         outState.putBoolean("infoDismissed", infoDismissed)
         outState.putSerializable("selectedStop", selected)
         outState.putBoolean("nearestSwitching", nearestSwitching)
