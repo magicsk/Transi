@@ -22,8 +22,8 @@ import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.color.MaterialColors
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
-import eu.magicsk.transi.data.remote.responses.StopsJSON
-import eu.magicsk.transi.data.remote.responses.StopsJSONItem
+import eu.magicsk.transi.data.remote.responses.Stop
+import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.ActivityMainBinding
 import eu.magicsk.transi.util.UpdateAlert
 import eu.magicsk.transi.view_models.MainViewModel
@@ -36,7 +36,7 @@ import kotlin.math.*
 @SuppressLint("MissingPermission")
 class MainActivity : AppCompatActivity() {
     private var actualLocation: Location? = null
-    private var stopList: StopsJSON = StopsJSON()
+    private var stopList: Stops = Stops()
     private val stopListBundle = Bundle()
     private val stopsViewModel: StopsListViewModel by viewModels()
     private val stopsVersionViewModel: StopsListVersionViewModel by viewModels()
@@ -47,9 +47,9 @@ class MainActivity : AppCompatActivity() {
     private val binding get() = _binding!!
 
 
-    private fun calcDistance(x: StopsJSONItem): Double {
+    private fun calcDistance(x: Stop): Double {
         val xLat = x.lat
-        val xLong = x.long
+        val xLong = x.lng
         val radius = 6378137.toDouble()
         val deltaLat = xLat - actualLocation!!.latitude
         val deltaLong = xLong - actualLocation!!.longitude
@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity() {
         return radius * angle
     }
 
-    private val sortByNearest = Comparator<StopsJSONItem> { a, b ->
+    private val sortByNearest = Comparator<Stop> { a, b ->
         val aDist = calcDistance(a)
         val bDist = calcDistance(b)
         return@Comparator (aDist - bDist).roundToInt()
@@ -82,7 +82,7 @@ class MainActivity : AppCompatActivity() {
         val savedStopListJson = sharedPreferences.getString("stopList", "")
         val savedStopListVersion = sharedPreferences.getString("stopsVersion", "")
         if (savedStopListJson != "") {
-            val savedStopList = Gson().fromJson(savedStopListJson, StopsJSON::class.java)
+            val savedStopList = Gson().fromJson(savedStopListJson, Stops::class.java)
             stopList.clear()
             stopList.addAll(savedStopList)
             stopListBundle.clear()
@@ -93,7 +93,7 @@ class MainActivity : AppCompatActivity() {
             if (stopsVersion != null) {
                 if (savedStopListVersion != stopsVersion.version || savedStopListJson == "") {
                     stopsViewModel.stops.observe(this) { stops ->
-                        if (stops != null && stopList.size < 1) {
+                        if (stops != null && stops.size > 0) {
                             println("stops fetched")
                             stopList.clear()
                             stopList.addAll(stops)
@@ -101,7 +101,6 @@ class MainActivity : AppCompatActivity() {
                             sharedPreferences.edit().putString("stopList", stopListJson).apply()
                             sharedPreferences.edit().putString("stopsVersion", stopsVersion.version)
                                 .apply()
-
                         }
                     }
                 }

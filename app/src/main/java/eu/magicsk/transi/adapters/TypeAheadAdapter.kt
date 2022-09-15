@@ -6,13 +6,13 @@ import android.view.ViewGroup
 import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.RecyclerView
 import eu.magicsk.transi.R
-import eu.magicsk.transi.data.remote.responses.StopsJSON
-import eu.magicsk.transi.data.remote.responses.StopsJSONItem
+import eu.magicsk.transi.data.remote.responses.Stop
+import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.StopsListItemBinding
 import eu.magicsk.transi.util.unaccent
 
 class TypeAheadAdapter(
-    private var typeAheadItemList: MutableList<StopsJSONItem>,
+    private var typeAheadItemList: MutableList<Stop>,
     private val showDirections: Boolean,
     private val onItemClicked: (pos: Int) -> Unit,
     private val onButtonClicked: (pos: Int) -> Unit,
@@ -44,12 +44,12 @@ class TypeAheadAdapter(
 
     private var _binding: StopsListItemBinding? = null
     private val binding get() = _binding!!
-    private val originalStopList = mutableListOf<StopsJSONItem>()
-    private val fromMap = StopsJSONItem(
-        0, "From map", "From map", "", "-1", "map", 0, 0.0, 0.0, null
+    private val originalStopList = mutableListOf<Stop>()
+    private val fromMap = Stop(
+        0, 0, "From map", "", "map", 0, 0.0, 0.0, null
     )
-    private val actualPosition = StopsJSONItem(
-        0, "Actual position", "Actual position", "", "0", "location", 0, 0.0, 0.0, null
+    private val actualPosition = Stop(
+        0, 0, "Actual position", "", "location", 0, 0.0, 0.0, null
     )
 
     fun filter(term: String) {
@@ -74,25 +74,25 @@ class TypeAheadAdapter(
         }
     }
 
-    fun addItems(items: StopsJSON, ap: Boolean) {
+    fun addItems(items: Stops, ap: Boolean) {
         addDefaults(ap)
         originalStopList.addAll(items)
         typeAheadItemList.addAll(items)
         notifyItemRangeInserted(0, itemCount)
     }
 
-    fun add(pos: Int, item: StopsJSONItem) {
+    fun add(pos: Int, item: Stop) {
         typeAheadItemList.add(pos, item)
         notifyItemChanged(pos)
     }
 
-    fun remove(item: StopsJSONItem) {
+    fun remove(item: Stop) {
         val index = typeAheadItemList.indexOf(item)
         typeAheadItemList.remove(item)
         notifyItemRemoved(index)
     }
 
-    fun getItem(pos: Int): StopsJSONItem {
+    fun getItem(pos: Int): Stop {
         return typeAheadItemList[pos]
     }
 

@@ -5,4 +5,4 @@ import kotlinx.parcelize.Parcelize
 import java.io.Serializable
 
 @Parcelize
-class StopsJSON : ArrayList<StopsJSONItem>(), Parcelable, Serializable
+class Stops : ArrayList<Stop>(), Parcelable, Serializable

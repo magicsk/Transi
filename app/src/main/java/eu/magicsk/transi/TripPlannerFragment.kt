@@ -26,7 +26,7 @@ import com.google.android.material.color.MaterialColors
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.TripPlannerAdapter
 import eu.magicsk.transi.data.models.SelectedTrip
-import eu.magicsk.transi.data.remote.responses.StopsJSON
+import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.FragmentTripPlannerBinding
 import eu.magicsk.transi.util.ErrorAlert
 import eu.magicsk.transi.util.Trip
@@ -47,7 +47,7 @@ class TripPlannerFragment : Fragment() {
     private var selectedTripCalendar = Calendar.getInstance()
     private var selectedTrip = SelectedTrip()
     private var waitingForLocation: Boolean = true
-    private var stopList = StopsJSON()
+    private var stopList = Stops()
     private var actualLocation: Location? = null
     private var loadingMore: Boolean = false
     private var loadingNewTrip: Boolean = false
@@ -65,8 +65,8 @@ class TripPlannerFragment : Fragment() {
 
     private fun getTrip(
         v: Int = selectedTrip.v,
-        from: String = selectedTrip.from,
-        to: String = selectedTrip.to,
+        from: Int? = selectedTrip.from,
+        to: Int? = selectedTrip.to,
         date: String = selectedTrip.date,
         time: String = selectedTrip.time,
         arrivalDeparture: Int = selectedTrip.arrivalDeparture,
@@ -96,9 +96,9 @@ class TripPlannerFragment : Fragment() {
             service,
             format
         )
-        if (selectedTrip.to != "") {
+        if (selectedTrip.to != null) {
             activity?.findViewById<ProgressBar>(R.id.progressBar_ic)?.isVisible = true
-            if ((to == "" || from == "") || (to == "0" && from == "0")) {
+            if (to == null || from == null || from == to) {
                 activity?.runOnUiThread {
                     ErrorAlert(getString(R.string.ops), getString(R.string.error400)).show(
                         parentFragmentManager,
@@ -106,15 +106,15 @@ class TripPlannerFragment : Fragment() {
                     )
                 }
             } else {
-                if ((to == "0" || from == "0") && actualLocation == null) {
+                if ((to == 0 || from == 0) && actualLocation == null) {
                     waitingForLocation = true
                 } else if (actualLocation != null) {
                     val lat = actualLocation!!.latitude
-                    val long = actualLocation!!.longitude
+                    val lng = actualLocation!!.longitude
                     tripViewModel.getTrip(
                         v,
-                        if (from == "0") "c$lat,$long" else from,
-                        if (to == "0") "c$lat,$long" else to,
+                        if (from == 0) "c$lat,$lng" else "g$from",
+                        if (to == 0) "c$lat,$lng" else "g$to",
                         date,
                         time,
                         arrivalDeparture,
@@ -173,7 +173,7 @@ class TripPlannerFragment : Fragment() {
                             tripHolder = parsedTrip
                             tripPlannerAdapter.addItems(parsedTrip)
                             if (!_binding?.editTextTo?.text.isNullOrEmpty()) {
-                                _binding?.TripPlannerName?.text =
+                                _binding?.TripPlannerTitle?.text =
                                     resources.getString(R.string.tripPlannerTitle)
                                         .format(_binding?.editTextFrom?.text, _binding?.editTextTo?.text)
                             }
@@ -193,7 +193,7 @@ class TripPlannerFragment : Fragment() {
             editTextTo.clearFocus()
             TripPlannerList.adapter = tripPlannerAdapter
             TripPlannerList.layoutManager = LinearLayoutManager(context)
-            TripPlannerName.isSelected = true
+            TripPlannerTitle.isSelected = true
 
             mainViewModel.stopList.observe(viewLifecycleOwner) { stopsJSON ->
                 stopList = stopsJSON
@@ -202,7 +202,7 @@ class TripPlannerFragment : Fragment() {
                 typeAheadBundle.putSerializable("stopsList", stopList)
                 typeAheadBundle.putBoolean("directions", false)
                 typeAheadFragment.arguments = typeAheadBundle
-                if (tripPlannerAdapter.itemCount > 0) TripPlannerName.text =
+                if (tripPlannerAdapter.itemCount > 0) TripPlannerTitle.text =
                     resources.getString(R.string.tripPlannerTitle).format(editTextFrom.text, editTextTo.text)
             }
             mainViewModel.actualLocation.observe(viewLifecycleOwner) { location ->
@@ -210,14 +210,14 @@ class TripPlannerFragment : Fragment() {
                 waitingForLocation = false
                 if (editTextFrom.text.isNullOrEmpty()) {
                     editTextFrom.setText(context?.getString(R.string.actual_position))
-                    selectedTrip.from = "0"
+                    selectedTrip.from = 0
                     tripPlannerAdapter.setFromTo(newFrom = requireContext().getString(R.string.actual_position))
                 }
             }
             tripPlannerViewModel.clear()
             tripPlannerViewModel.selectedFromStop.observe(viewLifecycleOwner) {
                 activity?.window?.statusBarColor = MaterialColors.getColor(view, R.attr.colorMyBackground)
-                if (selectedTrip.from != it?.value && it != null) {
+                if (selectedTrip.from != it?.id && it != null) {
                     editTextFrom.setText(it.name)
                     tripPlannerAdapter.setFromTo(newFrom = it.name)
                     if (editTextTo.text.isNullOrEmpty()) {
@@ -228,16 +228,16 @@ class TripPlannerFragment : Fragment() {
                         val im: InputMethodManager? =
                             activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
                         im?.hideSoftInputFromWindow(view.windowToken, 0)
-                        getTrip(from = it.value)
+                        getTrip(from = it.id)
                     }
                 }
 
             }
             tripPlannerViewModel.selectedToStop.observe(viewLifecycleOwner) {
                 activity?.window?.statusBarColor = MaterialColors.getColor(view, R.attr.colorMyBackground)
-                if (selectedTrip.to != it?.value && it != null) {
+                if (selectedTrip.to != it?.id && it != null) {
                     editTextTo.setText(it.name)
-                    getTrip(to = it.value)
+                    getTrip(to = it.id)
                     tripPlannerAdapter.setFromTo(newTo = it.name)
                 }
             }
@@ -291,7 +291,7 @@ class TripPlannerFragment : Fragment() {
                     val tempValue = selectedTrip.to
                     selectedTrip.to = selectedTrip.from
                     selectedTrip.from = tempValue
-                    if (selectedTrip.from != "" && selectedTrip.to != "") {
+                    if (selectedTrip.from != null && selectedTrip.to != null) {
                         getTrip()
                     }
                 } else {
@@ -395,7 +395,7 @@ class TripPlannerFragment : Fragment() {
         if (tripHolder.isNotEmpty()) {
             tripPlannerAdapter.addItems(tripHolder)
             if (!_binding?.editTextTo?.text.isNullOrEmpty()) {
-                _binding?.TripPlannerName?.text =
+                _binding?.TripPlannerTitle?.text =
                     resources.getString(R.string.tripPlannerTitle)
                         .format(_binding?.editTextFrom?.text, _binding?.editTextTo?.text)
             }

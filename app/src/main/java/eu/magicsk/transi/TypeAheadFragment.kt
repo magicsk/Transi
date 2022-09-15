@@ -18,7 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.color.MaterialColors
 import eu.magicsk.transi.adapters.TypeAheadAdapter
-import eu.magicsk.transi.data.remote.responses.StopsJSON
+import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.FragmentTypeAheadBinding
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TripPlannerViewModel
@@ -30,7 +30,7 @@ class TypeAheadFragment : Fragment() {
     private lateinit var origin: String
     private val mapFragment: MapFragment = MapFragment()
     private var showDirections = false
-    private var stopsList: StopsJSON = StopsJSON()
+    private var stopsList: Stops = Stops()
     private val filterHandler = Handler(Looper.getMainLooper())
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -103,7 +103,7 @@ class TypeAheadFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        stopsList = requireArguments().getSerializable("stopsList") as StopsJSON
+        stopsList = requireArguments().getSerializable("stopsList") as Stops
         showDirections = requireArguments().getBoolean("directions")
         origin = requireArguments().getString("origin").toString()
     }

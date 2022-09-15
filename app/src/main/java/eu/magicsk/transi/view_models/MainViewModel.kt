@@ -3,19 +3,19 @@ package eu.magicsk.transi.view_models
 import android.location.Location
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import eu.magicsk.transi.data.remote.responses.StopsJSON
-import eu.magicsk.transi.data.remote.responses.StopsJSONItem
+import eu.magicsk.transi.data.remote.responses.Stop
+import eu.magicsk.transi.data.remote.responses.Stops
 import org.json.JSONArray
 import org.json.JSONException
 
 class MainViewModel : ViewModel() {
 
-    val stopList = MutableLiveData<StopsJSON>()
+    val stopList = MutableLiveData<Stops>()
     val actualLocation = MutableLiveData<Location>()
-    val selectedStop = MutableLiveData<StopsJSONItem?>()
+    val selectedStop = MutableLiveData<Stop?>()
     val tableInfo = MutableLiveData("")
 
-    fun setStopList(value: StopsJSON) {
+    fun setStopList(value: Stops) {
         stopList.value = value
     }
 
@@ -23,7 +23,7 @@ class MainViewModel : ViewModel() {
         actualLocation.value = value
     }
 
-    fun setSelectedStop(value: StopsJSONItem) {
+    fun setSelectedStop(value: Stop) {
         selectedStop.value = value
 
     }

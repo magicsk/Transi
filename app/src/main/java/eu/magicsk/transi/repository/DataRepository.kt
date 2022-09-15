@@ -5,7 +5,7 @@ import eu.magicsk.transi.data.remote.ApiRequests
 import eu.magicsk.transi.data.remote.GithubRequests
 import eu.magicsk.transi.data.remote.ImhdRequests
 import eu.magicsk.transi.data.remote.responses.ReleaseInfo
-import eu.magicsk.transi.data.remote.responses.StopsJSON
+import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.data.remote.responses.StopsVersion
 import eu.magicsk.transi.util.Resource
 import javax.inject.Inject
@@ -57,7 +57,7 @@ class DataRepository @Inject constructor(
         return Resource.Success(response)
     }
 
-    suspend fun getStops(): Resource<StopsJSON> {
+    suspend fun getStops(): Resource<Stops> {
         val response = try {
             api.getStops()
         } catch (e: Exception) {

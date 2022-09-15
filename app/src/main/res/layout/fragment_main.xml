@@ -36,29 +36,51 @@
                 android:textSize="26sp"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/MHDTableActualTime"/>
+                app:layout_constraintEnd_toStartOf="@id/MHDTableInfoButton"/>
+
+            <Button
+                style="?attr/materialIconButtonStyle"
+                android:id="@+id/MHDTableInfoButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:visibility="gone"
+                app:icon="@drawable/ic_notifications_none"
+                app:layout_constraintStart_toEndOf="@id/MHDTableStopName"
+                app:layout_constraintEnd_toStartOf="@id/MHDTableActualTime"
+                app:layout_constraintTop_toTopOf="parent"
+            />
 
             <TextView
                 android:id="@+id/MHDTableActualTime"
-                android:layout_width="90dp"
+                android:layout_width="80dp"
                 android:layout_height="25dp"
-                android:layout_marginStart="5dp"
                 android:layout_marginEnd="15dp"
                 android:fontFamily="@font/roboto_medium"
                 android:text="@string/actualTime"
                 android:textSize="18sp"
                 android:gravity="end"
                 android:lines="1"
-                app:layout_constraintStart_toEndOf="@id/MHDTableStopName"
+                app:layout_constraintStart_toEndOf="@id/MHDTableInfoButton"
                 app:layout_constraintBottom_toBottomOf="@id/MHDTableStopName"
                 app:layout_constraintEnd_toEndOf="parent"/>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/MHDTableInfoText"
+            <net.cachapa.expandablelayout.ExpandableLayout
+                android:id="@+id/MHDTableInfoTextContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="gone"
-                app:layout_constraintTop_toBottomOf="@id/MHDTableStopName"/>
+                app:el_parallax="0.5"
+                app:el_duration="300"
+                app:el_expanded="true"
+                app:layout_constraintTop_toBottomOf="@id/MHDTableStopName"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+            >
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/MHDTableInfoText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </net.cachapa.expandablelayout.ExpandableLayout>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/MHDTableList"
@@ -66,7 +88,7 @@
                 android:layout_height="0dp"
                 android:layout_marginTop="15dp"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/MHDTableInfoText"/>
+                app:layout_constraintTop_toBottomOf="@id/MHDTableInfoTextContainer"/>
 
             <TextView
                 android:id="@+id/MHDTableListConnectInfo"

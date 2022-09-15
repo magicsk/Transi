@@ -27,8 +27,8 @@ import com.google.android.material.color.MaterialColors
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.MHDTableAdapter
 import eu.magicsk.transi.adapters.TableInfoAdapter
-import eu.magicsk.transi.data.remote.responses.StopsJSON
-import eu.magicsk.transi.data.remote.responses.StopsJSONItem
+import eu.magicsk.transi.data.remote.responses.Stop
+import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.FragmentMainBinding
 import eu.magicsk.transi.view_models.MainViewModel
 import java.util.*
@@ -40,21 +40,22 @@ class MainFragment : Fragment() {
     private lateinit var sharedPreferences: SharedPreferences
     private val tableAdapter = MHDTableAdapter()
     private val tableInfoAdapter = TableInfoAdapter(mutableListOf())
-    private var stopList = StopsJSON()
+    private var stopList = Stops()
     private val typeAheadFragment = TypeAheadFragment()
     private var actualLocation: Location? = null
     private var nearestSwitching = true
     private var infoDismissed = false
+    private var firstRun = true
     private val connectionHandler = Handler(Looper.getMainLooper())
     private var tableState: Parcelable? = null
-    private var selected = StopsJSONItem(
-        0, "Locating nearest stop…", "none", "/ba/zastavka/Hronsk%C3%A1/b68883", "g94", "bus", 394, 48.13585663, 17.20938683, null
+    private var selected = Stop(
+        394, 0, "Locating nearest stop…", "none", "bus", 0, 48.13585663, 17.20938683, null
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         infoDismissed = savedInstanceState?.get("infoDismissed") as? Boolean ?: infoDismissed
-        selected = savedInstanceState?.getSerializable("selectedStop") as? StopsJSONItem ?: selected
+        selected = savedInstanceState?.getSerializable("selectedStop") as? Stop ?: selected
         nearestSwitching = savedInstanceState?.getBoolean("nearestSwitching") ?: nearestSwitching
         sharedPreferences = context?.getSharedPreferences("Transi", Context.MODE_PRIVATE)!!
     }
@@ -83,10 +84,10 @@ class MainFragment : Fragment() {
         if (tableState != null) activity?.findViewById<RecyclerView>(R.id.MHDTableList)?.layoutManager?.onRestoreInstanceState(
             tableState
         )
-        println("connection ${tableAdapter.connected} ${tableAdapter.connecting}")
-        if (!tableAdapter.connected && !tableAdapter.connecting) {
+        if (!tableAdapter.connected && !firstRun) {
             tableAdapter.ioConnect(selected.id)
         }
+        firstRun = false
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -213,7 +214,7 @@ class MainFragment : Fragment() {
                 }
             }
 
-            if (selected.html != "none") MHDTableStopName.text = selected.name
+            if (selected.id != 0) MHDTableStopName.text = selected.name
             val calendar = Calendar.getInstance()
             MHDTableActualTime.text = context?.getString(
                 R.string.actualTime,
@@ -242,6 +243,9 @@ class MainFragment : Fragment() {
                 }
             }
             MHDTableInfoText.isVisible = tableInfoAdapter.itemCount > 0
+            MHDTableInfoButton.setOnClickListener {
+                MHDTableInfoTextContainer.toggle()
+            }
         }
     }
 

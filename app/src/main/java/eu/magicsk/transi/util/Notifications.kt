@@ -13,7 +13,7 @@ import eu.magicsk.transi.MainActivity
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.models.MHDTable
 import eu.magicsk.transi.data.models.MHDTableData
-import eu.magicsk.transi.data.remote.responses.StopsJSONItem
+import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.receivers.MHDTableCancelNotificationReceiver
 import io.socket.client.IO
 import io.socket.client.Socket
@@ -71,7 +71,7 @@ fun startNotificationUpdater(context: Context) {
     thread.start()
 }
 
-fun tableNotification(stop: StopsJSONItem, connectionId: Long, context: Context) {
+fun tableNotification(stop: Stop, connectionId: Long, context: Context) {
     actualStopName = stop.name
     if (connected) {
         cancelTableNotification(context)

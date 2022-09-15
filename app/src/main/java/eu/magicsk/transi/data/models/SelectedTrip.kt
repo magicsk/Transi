@@ -7,8 +7,8 @@ import java.io.Serializable
 @Parcelize
 data class SelectedTrip(
     var v: Int = 7,
-    var from: String = "",
-    var to: String = "",
+    var from: Int? = null,
+    var to: Int? = null,
     var date: String = "",
     var time: String = "",
     var arrivalDeparture: Int = 0,

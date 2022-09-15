@@ -5,15 +5,14 @@ import kotlinx.parcelize.Parcelize
 import java.io.Serializable
 
 @Parcelize
-data class StopsJSONItem(
+data class Stop(
+    val id: Int,
     val station_id: Int,
     val name: String,
-    val html: String,
-    val url: String,
-    val value: String,
+    val city: String,
     val type: String,
-    val id: Int,
+    val trips_count: Int,
     val lat: Double,
-    val long: Double,
+    val lng: Double,
     val platform_labels: PlatformLabels?
 ) : Parcelable, Serializable

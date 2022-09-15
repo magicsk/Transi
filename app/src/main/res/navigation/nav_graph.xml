@@ -28,7 +28,7 @@
         tools:layout="@layout/fragment_type_ahead">
         <argument
             android:name="stopsList"
-            app:argType="eu.magicsk.transi.data.remote.responses.StopsJSON"/>
+            app:argType="eu.magicsk.transi.data.remote.responses.Stops"/>
         <action
             android:id="@+id/action_typeAheadFragment_to_mapFragment"
             app:destination="@id/mapFragment"/>
@@ -40,7 +40,7 @@
         tools:layout="@layout/fragment_map">
         <argument
             android:name="stopsList"
-            app:argType="eu.magicsk.transi.data.remote.responses.StopsJSON"/>
+            app:argType="eu.magicsk.transi.data.remote.responses.Stops"/>
     </fragment>
 
 </navigation>

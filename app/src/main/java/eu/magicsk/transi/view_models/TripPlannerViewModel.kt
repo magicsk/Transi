@@ -5,7 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import eu.magicsk.transi.data.remote.responses.StopsJSONItem
+import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.repository.DataRepository
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -16,8 +16,8 @@ class TripPlannerViewModel @Inject constructor(
     private val repository: DataRepository
 ) : ViewModel() {
     private var tripLiveData = MutableLiveData<JSONObject?>()
-    val selectedFromStop = MutableLiveData<StopsJSONItem?>()
-    val selectedToStop = MutableLiveData<StopsJSONItem?>()
+    val selectedFromStop = MutableLiveData<Stop?>()
+    val selectedToStop = MutableLiveData<Stop?>()
     val trip: LiveData<JSONObject?> = tripLiveData
     fun getTrip(
         v: Int = 7,
@@ -56,11 +56,11 @@ class TripPlannerViewModel @Inject constructor(
         }
     }
 
-    fun setSelectedFromStop(value: StopsJSONItem) {
+    fun setSelectedFromStop(value: Stop) {
         selectedFromStop.value = value
     }
 
-    fun setSelectedToStop(value: StopsJSONItem?) {
+    fun setSelectedToStop(value: Stop?) {
         selectedToStop.value = value
     }
 

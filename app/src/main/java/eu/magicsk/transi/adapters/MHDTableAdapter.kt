@@ -6,6 +6,8 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.PorterDuff
 import android.graphics.drawable.AnimatedVectorDrawable
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,8 +23,8 @@ import com.bumptech.glide.Glide
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.models.MHDTable
 import eu.magicsk.transi.data.models.MHDTableData
-import eu.magicsk.transi.data.remote.responses.StopsJSON
-import eu.magicsk.transi.data.remote.responses.StopsJSONItem
+import eu.magicsk.transi.data.remote.responses.Stop
+import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.TableListItemBinding
 import eu.magicsk.transi.util.*
 import eu.magicsk.transi.view_models.MainViewModel
@@ -45,14 +47,14 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
     private val options = IO.Options()
     private val socket: Socket = IO.socket(uri, options)
     private val tabArgs = JSONArray()
-    private var stopList: StopsJSON = StopsJSON()
+    private var stopList: Stops = Stops()
     private var actualStopId = 0
     private val mhdTable = MHDTable()
     private var updateTimeStamp = 0L
+    private val connectionHandler = Handler(Looper.getMainLooper())
     var connected = false
-    var connecting = false
 
-    private fun getStopById(id: Int): StopsJSONItem? {
+    private fun getStopById(id: Int): Stop? {
         stopList.let {
             for (i in 0 until stopList.size) {
                 if (id == stopList[i].id) {
@@ -63,7 +65,7 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
         return null
     }
 
-    fun putStopList(stops: StopsJSON) {
+    fun putStopList(stops: Stops) {
         stopList.clear()
         stopList.addAll(stops)
     }
@@ -100,27 +102,27 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
     }
 
     fun ioConnect(stopId: Int) {
-        connecting = true
-        actualStopId = stopId
-        ioDisconnect()
-        println("connecting")
-        options.reconnection = true
-        options.path = "/rt/sio2"
-        tabArgs.put(0, stopId)
-        tabArgs.put(1, "*")
-        socket.connect()
-        socket
-            .emit("tabStart", tabArgs)
-            .emit("infoStart")
+        connectionHandler.removeCallbacksAndMessages(null)
+        connectionHandler.postDelayed({
+            actualStopId = stopId
+            ioDisconnect()
+            options.reconnection = true
+            options.path = "/rt/sio2"
+            tabArgs.put(0, stopId)
+            tabArgs.put(1, "*")
+            socket.connect()
+            socket
+                .emit("tabStart", tabArgs)
+                .emit("infoStart")
+        }, 50)
     }
 
     fun ioAddObservers(activity: Activity) {
         socket.off()
-        val mainViewModel = ViewModelProvider(activity as ViewModelStoreOwner).get(MainViewModel::class.java)
+        val mainViewModel = ViewModelProvider(activity as ViewModelStoreOwner)[MainViewModel::class.java]
         val connectInfo = activity.findViewById<TextView>(R.id.MHDTableListConnectInfo)
         socket
             .on(Socket.EVENT_CONNECTING) {
-                connecting = true
                 println("connecting")
                 activity.runOnUiThread {
                     connectInfo?.visibility = View.VISIBLE
@@ -128,7 +130,6 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                 }
             }
             .on(Socket.EVENT_CONNECT) {
-                connecting = false
                 connected = true
                 println("connected")
                 activity.runOnUiThread {
@@ -137,7 +138,6 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                 }
             }
             .on(Socket.EVENT_DISCONNECT) {
-                connecting = false
                 connected = false
                 println("disconnected")
                 activity.runOnUiThread {
@@ -146,14 +146,12 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                 }
             }
             .on(Socket.EVENT_RECONNECTING) {
-                connecting = true
                 activity.runOnUiThread {
                     connectInfo?.visibility = View.VISIBLE
                     connectInfo?.text = activity.getString(R.string.reconnecting)
                 }
             }
             .on(Socket.EVENT_RECONNECT) {
-                connecting = false
                 connected = true
                 println("reconnected")
                 activity.runOnUiThread {

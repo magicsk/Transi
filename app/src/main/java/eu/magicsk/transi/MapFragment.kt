@@ -23,14 +23,14 @@ import com.google.android.gms.maps.model.*
 import com.google.maps.android.clustering.ClusterItem
 import com.google.maps.android.clustering.ClusterManager
 import com.google.maps.android.clustering.view.DefaultClusterRenderer
-import eu.magicsk.transi.data.remote.responses.StopsJSON
-import eu.magicsk.transi.data.remote.responses.StopsJSONItem
+import eu.magicsk.transi.data.remote.responses.Stop
+import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.util.isDarkTheme
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TripPlannerViewModel
 
 class MapFragment : SupportMapFragment() {
-    private lateinit var stopsList: StopsJSON
+    private lateinit var stopsList: Stops
     private lateinit var origin: String
     private val placesList = arrayListOf<Place>()
 
@@ -77,37 +77,31 @@ class MapFragment : SupportMapFragment() {
 
 
     data class Place(
-        val station_id: Int,
-        val name: String,
-        val html: String,
-        val url: String,
-        val value: String,
-        val type: String,
         val id: Int,
+        val name: String,
+        val type: String,
         val latLng: LatLng,
     ) : ClusterItem {
         override fun getPosition(): LatLng = latLng
-
         override fun getTitle(): String = name
-
-        override fun getSnippet(): String = html
+        override fun getSnippet(): String = name
     }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        stopsList = requireArguments().getSerializable("stopsList") as StopsJSON
+        stopsList = requireArguments().getSerializable("stopsList") as Stops
         origin = requireArguments().getString("origin").toString()
         stopsList.forEach { stop ->
             if (stop.id != 0) placesList.add(
                 Place(
-                    stop.station_id, stop.name, stop.html, stop.url, stop.value, stop.type, stop.id, LatLng(stop.lat, stop.long)
+                    stop.id, stop.name, stop.type, LatLng(stop.lat, stop.lng)
                 )
             )
         }
     }
 
-    private fun getItem(name: String): StopsJSONItem {
+    private fun getItem(name: String): Stop {
         stopsList.forEach {
             if (it.name == name) return it
         }
@@ -126,18 +120,20 @@ class MapFragment : SupportMapFragment() {
         // Set custom info window adapter
         clusterManager.markerCollection.setOnInfoWindowClickListener { marker ->
             val stopInfo = marker.title?.let { getItem(it) }
-            val mainViewModel = ViewModelProvider(requireActivity()).get(MainViewModel::class.java)
-            val tripPlannerViewModel = ViewModelProvider(requireActivity()).get(TripPlannerViewModel::class.java)
+            val mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
+            val tripPlannerViewModel = ViewModelProvider(requireActivity())[TripPlannerViewModel::class.java]
             stopInfo?.let { stop ->
                 when (origin) {
                     "editTextFrom" -> {
                         activity?.supportFragmentManager?.popBackStack("tripTypeAhead", 1)
                         tripPlannerViewModel.setSelectedFromStop(stop)
                     }
+
                     "editTextTo" -> {
                         activity?.supportFragmentManager?.popBackStack("tripTypeAhead", 1)
                         tripPlannerViewModel.setSelectedToStop(stop)
                     }
+
                     else -> {
                         activity?.supportFragmentManager?.popBackStack("typeAhead", 1)
                         mainViewModel.setSelectedStop(stop)
@@ -160,7 +156,7 @@ class MapFragment : SupportMapFragment() {
         super.onViewCreated(view, savedInstanceState)
         val bounds = LatLngBounds.builder()
         stopsList.forEach {
-            if (it.id != 0) bounds.include(LatLng(it.lat, it.long))
+            if (it.id != 0) bounds.include(LatLng(it.lat, it.lng))
         }
         val locationManager = activity?.getSystemService(AppCompatActivity.LOCATION_SERVICE) as LocationManager
         val actualLocation = locationManager.getLastKnownLocation(
