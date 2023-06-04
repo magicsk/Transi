@@ -8,8 +8,7 @@
         android:id="@+id/navigationTable"
         android:name="eu.magicsk.transi.MainFragment"
         android:label="MainFragment"
-        tools:layout="@layout/fragment_main">
-    </fragment>
+        tools:layout="@layout/fragment_main"/>
     <fragment
         android:id="@+id/navigationTripPlanner"
         android:name="eu.magicsk.transi.TripPlannerFragment"
@@ -17,10 +16,31 @@
         tools:layout="@layout/fragment_trip_planner">
     </fragment>
     <fragment
+        android:id="@+id/navigationTimetables"
+        android:name="eu.magicsk.transi.TimetablesFragment"
+        android:label="TimetableFragment"
+        tools:layout="@layout/fragment_timetables">
+        <action
+                android:id="@+id/action_navigationTimetables_to_navigationTimetable"
+                app:destination="@id/navigationTimetable" />
+    </fragment>
+    <fragment
         android:id="@+id/navigationTimetable"
         android:name="eu.magicsk.transi.TimetableFragment"
         android:label="TimetableFragment"
-        tools:layout="@layout/fragment_timetable"/>
+        tools:layout="@layout/fragment_timetable">
+        <action
+                android:id="@+id/action_navigationTimetable_to_navigationTimetableDetail"
+                app:destination="@id/navigationTimetableDetail" />
+    </fragment>
+    <fragment
+        android:id="@+id/navigationTimetableDetail"
+        android:name="eu.magicsk.transi.TimetableDetailFragment"
+        android:label="TimetableFragment"
+        tools:layout="@layout/fragment_timetable_detail"/>
+
+
+
     <fragment
         android:id="@+id/typeAheadFragment"
         android:name="eu.magicsk.transi.TypeAheadFragment"

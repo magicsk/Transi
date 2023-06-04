@@ -93,7 +93,7 @@ class MainActivity : AppCompatActivity() {
             if (stopsVersion != null) {
                 if (savedStopListVersion != stopsVersion.version || savedStopListJson == "") {
                     stopsViewModel.stops.observe(this) { stops ->
-                        if (stops != null && stops.size > 0) {
+                        if (!stops.isNullOrEmpty()) {
                             println("stops fetched")
                             stopList.clear()
                             stopList.addAll(stops)
@@ -136,13 +136,19 @@ class MainActivity : AppCompatActivity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         window?.statusBarColor = MaterialColors.getColor(window.decorView, R.attr.colorMyBackground)
-        if (supportFragmentManager.findFragmentById(R.id.tripSearchFragmentLayout) != null) {
-            supportFragmentManager.popBackStack(
-                "tripTypeAhead",
-                1
-            )
-        } else if (supportFragmentManager.findFragmentById(R.id.tripSearchFragmentLayout) != null) {
+//        if (supportFragmentManager.findFragmentById(R.id.tripSearchFragmentLayout) != null) {
+//            supportFragmentManager.popBackStack(
+//                "tripTypeAhead",
+//                1
+//            )
+//        } else if (supportFragmentManager.findFragmentById(R.id.tripSearchFragmentLayout) != null) {
+//            supportFragmentManager.popBackStack("typeAhead", 1)
+        if (supportFragmentManager.backStackEntryCount > 1) {
+            supportFragmentManager.popBackStack("timetableDetail", 1)
+        } else if (supportFragmentManager.backStackEntryCount > 0) {
+            supportFragmentManager.popBackStack("tripTypeAhead", 1)
             supportFragmentManager.popBackStack("typeAhead", 1)
+            supportFragmentManager.popBackStack("timetable", 1)
         } else {
             super.onBackPressed()
         }
@@ -196,8 +202,14 @@ class MainActivity : AppCompatActivity() {
         )
 
         val locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
-        val locationListener = LocationListener { location ->
-            locationChange(location)
+        val locationListener = object : LocationListener {
+            override fun onLocationChanged(location: Location) {
+                locationChange(location)
+            }
+
+            override fun onProviderDisabled(provider: String) {}
+            override fun onProviderEnabled(provider: String) {}
+            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
         }
 
         fun requestLocation() {
@@ -224,8 +236,15 @@ class MainActivity : AppCompatActivity() {
             ActivityResultContracts.RequestMultiplePermissions()
         ) { permissions ->
             when {
-                permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> requestLocation()
-                permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> requestLocation()
+                permissions.getOrDefault(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    false
+                ) -> requestLocation()
+
+                permissions.getOrDefault(
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    false
+                ) -> requestLocation()
             }
         }
 

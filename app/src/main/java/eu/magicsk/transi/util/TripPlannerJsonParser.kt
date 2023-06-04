@@ -141,7 +141,7 @@ fun tripPlannerJsonParser(data: JSONObject, fragmentManager: FragmentManager, co
                     val part = TripPart(
                         type = if (type) 0 else 1,
                         line = if (type) null else currentPart.getJSONArray("line").getString(1),
-                        headsign = if (type) null else currentPart.getString("destination"),
+                        headsign = if (type) null else currentPart.getString("destination").removePrefix(", "),
                         duration = partDuration,
                         departure = if (type) null else TripDA(
                             time = partDeparture.format(timeFormat),

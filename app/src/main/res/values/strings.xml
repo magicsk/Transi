@@ -24,6 +24,15 @@
     <string name="actual_position">Actual position</string>
     <string name="back">Back</string>
 
+    <string name="timetables">Timetables</string>
+    <string name="trams">Trams</string>
+    <string name="trolleybuses">Trolleybuses</string>
+    <string name="buses">Buses</string>
+    <string name="night_lines">Night lines</string>
+    <string name="trains">Trains</string>
+    <string name="regional_buses">Regional buses</string>
+    <string name="directions">%1$ - %2$</string>
+
     <string name="tripPlanner">Trip Planner</string>
     <string name="tripPlannerTitle">%1$s ▶ %2$s</string>
     <string name="walking_directions">walking directions</string>
@@ -67,9 +76,10 @@
     <string name="trip_planner_notification_channel_description">Trip planner notifier</string>
 
     <string name="table_notification_title">%1$s ▶ %2$s %3$s</string>
-    <string name="table_notification_body">Expected departure: %1$s&lt;br>Last stop: %2$s&lt;br>%3$s    %4$s&lt;br>&lt;br>%5$s</string>
+    <string name="table_notification_body">Expected departure: %1$s&lt;br>Last stop: %2$s&lt;br>%3$s %4$s&lt;br>&lt;br>%5$s
+    </string>
     <string name="table_notification_body_offline">Expected departure: %1$s&lt;br>offline</string>
-    <string name="table_share_body">&lt;b>%1$s ▶ %2$s&lt;/b>&lt;br>Departure from %3$s: %4$s&lt;br>Last stop: %5$s&lt;br>%6$s    %7$s&lt;br>&lt;br>%8$s</string>
+    <string name="table_share_body">&lt;b>%1$s ▶ %2$s&lt;/b>&lt;br>Departure from %3$s: %4$s&lt;br>Last stop: %5$s&lt;br>%6$s %7$s&lt;br>&lt;br>%8$s</string>
     <string name="table_share_body_offline">&lt;b>%1$s ▶ %2$s&lt;/b>&lt;br>Departure from %3$s: %4$s&lt;br>offline</string>
     <string name="dismiss">Dismiss</string>
     <string name="share">Share</string>

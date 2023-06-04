@@ -130,7 +130,7 @@
         app:layout_constraintBottom_toBottomOf="parent">
 
         <EditText
-            android:background="@drawable/round_shape_15"
+            android:background="@drawable/round_shape_50"
             android:hint="@string/search"
             android:id="@+id/editText"
             android:inputType="textNoSuggestions"

@@ -12,7 +12,7 @@
         android:title="Table"/>
 
     <item
-        android:id="@+id/navigationTimetable"
+        android:id="@+id/navigationTimetables"
         android:icon="@drawable/ic_bus"
         android:title="Timetables"/>
 

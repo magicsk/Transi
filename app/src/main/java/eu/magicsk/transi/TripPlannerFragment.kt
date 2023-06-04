@@ -141,7 +141,6 @@ class TripPlannerFragment : Fragment() {
 
     private fun openTypeAhead(typeAheadFragment: TypeAheadFragment, origin: String) {
         val supportFragmentManager = activity?.supportFragmentManager
-        println(supportFragmentManager?.backStackEntryCount)
         if ((supportFragmentManager?.backStackEntryCount ?: 0) > 0) {
             supportFragmentManager?.popBackStackImmediate("tripTypeAhead", 1)
             if (origin == "editTextFrom") binding.editTextFrom.requestFocus() else binding.editTextTo.requestFocus()

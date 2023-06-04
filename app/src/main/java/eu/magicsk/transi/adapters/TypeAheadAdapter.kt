@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.github.androidpasswordstore.sublimefuzzy.Fuzzy
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.Stops
@@ -26,7 +27,7 @@ class TypeAheadAdapter(
     ) :
         RecyclerView.ViewHolder(binding.root), View.OnClickListener {
         init {
-            binding.root.setOnClickListener(this) // was itemView
+            binding.root.setOnClickListener(this)
             binding.directionBtn.setOnClickListener {
                 onButtonClicked(adapterPosition)
             }
@@ -54,7 +55,9 @@ class TypeAheadAdapter(
 
     fun filter(term: String) {
         var defaultsCount = 0
-        val filtered = originalStopList.filter { it.name.unaccent().contains(term.unaccent(), ignoreCase = true) }
+        val filtered = if (term.isEmpty())  originalStopList else originalStopList.filter {
+            if (it.id == 0) true else Fuzzy.fuzzyMatchSimple(term.unaccent(), it.name.unaccent())
+        }
         val toRemove = mutableListOf<Int>()
         typeAheadItemList.forEachIndexed { index, item ->
             if (!filtered.contains(item) && item.id != 0) {
@@ -68,16 +71,27 @@ class TypeAheadAdapter(
         }
         filtered.forEachIndexed { index, item ->
             if (!typeAheadItemList.contains(item)) {
-                typeAheadItemList.add(index+defaultsCount, item)
-                notifyItemInserted(index+defaultsCount)
+                typeAheadItemList.add(index, item)
+                notifyItemInserted(index)
+            }
+        }
+        val sorted = filtered.sortedByDescending {
+            val (_, score) = Fuzzy.fuzzyMatch(term.unaccent(), it.name.unaccent())
+            if (it.id == 0) 999999 else score
+        }
+
+        sorted.forEachIndexed { index, stop ->
+            if (stop.id != typeAheadItemList[index].id) {
+                typeAheadItemList[index] = stop
+                notifyItemChanged(index)
             }
         }
     }
 
     fun addItems(items: Stops, ap: Boolean) {
         addDefaults(ap)
-        originalStopList.addAll(items)
         typeAheadItemList.addAll(items)
+        originalStopList.addAll(typeAheadItemList)
         notifyItemRangeInserted(0, itemCount)
     }
 

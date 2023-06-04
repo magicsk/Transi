@@ -19,8 +19,9 @@ object ApiModule {
     fun provideRepository(
         api: ApiRequests,
         imhdApi: ImhdRequests,
+        idsbkApi: IdsbkRequests,
         githubApi: GithubRequests
-    ) = DataRepository(api, imhdApi, githubApi)
+    ) = DataRepository(api, imhdApi, idsbkApi, githubApi)
 
     @Singleton
     @Provides
@@ -40,6 +41,16 @@ object ApiModule {
             .baseUrl("https://imhd.sk/ba/api/")
             .build()
             .create(ImhdRequests::class.java)
+    }
+
+    @Singleton
+    @Provides
+    fun provideIdsbkApi(): IdsbkRequests {
+        return Retrofit.Builder()
+            .addConverterFactory(GsonConverterFactory.create())
+            .baseUrl("https://api.idsbk.sk/mobile/v1/")
+            .build()
+            .create(IdsbkRequests::class.java)
     }
 
     @Singleton

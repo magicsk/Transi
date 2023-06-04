@@ -53,6 +53,7 @@
     <color name="md_theme_dark_inverseOnSurface">#201A19</color>
     <color name="md_theme_dark_inverseSurface">#ECDFDE</color>
     <color name="md_theme_dark_primaryInverse">#9C413D</color>
+    <color name="colorControlHighlight">@color/ripple_material_light</color>
     <color name="seed" tools:keep="@color/seed">#FCE8E6</color>
     <color name="error" tools:keep="@color/error">#BA1B1B</color>
 

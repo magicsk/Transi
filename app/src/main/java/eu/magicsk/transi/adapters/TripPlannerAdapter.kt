@@ -2,9 +2,12 @@ package eu.magicsk.transi.adapters
 
 import android.app.NotificationManager
 import android.content.Context
+import android.content.res.ColorStateList
+import android.graphics.drawable.RippleDrawable
 import android.text.Html
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import eu.magicsk.transi.R
@@ -82,6 +85,11 @@ class TripPlannerAdapter(
         val current = TripPlannerItemList[position]
         holder.binding.apply {
             val context = root.context
+            TableListCard.foreground = RippleDrawable(
+                ColorStateList.valueOf(ContextCompat.getColor(context, R.color.colorControlHighlight)),
+                null,
+                TableListCard.background
+            )
             TableListDurationStopList.text = current.duration
             TableListTime.text = context.getString(R.string.tripTime).format(current.departure, current.arrival)
             TableListItems.layoutManager =

@@ -4,8 +4,13 @@ import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.util.TypedValue
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import org.json.JSONArray
 import java.text.Normalizer
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
 fun isDarkTheme(resources: Resources): Boolean {
@@ -33,7 +38,7 @@ fun CharSequence.unaccent(): String {
 }
 
 fun JSONArray.size(): Int {
-    return this.length()-1
+    return this.length() - 1
 }
 
 sealed class Either<out L, out R> {
@@ -44,4 +49,26 @@ sealed class Either<out L, out R> {
 
     val isLeft: Boolean get() = this is Left<L>
     val isRight: Boolean get() = this is Right<R>
+}
+
+fun getDate(plusDays: Long = 0, format: String = "yyyyMMdd"): String {
+    var current = LocalDateTime.now()
+    current = current.plusDays(plusDays)
+    val dateFormat = DateTimeFormatter.ofPattern(format)
+    return current.format(dateFormat)
+}
+
+fun getMinutes(): Int {
+    val current = LocalDateTime.now()
+    return current.minute + current.hour*60
+
+}
+
+fun <T> LiveData<T>.observeOnce(owner: LifecycleOwner, observer: (T) -> Unit) {
+    observe(owner, object : Observer<T> {
+        override fun onChanged(value: T) {
+            observer(value)
+            removeObserver(this)
+        }
+    })
 }

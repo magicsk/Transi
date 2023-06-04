@@ -8,6 +8,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +19,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.GoogleMap.MAP_TYPE_NONE
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.clustering.ClusterItem
@@ -25,14 +27,35 @@ import com.google.maps.android.clustering.ClusterManager
 import com.google.maps.android.clustering.view.DefaultClusterRenderer
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.Stops
-import eu.magicsk.transi.util.isDarkTheme
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TripPlannerViewModel
+import java.net.MalformedURLException
+import java.net.URL
 
 class MapFragment : SupportMapFragment() {
     private lateinit var stopsList: Stops
     private lateinit var origin: String
     private val placesList = arrayListOf<Place>()
+
+    private val tileProvider: TileProvider = object : UrlTileProvider(256, 256) {
+        override fun getTileUrl(x: Int, y: Int, zoom: Int): URL? {
+
+            val url = "https://tile.thunderforest.com/transport/${zoom}/$x/$y@2x.png?apikey=6170aad10dfd42a38d4d8c709a536f38"
+            return if (!checkTileExists(zoom)) {
+                null
+            } else try {
+                URL(url)
+            } catch (e: MalformedURLException) {
+                throw AssertionError(e)
+            }
+        }
+
+        private fun checkTileExists(zoom: Int): Boolean {
+            val minZoom = 0
+            val maxZoom = 19
+            return zoom in minZoom..maxZoom
+        }
+    }
 
     object BitmapHelper {
         fun vectorToBitmap(
@@ -154,6 +177,8 @@ class MapFragment : SupportMapFragment() {
     @SuppressLint("MissingPermission")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val im: InputMethodManager? = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+        im?.hideSoftInputFromWindow(view.windowToken, 0)
         val bounds = LatLngBounds.builder()
         stopsList.forEach {
             if (it.id != 0) bounds.include(LatLng(it.lat, it.lng))
@@ -164,8 +189,14 @@ class MapFragment : SupportMapFragment() {
         )
         findNavController().previousBackStackEntry?.savedStateHandle
         getMapAsync { googleMap ->
+            googleMap.mapType = MAP_TYPE_NONE
+            googleMap.addTileOverlay(
+                TileOverlayOptions()
+                    .fadeIn(false)
+                    .tileProvider(tileProvider)
+            )
             googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 50))
-            if (isDarkTheme(resources)) googleMap.setMapStyle(MapStyleOptions(resources.getString(R.string.style_json)))
+//            if (isDarkTheme(resources)) googleMap.setMapStyle(MapStyleOptions(resources.getString(R.string.style_json)))
             googleMap.uiSettings.isMapToolbarEnabled = false
             googleMap.setOnMapLoadedCallback {
                 googleMap.isMyLocationEnabled = true
