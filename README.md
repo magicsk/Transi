@@ -8,12 +8,12 @@ trip planner and timetables for MHD in Bratislava.
 ## Features
 
 On the virtual table you can see actual departures in real time
-with delays, vehicle info and more. By long pressing on a specific
+with delays, informations about vehicle and more. By long pressing on a specific
 connection you can create a notification which will update in real
 time. With the same gesture you can create a notification of the
-searched trip from the trip planner. There are of course old fashion
-timetables which are also available offline and will automatically
-update in background when you are on wi-fi.
+searched trip from the trip planner. There are also timetables.
+Everything requires internet connection but database of stops is
+cached to save data.
 
 ## Download
 
