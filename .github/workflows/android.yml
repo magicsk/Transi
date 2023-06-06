@@ -14,8 +14,8 @@ jobs:
     - uses: actions/checkout@v3
     - name: Get latest tag
       id: previoustag
-      run: git fetch --tags && echo "::set-output name=tag::$(git describe --abbrev=0 --tags $(git rev-list --tags --max-count=1))"
-    - name: Set up JDK 11
+      run: git fetch --tags && echo "tag=$(git describe --abbrev=0 --tags $(git rev-list --tags --max-count=1)) >> $GITHUB_OUTPUT"
+    - name: Set up JDK 17
       uses: actions/setup-java@v3
       with:
         java-version: '17'
@@ -30,8 +30,8 @@ jobs:
     - name: Get apk version
       id: apk
       run: APK_VERSION=$(./gradlew properties -q | grep "version:" | awk '{print v$2}') &&
-            echo "::set-output name=version::$APK_VERSION" &&
-            echo "::set-output name=tag::v$APK_VERSION"
+            echo "version=$APK_VERSION" >> $GITHUB_OUTPUT &&
+            echo "tag=v$APK_VERSION" >> $GITHUB_OUTPUT
     - name: Build signed apk
       run: ./gradlew assembleRelease
         -Pandroid.injected.signing.store.file=$GITHUB_WORKSPACE/transi.jks
