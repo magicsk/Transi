@@ -1,9 +1,10 @@
-@Suppress("JcenterRepositoryObsolete") dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+@file:Suppress("UnstableApiUsage")
+
+dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        jcenter() // Warning: this repository is going to shut down soon
+        maven { url = uri("https://jitpack.io") }
     }
 }
 rootProject.name = "Transi"

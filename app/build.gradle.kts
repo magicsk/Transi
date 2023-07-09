@@ -89,11 +89,11 @@ dependencies {
     implementation("com.google.maps.android:android-maps-utils:2.4.0")
 
     implementation("com.google.android.flexbox:flexbox:3.0.0")
-    implementation("net.cachapa.expandablelayout:expandablelayout:2.9.2")
+    implementation("com.github.cachapa:ExpandableLayout:2.9.2")
 
-    implementation(platform("com.google.firebase:firebase-bom:31.0.0"))
-    implementation("com.google.firebase:firebase-analytics-ktx:21.3.0")
-    implementation("com.google.firebase:firebase-crashlytics-ktx:18.3.7")
+    implementation(platform("com.google.firebase:firebase-bom:32.1.1"))
+    implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-crashlytics-ktx")
 
     implementation("io.noties.markwon:core:4.6.2")
     implementation("com.github.android-password-store:sublime-fuzzy:2.2.1")
