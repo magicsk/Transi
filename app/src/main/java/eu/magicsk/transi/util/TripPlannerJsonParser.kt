@@ -86,6 +86,9 @@ fun tripPlannerJsonParser(data: JSONObject, fragmentManager: FragmentManager, co
                     parts = mutableListOf()
                 )
 
+                val tripLines = current.getJSONArray("lines")
+
+
                 for (j in 0 until parts.length()) {
                     val currentPart = parts.getJSONObject(j)
                     val partDeparture =
@@ -137,10 +140,9 @@ fun tripPlannerJsonParser(data: JSONObject, fragmentManager: FragmentManager, co
                         }
                     } else if (arrivalStop.name != "") "to ${arrivalStop.name}" else "to the destination"
                     val message = "$partDuration min $arrivalPlace"
-
                     val part = TripPart(
                         type = if (type) 0 else 1,
-                        line = if (type) null else currentPart.getJSONArray("line").getString(1),
+                        line = if (type) null else tripLines.getJSONArray(j).getString(1),
                         headsign = if (type) null else currentPart.getString("destination").removePrefix(", "),
                         duration = partDuration,
                         departure = if (type) null else TripDA(
