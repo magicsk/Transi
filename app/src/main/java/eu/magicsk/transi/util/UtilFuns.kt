@@ -64,7 +64,7 @@ fun getDate(plusDays: Long = 0, format: String = "yyyyMMdd"): String {
 
 fun getMinutes(): Int {
     val current = LocalDateTime.now()
-    return current.minute + current.hour*60
+    return current.minute + current.hour * 60
 
 }
 
@@ -76,16 +76,16 @@ fun animatedAlphaChange(from: Float, to: Float, offset: Long, View: View) {
     View.startAnimation(animation)
 }
 
-fun customizeLineText(textView: TextView,lineNum: String, context: Context, resources: Resources) {
+fun customizeLineText(textView: TextView, lineNum: String, context: Context, resources: Resources) {
     val rounded =
         try {
-            lineNum.startsWith("S") || lineNum.startsWith("R") || lineNum.toInt() < 10
+            lineNum.startsWith("S") || lineNum.startsWith("R") || lineNum.startsWith("AT") || lineNum.toInt() < 10
         } catch (e: NumberFormatException) {
             false
         }
     if (rounded) {
         textView.setBackgroundResource(R.drawable.round_shape)
-        if (!lineNum.startsWith("S") && !lineNum.startsWith("R")) textView.setPadding(
+        if (!lineNum.startsWith("S") && !lineNum.startsWith("R") && !lineNum.startsWith("AT")) textView.setPadding(
             12f.dpToPx(context),
             5f.dpToPx(context),
             12f.dpToPx(context),

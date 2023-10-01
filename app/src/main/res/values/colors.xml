@@ -91,7 +91,7 @@
     <color name="l7">#FFffed03</color>
     <color name="l8">#FF4d897c</color>
     <color name="l9">#FF889923</color>
-    <color name="l21">#FF3fa03b</color>
+    <color name="l21">#FF338632</color>
     <color name="ln21">#FF54c279</color>
     <color name="ln29">#FFbbc79a</color>
     <color name="ln31">#FFddf8de</color>
@@ -112,21 +112,20 @@
     <color name="ln55">#FFfadf17</color>
     <color name="ln56">#FFc1ea8b</color>
     <color name="l60">#FF2b4493</color>
-    <color name="l61">#FFa72421</color>
+    <color name="l61">#FFa21517</color>
     <color name="ln61">#FFfb7373</color>
     <color name="l63">#FF642f6c</color>
     <color name="l64">#FF0e562c</color>
     <color name="l68">#FF897917</color>
     <color name="ln70">#FFffd8a8</color>
-    <color name="l71">#FF117eb4</color>
-    <color name="l72">#FF8c9f23</color>
+    <color name="l71">#FF047db3</color>
+    <color name="l72">#FF899d1c</color>
     <color name="ln72">#FFbbd702</color>
     <color name="ln74">#FFb5f1bb</color>
     <color name="ln80">#FFfeae46</color>
     <color name="l83">#FF0e7bba</color>
-    <color name="l88">#FF642f6c</color>
     <color name="ln91">#FFfff4b3</color>
-    <color name="l93">#FFad1b63</color>
+    <color name="l93">#FFab075f</color>
     <color name="ln93">#FFe43692</color>
     <color name="l95">#FFec6a1f</color>
     <color name="ln95">#FFee6901</color>
@@ -149,11 +148,14 @@
     <color name="l632">#FFeed502</color>
     <color name="l720">#FFfabc48</color>
     <color name="l737">#FFea533d</color>
-    <color name="train">#FF1756a2</color>
+    <color name="train">#FF166dd4</color>
+    <color name="AT_train">#FFff671f</color>
     <color name="night">#FF2b2a29</color>
     <color name="night_regional">#FF000000</color>
     <color name="replacement">#FFef7f1a</color>
     <color name="replacement_text">#FF2b2a29</color>
+    <color name="regio">#FFbfbfb9</color>
+    <color name="regio_text">#FF2b2a29</color>
 <!--    original default color-->
     <color name="ldefault_original" tools:keep="@color/ldefault_original">#FFc5c6c6</color>
     <color name="ldefault">#FF52595c</color>

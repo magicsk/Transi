@@ -1,6 +1,7 @@
 package eu.magicsk.transi.util
 
 import eu.magicsk.transi.R
+import java.lang.NumberFormatException
 
 fun getLineColor(lineNum: String, dark: Boolean): Int {
     when (lineNum) {
@@ -23,13 +24,12 @@ fun getLineColor(lineNum: String, dark: Boolean): Int {
         "50" -> return R.color.l50
         "60" -> return R.color.l60
         "61" -> return R.color.l61
-        "63" -> return R.color.l63
+        "63", "88" -> return R.color.l63
         "64" -> return R.color.l64
         "68" -> return R.color.l68
         "71" -> return R.color.l71
         "72" -> return R.color.l72
         "83", "84" -> return R.color.l83
-        "88" -> return R.color.l88
         "93", "94" -> return R.color.l93
         "95" -> return R.color.l95
         "96" -> return R.color.l96
@@ -54,8 +54,12 @@ fun getLineColor(lineNum: String, dark: Boolean): Int {
         "►" -> return if (dark) R.color.gray else R.color.cardview_light_background
         else -> {
             if (lineNum.startsWith("S") || lineNum.startsWith("R")) return R.color.train
+            if (lineNum.startsWith("AT")) return R.color.AT_train
             if (lineNum.startsWith("N")) return R.color.night
             if (lineNum.startsWith("X")) return R.color.replacement
+            try {
+                if (lineNum.toInt() > 200) return R.color.regio
+            } catch (_: NumberFormatException) {}
             return R.color.ldefault
         }
     }
@@ -63,6 +67,7 @@ fun getLineColor(lineNum: String, dark: Boolean): Int {
 
 fun getLineTextColor(lineNum: String): Int {
     when (lineNum) {
+        "7" -> return R.color.regio_text
         "N21" -> return R.color.ln21
         "N29" -> return R.color.ln29
         "N31" -> return R.color.ln31
@@ -84,8 +89,12 @@ fun getLineTextColor(lineNum: String): Int {
         "N95" -> return R.color.ln95
         "N99" -> return R.color.ln99
         "►" -> return R.color.material_on_surface_emphasis_high_type
+        "298", "299", "598", "599", "699", "798", "799" -> return R.color.white
         else -> {
             if (lineNum.startsWith("X")) return R.color.replacement_text
+            try {
+                if (lineNum.toInt() > 200) return R.color.regio_text
+            } catch (_: NumberFormatException) {}
             return R.color.white
         }
     }
