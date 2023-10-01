@@ -4,45 +4,48 @@ import eu.magicsk.transi.R
 
 fun getLineColor(lineNum: String, dark: Boolean): Int {
     when (lineNum) {
-        "1", "95" -> return R.color.l1
-        "2" -> return R.color.l2
+        "1" -> return R.color.l1
         "3" -> return R.color.l3
         "4", "14" -> return R.color.l4
         "5", "80" -> return R.color.l5
         "6", "99" -> return R.color.l6
-        "7", "522" -> return R.color.l7
+        "7" -> return R.color.l7
         "8" -> return R.color.l8
-        "9", "72", "202" -> return R.color.l9
+        "9" -> return R.color.l9
         "21" -> return R.color.l21
-        "31", "39" -> return R.color.l31
         "33" -> return R.color.l33
+        "37" -> return R.color.l37
+        "40" -> return R.color.l40
+        "42" -> return R.color.l42
+        "44" -> return R.color.l44
+        "47" -> return R.color.l47
+        "49" -> return R.color.l49
         "50" -> return R.color.l50
+        "60" -> return R.color.l60
         "61" -> return R.color.l61
+        "63" -> return R.color.l63
+        "64" -> return R.color.l64
         "68" -> return R.color.l68
+        "71" -> return R.color.l71
+        "72" -> return R.color.l72
         "83", "84" -> return R.color.l83
         "88" -> return R.color.l88
         "93", "94" -> return R.color.l93
+        "95" -> return R.color.l95
+        "96" -> return R.color.l96
         "98" -> return R.color.l98
-        "141", "570" -> return R.color.l141
-        "71", "201" -> return R.color.l201
-        "44", "203" -> return R.color.l203
-        "32", "62", "204" -> return R.color.l204
-        "60", "205" -> return R.color.l205
-        "47", "207" -> return R.color.l207
-        "46", "209" -> return R.color.l209
-        "40", "210" -> return R.color.l210
-        "42", "212" -> return R.color.l212
-        "245", "638" -> return R.color.l245
+        "570" -> return R.color.l141
+        "245" -> return R.color.l245
         "255", "637" -> return R.color.l255
         "256" -> return R.color.l256
         "257" -> return R.color.l257
         "258" -> return R.color.l258
-        "269", "524", "635" -> return R.color.l269
+        "269" -> return R.color.l269
         "523", "636" -> return R.color.l523
-        "525", "527", "639" -> return R.color.l525
-        "530" -> return R.color.l530
+        "525", "527" -> return R.color.l525
         "540", "550" -> return R.color.l540
         "610" -> return R.color.l610
+        "620" -> return R.color.l620
         "632" -> return R.color.l632
         "720", "740" -> return R.color.l720
         "737" -> return R.color.l737
@@ -60,16 +63,26 @@ fun getLineColor(lineNum: String, dark: Boolean): Int {
 
 fun getLineTextColor(lineNum: String): Int {
     when (lineNum) {
-        "N21" -> return R.color.l21
-        "N31" -> return R.color.l31
-        "N33" -> return R.color.l33
-        "N47" -> return R.color.l207
-        "N61" -> return R.color.l61
-        "N72" -> return R.color.l9
-        "N80" -> return R.color.l5
-        "N93" -> return R.color.l93
-        "N95" -> return R.color.l1
-        "N99" -> return R.color.l6
+        "N21" -> return R.color.ln21
+        "N29" -> return R.color.ln29
+        "N31" -> return R.color.ln31
+        "N33" -> return R.color.ln33
+        "N34" -> return R.color.ln34
+        "N37" -> return R.color.ln37
+        "N44" -> return R.color.ln44
+        "N47" -> return R.color.ln47
+        "N53" -> return R.color.ln53
+        "N55" -> return R.color.ln55
+        "N56" -> return R.color.ln56
+        "N61" -> return R.color.ln61
+        "N70" -> return R.color.ln70
+        "N72" -> return R.color.ln72
+        "N74" -> return R.color.ln74
+        "N80" -> return R.color.ln80
+        "N91" -> return R.color.ln91
+        "N93" -> return R.color.ln93
+        "N95" -> return R.color.ln95
+        "N99" -> return R.color.ln99
         "►" -> return R.color.material_on_surface_emphasis_high_type
         else -> {
             if (lineNum.startsWith("X")) return R.color.replacement_text
