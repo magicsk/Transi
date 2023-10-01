@@ -15,9 +15,9 @@ interface ImhdRequests {
         @Query("pl") features: String = "pl=1.0-4.0",
         @Query("pp") preference: Int = 0,
         @Query("pc") moreTimeForTransfer: Int = 0,
-        @Query("pv") transportType: String = "30.1-11.1-3.1-6.1-2.1-15.1-22.1",
-        @Query("pf") rate: String = "2.1-21.1-49.1",
-        @Query("po") carriers: String = "1.1-80.1-214.1-219.1",
+        @Query("pv") transportType: String = "",
+        @Query("pf") rate: String = "",
+        @Query("po") carriers: String = "",
         @Query("op") service: String = "Planner",
         @Query("format") format: Int = 0,
     ): String

@@ -14,15 +14,18 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.core.view.setMargins
 import androidx.core.view.setPadding
-import androidx.core.view.size
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import eu.magicsk.transi.data.remote.responses.idsbk.Session
 import eu.magicsk.transi.databinding.FragmentTimetablesBinding
+import eu.magicsk.transi.util.animatedAlphaChange
 import eu.magicsk.transi.util.dpToPx
 import eu.magicsk.transi.util.getLineColor
 import eu.magicsk.transi.util.getLineTextColor
 import eu.magicsk.transi.util.isDarkTheme
+import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TimetablesViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,8 +54,29 @@ class TimetablesFragment : Fragment() {
         binding.apply {
             val timetablesViewModel =
                 ViewModelProvider(requireActivity())[TimetablesViewModel::class.java]
+            val mainViewModel =
+                ViewModelProvider(requireActivity())[MainViewModel::class.java]
+            mainViewModel.idsbkSession.observe(viewLifecycleOwner) { idsbkSession ->
+                idsbkSession?.let {
+                    TimetablesErrorBtn.setOnClickListener {
+                        fetchTimetables(timetablesViewModel, activity, idsbkSession)
+                    }
+                    fetchTimetables(timetablesViewModel, activity, idsbkSession)
+                }
+            }
+        }
+    }
+
+    private fun fetchTimetables(
+        timetablesViewModel: TimetablesViewModel,
+        activity: FragmentActivity?,
+        idsbkSession: Session
+    ) {
+        binding.apply {
+            TimetablesError.isVisible = false
+            TimetablesContent.isVisible = true
             CoroutineScope(Dispatchers.IO).launch {
-                val timetables = timetablesViewModel.getTimetables()
+                val timetables = timetablesViewModel.getTimetables(idsbkSession)
                 if (timetables != null && timetables.routes.isNotEmpty()) {
                     timetables.routes.forEach { line ->
                         val context = root.context
@@ -75,6 +99,7 @@ class TimetablesFragment : Fragment() {
                             lineBtn.setBackgroundResource(R.drawable.rounded_shape)
                         }
                         val drawable = lineBtn.background
+                        @Suppress("DEPRECATION")
                         drawable.setColorFilter(
                             ContextCompat.getColor(
                                 context,
@@ -144,7 +169,13 @@ class TimetablesFragment : Fragment() {
 
                     }
                 } else {
-                    println("Error") // should also display error and retry button
+                    activity?.runOnUiThread {
+                        TimetablesError.isVisible = true
+                        TimetablesContent.isVisible = false
+                    }
+                }
+                activity?.runOnUiThread {
+                    animatedAlphaChange(1F, 0F, 100, TimetablesLoadingIndicator)
                 }
             }
         }

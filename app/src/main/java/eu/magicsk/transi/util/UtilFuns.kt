@@ -3,10 +3,14 @@ package eu.magicsk.transi.util
 import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.graphics.PorterDuff
 import android.util.TypedValue
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.Observer
+import android.view.View
+import android.view.animation.AlphaAnimation
+import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.core.view.setPadding
+import eu.magicsk.transi.R
 import org.json.JSONArray
 import java.text.Normalizer
 import java.time.LocalDateTime
@@ -64,11 +68,48 @@ fun getMinutes(): Int {
 
 }
 
-fun <T> LiveData<T>.observeOnce(owner: LifecycleOwner, observer: (T) -> Unit) {
-    observe(owner, object : Observer<T> {
-        override fun onChanged(value: T) {
-            observer(value)
-            removeObserver(this)
+fun animatedAlphaChange(from: Float, to: Float, offset: Long, View: View) {
+    val animation = AlphaAnimation(from, to)
+    animation.duration = 200
+    animation.startOffset = offset
+    animation.fillAfter = true
+    View.startAnimation(animation)
+}
+
+fun customizeLineText(textView: TextView,lineNum: String, context: Context, resources: Resources) {
+    val rounded =
+        try {
+            lineNum.startsWith("S") || lineNum.startsWith("R") || lineNum.toInt() < 10
+        } catch (e: NumberFormatException) {
+            false
         }
-    })
+    if (rounded) {
+        textView.setBackgroundResource(R.drawable.round_shape)
+        if (!lineNum.startsWith("S") && !lineNum.startsWith("R")) textView.setPadding(
+            12f.dpToPx(context),
+            5f.dpToPx(context),
+            12f.dpToPx(context),
+            5f.dpToPx(context)
+        ) else {
+            textView.setPadding(5f.dpToPx(context))
+        }
+    } else {
+        textView.setBackgroundResource(R.drawable.rounded_shape)
+    }
+    val drawable = textView.background
+    @Suppress("DEPRECATION")
+    drawable.setColorFilter(
+        ContextCompat.getColor(
+            context,
+            getLineColor(lineNum, isDarkTheme(resources))
+        ), PorterDuff.Mode.SRC
+    )
+    textView.setTextColor(
+        ContextCompat.getColor(
+            context,
+            getLineTextColor(lineNum)
+        )
+    )
+    textView.background = drawable
+    textView.text = lineNum
 }

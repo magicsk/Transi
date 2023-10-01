@@ -1,10 +1,7 @@
-@file:Suppress("DEPRECATION")
-
 package eu.magicsk.transi.adapters
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.graphics.PorterDuff
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.os.Handler
 import android.os.Looper
@@ -15,7 +12,6 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isVisible
-import androidx.core.view.setPadding
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.recyclerview.widget.RecyclerView
@@ -281,13 +277,6 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                 mins < 1 -> "${o}<1 min"
                 else -> "${o}${mins.toInt()} min"
             }
-        val rounded =
-            try {
-                current.line.contains("S") || current.line.toInt() < 10
-            } catch (e: NumberFormatException) {
-                false
-            }
-
         holder.binding.apply {
             val context = root.context
             val resources = root.resources
@@ -296,36 +285,7 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                 (itemCount - 1) -> MHDTableListLayout.setBackgroundResource(R.drawable.round_shape_bottom_25)
                 else -> MHDTableListLayout.setBackgroundResource(R.drawable.rectangle_shape)
             }
-
-            if (rounded) {
-                MHDTableListLineNum.setBackgroundResource(R.drawable.round_shape)
-                if (!current.line.contains("S")) MHDTableListLineNum.setPadding(
-                    12f.dpToPx(context),
-                    5f.dpToPx(context),
-                    12f.dpToPx(context),
-                    5f.dpToPx(context)
-                ) else {
-                    MHDTableListLineNum.setPadding(5f.dpToPx(context))
-                }
-            } else {
-                MHDTableListLineNum.setBackgroundResource(R.drawable.rounded_shape)
-            }
-            val drawable = MHDTableListLineNum.background
-            drawable.setColorFilter(
-                ContextCompat.getColor(
-                    context,
-                    getLineColor(current.line, isDarkTheme(resources))
-                ), PorterDuff.Mode.SRC
-            )
-            MHDTableListLineNum.setTextColor(
-                ContextCompat.getColor(
-                    context,
-                    getLineTextColor(current.line)
-                )
-            )
-
-            MHDTableListLineNum.background = drawable
-            MHDTableListLineNum.text = current.line
+            customizeLineText(MHDTableListLineNum, current.line, context, resources)
             MHDTableListHeadsign.text = current.headsign
             MHDTableListHeadsign.isSelected = true
 

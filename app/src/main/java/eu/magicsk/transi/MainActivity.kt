@@ -136,20 +136,11 @@ class MainActivity : AppCompatActivity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         window?.statusBarColor = MaterialColors.getColor(window.decorView, R.attr.colorMyBackground)
-//        if (supportFragmentManager.findFragmentById(R.id.tripSearchFragmentLayout) != null) {
-//            supportFragmentManager.popBackStack(
-//                "tripTypeAhead",
-//                1
-//            )
-//        } else if (supportFragmentManager.findFragmentById(R.id.tripSearchFragmentLayout) != null) {
-//            supportFragmentManager.popBackStack("typeAhead", 1)
-        if (supportFragmentManager.backStackEntryCount > 1) {
-            supportFragmentManager.popBackStack("timetableDetail", 1)
-        } else if (supportFragmentManager.backStackEntryCount > 0) {
+        if (supportFragmentManager.backStackEntryCount > 0) {
             supportFragmentManager.popBackStack("tripTypeAhead", 1)
             supportFragmentManager.popBackStack("typeAhead", 1)
-            supportFragmentManager.popBackStack("timetable", 1)
         } else {
+            @Suppress("DEPRECATION")
             super.onBackPressed()
         }
     }
@@ -209,6 +200,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onProviderDisabled(provider: String) {}
             override fun onProviderEnabled(provider: String) {}
+            @Deprecated("Deprecated in Java")
             override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
         }
 

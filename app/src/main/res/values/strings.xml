@@ -5,11 +5,14 @@
     <string name="update">Update</string>
     <string name="cancel">Cancel</string>
     <string name="install">Install</string>
+    <string name="refresh">Refresh</string>
+    <string name="retry">Try again</string>
     <string name="update_in_progress">Update in progress</string>
     <string name="update_downloaded">Update downloaded</string>
     <string name="downloading">Downloading %1$s</string>
     <string name="finish_update">Finish update by installing new version</string>
     <string name="no_connection">No internet connection available</string>
+    <string name="network_error">Network error</string>
     <string name="no_location">GPS location no available yet</string>
 
     <string name="search">Search for stops</string>
@@ -86,4 +89,7 @@
     <string name="trip_notification_title">%1$s ▶ %2$s</string>
     <string name="trip_notification_body">%1$s (%2$s-%3$s)</string>
     <string name="trip_share_body">%1$s&lt;br>&lt;br>%2$s</string>
+    <string name="placeholderLine">N999</string>
+    <string name="example">Example</string>
+    <string name="examplePlatform">XX</string>
 </resources>

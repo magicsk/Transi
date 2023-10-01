@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
-import androidx.core.view.setPadding
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
@@ -63,41 +62,11 @@ class TripPlannerStepsAdapter(
 
                 else -> {
                     val bindingA = this as TripPlannerListStepTransitBinding
-                    val line = current.line!!
-                    val rounded =
-                        try {
-                            line.contains("S") || line.toInt() < 10
-                        } catch (e: NumberFormatException) {
-                            false
-                        }
-                    if (rounded) {
-                        bindingA.TripPlannerListStepLineNum.setBackgroundResource(R.drawable.round_shape)
-                        if (!line.contains("S")) bindingA.TripPlannerListStepLineNum.setPadding(
-                            12f.dpToPx(context),
-                            5f.dpToPx(context),
-                            12f.dpToPx(context),
-                            5f.dpToPx(context)
-                        ) else {
-                            bindingA.TripPlannerListStepLineNum.setPadding(5f.dpToPx(context))
-                        }
-                    } else {
-                        bindingA.TripPlannerListStepLineNum.setBackgroundResource(R.drawable.rounded_shape)
-                    }
-                    val drawable = bindingA.TripPlannerListStepLineNum.background
-                    drawable.setColorFilter(
-                        ContextCompat.getColor(
-                            context,
-                            getLineColor(line, isDarkTheme(resources))
-                        ), PorterDuff.Mode.SRC
-                    )
-                    bindingA.TripPlannerListStepLineNum.setTextColor(
-                        ContextCompat.getColor(
-                            context,
-                            getLineTextColor(line)
-                        )
-                    )
+                    val line = current.line ?: "Error"
+                    customizeLineText( bindingA.TripPlannerListStepLineNum, line, context, resources)
 
                     val arrowDrawable = bindingA.TripPlannerListStepLineArrow.background
+                    @Suppress("DEPRECATION")
                     arrowDrawable.setColorFilter(
                         ContextCompat.getColor(
                             context,
@@ -108,8 +77,6 @@ class TripPlannerStepsAdapter(
                     val departureStop = current.departure!!.stop
                     val arrivalStop = current.arrival!!.stop
 
-                    bindingA.TripPlannerListStepLineNum.background = drawable
-                    bindingA.TripPlannerListStepLineNum.text = line
                     bindingA.TripPlannerListStepLineArrow.background = arrowDrawable
                     bindingA.TripPlannerListStepHeadsign.text =
                         context.getString(R.string.tripHeadsign).format(current.headsign)

@@ -50,9 +50,9 @@ fun getLineColor(lineNum: String, dark: Boolean): Int {
         "Záhoráčik" -> return R.color.train
         "►" -> return if (dark) R.color.gray else R.color.cardview_light_background
         else -> {
-            if (lineNum.contains("S")) return R.color.train
-            if (lineNum.contains("N")) return R.color.night
-            if (lineNum.contains("X")) return R.color.replacement
+            if (lineNum.startsWith("S") || lineNum.startsWith("R")) return R.color.train
+            if (lineNum.startsWith("N")) return R.color.night
+            if (lineNum.startsWith("X")) return R.color.replacement
             return R.color.ldefault
         }
     }
@@ -72,7 +72,7 @@ fun getLineTextColor(lineNum: String): Int {
         "N99" -> return R.color.l6
         "►" -> return R.color.material_on_surface_emphasis_high_type
         else -> {
-            if (lineNum.contains("X")) return R.color.replacement_text
+            if (lineNum.startsWith("X")) return R.color.replacement_text
             return R.color.white
         }
     }

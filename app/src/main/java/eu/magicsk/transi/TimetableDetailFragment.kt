@@ -19,16 +19,16 @@ import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager.widget.PagerAdapter
+import eu.magicsk.transi.data.remote.responses.idsbk.Session
 import eu.magicsk.transi.databinding.FragmentTimetableDetailBinding
 import eu.magicsk.transi.util.*
+import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TimetablesViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.time.format.DateTimeFormatter
 
-class TimetableDetailFragment(
-) : Fragment() {
+class TimetableDetailFragment : Fragment() {
     private var _binding: FragmentTimetableDetailBinding? = null
     private val binding get() = _binding!!
 
@@ -57,63 +57,42 @@ class TimetableDetailFragment(
         binding.apply {
             val context = root.context
             val resources = root.resources
-            val rounded =
-                try {
-                    lineNum.contains("S") || lineNum.toInt() < 10
-                } catch (e: NumberFormatException) {
-                    false
-                }
-            if (rounded) {
-                TimetableDetailTitleLine.setBackgroundResource(R.drawable.round_shape)
-                if (!lineNum.contains("S")) TimetableDetailTitleLine.setPadding(
-                    12f.dpToPx(context),
-                    5f.dpToPx(context),
-                    12f.dpToPx(context),
-                    5f.dpToPx(context)
-                ) else {
-                    TimetableDetailTitleLine.setPadding(5f.dpToPx(context))
-                }
-            } else {
-                TimetableDetailTitleLine.setBackgroundResource(R.drawable.rounded_shape)
-            }
-            val drawable = TimetableDetailTitleLine.background
-            drawable.setColorFilter(
-                ContextCompat.getColor(
-                    context,
-                    getLineColor(lineNum, isDarkTheme(resources))
-                ), PorterDuff.Mode.SRC
-            )
-            TimetableDetailTitleLine.setTextColor(
-                ContextCompat.getColor(
-                    context,
-                    getLineTextColor(lineNum)
-                )
-            )
-
-            TimetableDetailTitleLine.background = drawable
-            TimetableDetailTitleLine.text = lineNum
+            customizeLineText(TimetableDetailTitleLine, lineNum, context, resources)
             TimetableDetailTitleDirection.text = lineDirection
             TimetableDetailTitleDirection.isSelected = true
             TimetableDetailSubtitleText.text = stationName
             TimetableDetailSubtitleText.isSelected = true
             val timetablesViewModel =
                 ViewModelProvider(requireActivity())[TimetablesViewModel::class.java]
-            val timetablePagerAdapter =
-                TimetablePagerAdapter(context, timetablesViewModel, routeId, directionId, stationId)
-            TimetableDetailDeparturesContainer.adapter = timetablePagerAdapter
+            val mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
+            mainViewModel.idsbkSession.observe(viewLifecycleOwner) { idsbkSession ->
+                idsbkSession?.let {
+                    val timetablePagerAdapter =
+                        TimetablePagerAdapter(
+                            context,
+                            binding,
+                            idsbkSession,
+                            timetablesViewModel,
+                            routeId,
+                            directionId,
+                            stationId
+                        )
+                    TimetableDetailDeparturesContainer.adapter = timetablePagerAdapter
+                }
+            }
         }
     }
 
 
     class TimetablePagerAdapter(
         val context: Context,
+        val binding:  FragmentTimetableDetailBinding,
+        private val idsbkSession: Session,
         private val timetablesViewModel: TimetablesViewModel,
         private val routeId: Int,
         private val directionId: Int,
         private val stationId: Int
     ) : PagerAdapter() {
-
-
         private val views = mutableMapOf<String, ViewGroup>()
         override fun isViewFromObject(view: View, `object`: Any): Boolean {
             return view === `object`
@@ -173,10 +152,12 @@ class TimetableDetailFragment(
                         "departures",
                         directionId,
                         date,
-                        stationId
+                        stationId,
+                        idsbkSession
                     )
                 println("fetched $date")
                 CoroutineScope(Dispatchers.Main).launch {
+                    animatedAlphaChange(1F, 0F, 100, binding.TimetableDetailLoadingIndicator)
                     val departureTimes = mutableListOf<Pair<Int, String>>()
                     val hours = mutableSetOf<Int>()
                     var lastTableRow: TableRow? = null

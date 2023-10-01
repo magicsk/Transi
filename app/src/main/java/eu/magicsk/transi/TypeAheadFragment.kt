@@ -33,7 +33,11 @@ class TypeAheadFragment : Fragment() {
     private var stopsList: Stops = Stops()
     private val filterHandler = Handler(Looper.getMainLooper())
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         _binding = FragmentTypeAheadBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -44,13 +48,15 @@ class TypeAheadFragment : Fragment() {
     }
 
     private fun hideVirtualInput(view: View) {
-        val im: InputMethodManager? = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
+        val im: InputMethodManager? =
+            activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
         im?.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
     private fun onListItemClick(view: View, pos: Int) {
-        val mainViewModel = ViewModelProvider(requireActivity()).get(MainViewModel::class.java)
-        val tripPlannerViewModel = ViewModelProvider(requireActivity()).get(TripPlannerViewModel::class.java)
+        val mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
+        val tripPlannerViewModel =
+            ViewModelProvider(requireActivity())[TripPlannerViewModel::class.java]
         if (typeAheadAdapter.getItem(pos).type == "map") {
             val mapBundle = Bundle()
             mapBundle.putSerializable("stopsList", stopsList)
@@ -69,10 +75,12 @@ class TypeAheadFragment : Fragment() {
                     activity?.supportFragmentManager?.popBackStack("typeAhead", 1)
                     hideVirtualInput(view)
                 }
+
                 "editTextFrom" -> {
                     tripPlannerViewModel.setSelectedFromStop(stop)
                     activity?.supportFragmentManager?.popBackStack("tripTypeAhead", 1)
                 }
+
                 "editTextTo" -> {
                     tripPlannerViewModel.setSelectedToStop(stop)
                     activity?.supportFragmentManager?.popBackStack("tripTypeAhead", 1)
@@ -84,7 +92,8 @@ class TypeAheadFragment : Fragment() {
     }
 
     private fun onButtonItemClick(view: View, pos: Int) {
-        val tripPlannerViewModel = ViewModelProvider(requireActivity()).get(TripPlannerViewModel::class.java)
+        val tripPlannerViewModel =
+            ViewModelProvider(requireActivity())[TripPlannerViewModel::class.java]
         val stop = typeAheadAdapter.getItem(pos)
         activity?.supportFragmentManager?.popBackStack("typeAhead", 1)
         val navView = activity?.findViewById<BottomNavigationView>(R.id.navView)
@@ -103,6 +112,7 @@ class TypeAheadFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        @Suppress("DEPRECATION")
         stopsList = requireArguments().getSerializable("stopsList") as Stops
         showDirections = requireArguments().getBoolean("directions")
         origin = requireArguments().getString("origin").toString()

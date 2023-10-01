@@ -54,7 +54,8 @@ class MainFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        infoDismissed = savedInstanceState?.get("infoDismissed") as? Boolean ?: infoDismissed
+        infoDismissed = savedInstanceState?.getBoolean("infoDismissed") ?: infoDismissed
+        @Suppress("DEPRECATION")
         selected = savedInstanceState?.getSerializable("selectedStop") as? Stop ?: selected
         nearestSwitching = savedInstanceState?.getBoolean("nearestSwitching") ?: nearestSwitching
         sharedPreferences = context?.getSharedPreferences("Transi", Context.MODE_PRIVATE)!!
@@ -208,9 +209,9 @@ class MainFragment : Fragment() {
             activity?.supportFragmentManager?.addOnBackStackChangedListener {
                 val fragment = activity?.supportFragmentManager?.findFragmentById(R.id.searchFragmentLayout)
                 if (fragment == null) {
-                    activity?.findViewById<EditText>(R.id.editText)?.clearFocus()
                     activity?.findViewById<ConstraintLayout>(R.id.MHDTable)?.isVisible = true
                     activity?.findViewById<FrameLayout>(R.id.searchFragmentLayout)?.isVisible = true
+                    activity?.findViewById<EditText>(R.id.editText)?.clearFocus()
                 }
             }
 
@@ -251,6 +252,7 @@ class MainFragment : Fragment() {
 
     override fun onViewStateRestored(savedInstanceState: Bundle?) {
         super.onViewStateRestored(savedInstanceState)
+        @Suppress("DEPRECATION")
         tableState = savedInstanceState?.getParcelable("MHDTableAdapter")
     }
 

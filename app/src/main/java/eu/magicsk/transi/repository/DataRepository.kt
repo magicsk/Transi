@@ -60,7 +60,19 @@ class DataRepository @Inject constructor(
         return Resource.Success(response)
     }
 
+    suspend fun getIdsbkSession(): Resource<Session> {
+        val response = try {
+            idsbkApi.getIdsbkSession()
+        } catch (e: Exception) {
+            println(e)
+            return Resource.Error("An unknown error occurred. $e")
+        }
+        println(response)
+        return Resource.Success(response)
+    }
+
     suspend fun getIdsbkTrip(
+        xSession: String,
         from: Int,
         to: Int,
         arrivalDeparture: Int = 0,
@@ -78,6 +90,7 @@ class DataRepository @Inject constructor(
                 org,
                 maxTransfers,
                 maxWalkingDuration,
+                xSession
             )
         } catch (e: Exception) {
             return Resource.Error("An unknown error occurred. $e")
@@ -85,36 +98,36 @@ class DataRepository @Inject constructor(
         return Resource.Success(response)
     }
 
-    suspend fun getTimetables(city: Int = 12): Resource<Timetables> {
+    suspend fun getTimetables(xSession: String, city: Int = 12): Resource<Timetables> {
         val response = try {
-            idsbkApi.getTimetables(city)
+            idsbkApi.getTimetables(city, xSession)
         } catch (e: Exception) {
             return Resource.Error("An unknown error occurred. $e")
         }
         return Resource.Success(response)
     }
 
-    suspend fun getTimetableDirections(route: Int): Resource<TimetableDirections> {
+    suspend fun getTimetableDirections(xSession: String, route: Int): Resource<TimetableDirections> {
         val response = try {
-            idsbkApi.getTimetableDirections(route)
+            idsbkApi.getTimetableDirections(route, xSession)
         } catch (e: Exception) {
             return Resource.Error("An unknown error occurred. $e")
         }
         return Resource.Success(response)
     }
 
-    suspend fun getTimetable(route: Int, arrivalDeparture: String, direction: Int, date: String): Resource<Timetable> {
+    suspend fun getTimetable(xSession: String, route: Int, arrivalDeparture: String, direction: Int, date: String): Resource<Timetable> {
         val response = try {
-            idsbkApi.getTimetable(route, arrivalDeparture, direction, date)
+            idsbkApi.getTimetable(route, arrivalDeparture, direction, date, xSession)
         } catch (e: Exception) {
             return Resource.Error("An unknown error occurred. $e")
         }
         return Resource.Success(response)
     }
 
-    suspend fun getTimetableDetail(route: Int, arrivalDeparture: String, direction: Int, date: String, stop: Int): Resource<TimetableDetails> {
+    suspend fun getTimetableDetail(xSession: String, route: Int, arrivalDeparture: String, direction: Int, date: String, stop: Int): Resource<TimetableDetails> {
         val response = try {
-            idsbkApi.getTimetableDetail(route, arrivalDeparture, direction, date, stop)
+            idsbkApi.getTimetableDetail(route, arrivalDeparture, direction, date, stop, xSession)
         } catch (e: Exception) {
             return Resource.Error("An unknown error occurred. $e")
         }
