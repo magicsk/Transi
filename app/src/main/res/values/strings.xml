@@ -92,4 +92,6 @@
     <string name="placeholderLine">N999</string>
     <string name="example">Example</string>
     <string name="examplePlatform">XX</string>
+    <string name="departure_icon">departureIcon</string>
+    <string name="no_routes">No routes at this time</string>
 </resources>

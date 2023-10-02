@@ -15,7 +15,6 @@ import androidx.core.view.isVisible
 import androidx.core.view.setMargins
 import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import eu.magicsk.transi.data.remote.responses.idsbk.Session
@@ -59,9 +58,9 @@ class TimetablesFragment : Fragment() {
             mainViewModel.idsbkSession.observe(viewLifecycleOwner) { idsbkSession ->
                 idsbkSession?.let {
                     TimetablesErrorBtn.setOnClickListener {
-                        fetchTimetables(timetablesViewModel, activity, idsbkSession)
+                        fetchTimetables(timetablesViewModel, idsbkSession)
                     }
-                    fetchTimetables(timetablesViewModel, activity, idsbkSession)
+                    fetchTimetables(timetablesViewModel, idsbkSession)
                 }
             }
         }
@@ -69,7 +68,6 @@ class TimetablesFragment : Fragment() {
 
     private fun fetchTimetables(
         timetablesViewModel: TimetablesViewModel,
-        activity: FragmentActivity?,
         idsbkSession: Session
     ) {
         binding.apply {
@@ -145,7 +143,7 @@ class TimetablesFragment : Fragment() {
                             )
                         }
                         lineBtn.id = generateViewId()
-                        activity?.runOnUiThread {
+                        CoroutineScope(Dispatchers.Main).launch {
                             when (line.route_type) {
                                 0 -> TimetableTramsLines.addView(lineBtn)
                                 2 -> TimetableTrainsLines.addView(lineBtn)
@@ -169,12 +167,12 @@ class TimetablesFragment : Fragment() {
 
                     }
                 } else {
-                    activity?.runOnUiThread {
+                    CoroutineScope(Dispatchers.Main).launch {
                         TimetablesError.isVisible = true
                         TimetablesContent.isVisible = false
                     }
                 }
-                activity?.runOnUiThread {
+                CoroutineScope(Dispatchers.Main).launch {
                     animatedAlphaChange(1F, 0F, 100, TimetablesLoadingIndicator)
                 }
             }
