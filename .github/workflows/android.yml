@@ -25,8 +25,7 @@ jobs:
       run: chmod +x gradlew
     - name: Create local.properties
       run: echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" > local.properties &&
-            echo "IDSBK_API_KEY=${{ secrets.IDSBK_API_KEY }}" >> local.properties &&
-            echo "IDSBK_SESSION_KEY=${{ secrets.IDSBK_SESSION_KEY }}" >> local.properties
+            echo "IDSBK_API_KEY=${{ secrets.IDSBK_API_KEY }}" >> local.properties
     - name: Get apk version
       id: apk
       run: APK_VERSION=$(./gradlew properties -q | grep "version:" | awk '{print v$2}') &&
