@@ -84,7 +84,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Download app APK
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: app-release
       - name: Login to Google Cloud
