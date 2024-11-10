@@ -30,6 +30,7 @@ import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.FragmentTripPlannerBinding
 import eu.magicsk.transi.util.ErrorAlert
 import eu.magicsk.transi.util.Trip
+import eu.magicsk.transi.util.addOneMinute
 import eu.magicsk.transi.util.tripPlannerJsonParser
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TripPlannerViewModel
@@ -53,7 +54,11 @@ class TripPlannerFragment : Fragment() {
     private var loadingNewTrip: Boolean = false
     private var listState: Parcelable? = null
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         _binding = FragmentTripPlannerBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -63,7 +68,8 @@ class TripPlannerFragment : Fragment() {
         _binding = null
     }
 
-    private fun getTrip(
+
+    private fun setSelectedTrip(
         v: Int = selectedTrip.v,
         from: Int? = selectedTrip.from,
         to: Int? = selectedTrip.to,
@@ -79,7 +85,6 @@ class TripPlannerFragment : Fragment() {
         service: String = selectedTrip.service,
         format: Int = selectedTrip.format
     ) {
-        loadingNewTrip = true
         selectedTrip = SelectedTrip(
             v,
             from,
@@ -96,6 +101,44 @@ class TripPlannerFragment : Fragment() {
             service,
             format
         )
+    }
+
+    private fun getTrip(
+        v: Int = selectedTrip.v,
+        from: Int? = selectedTrip.from,
+        to: Int? = selectedTrip.to,
+        date: String = selectedTrip.date,
+        time: String = selectedTrip.time,
+        arrivalDeparture: Int = selectedTrip.arrivalDeparture,
+        features: String = selectedTrip.features,
+        preference: Int = selectedTrip.preference,
+        moreTimeForTransfer: Int = selectedTrip.moreTimeForTransfer,
+        transportType: String = selectedTrip.transportType,
+        rate: String = selectedTrip.rate,
+        carriers: String = selectedTrip.carriers,
+        service: String = selectedTrip.service,
+        format: Int = selectedTrip.format,
+        save: Boolean = true,
+    ) {
+        loadingNewTrip = true
+        if (save) {
+            setSelectedTrip(
+                v,
+                from,
+                to,
+                date,
+                time,
+                arrivalDeparture,
+                features,
+                preference,
+                moreTimeForTransfer,
+                transportType,
+                rate,
+                carriers,
+                service,
+                format
+            )
+        }
         if (selectedTrip.to != null) {
             activity?.findViewById<ProgressBar>(R.id.progressBar_ic)?.isVisible = true
             if (to == null || from == null || from == to) {
@@ -149,7 +192,10 @@ class TripPlannerFragment : Fragment() {
             binding.tripSearchFragmentLayout.visibility = View.VISIBLE
             typeAheadFragment.arguments?.putString("origin", origin)
             supportFragmentManager?.beginTransaction()?.apply {
-                replace(R.id.tripSearchFragmentLayout, typeAheadFragment).addToBackStack("tripTypeAhead").commit()
+                replace(
+                    R.id.tripSearchFragmentLayout,
+                    typeAheadFragment
+                ).addToBackStack("tripTypeAhead").commit()
             }
         }
     }
@@ -162,7 +208,8 @@ class TripPlannerFragment : Fragment() {
                     findViewById<LinearLayout>(R.id.progressBar_bg)?.isVisible = false
                     findViewById<ProgressBar>(R.id.progressBar_ic)?.isVisible = false
                     println(trip)
-                    val parsedTrip = tripPlannerJsonParser(trip, supportFragmentManager, requireContext())
+                    val parsedTrip =
+                        tripPlannerJsonParser(trip, supportFragmentManager, requireContext())
                     if (parsedTrip != null) {
                         if (loadingMore) {
                             loadingMore = false
@@ -174,7 +221,10 @@ class TripPlannerFragment : Fragment() {
                             if (!_binding?.editTextTo?.text.isNullOrEmpty()) {
                                 _binding?.TripPlannerTitle?.text =
                                     resources.getString(R.string.tripPlannerTitle)
-                                        .format(_binding?.editTextFrom?.text, _binding?.editTextTo?.text)
+                                        .format(
+                                            _binding?.editTextFrom?.text,
+                                            _binding?.editTextTo?.text
+                                        )
                             }
                         }
                     }
@@ -186,7 +236,8 @@ class TripPlannerFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
-        val tripPlannerViewModel = ViewModelProvider(requireActivity())[TripPlannerViewModel::class.java]
+        val tripPlannerViewModel =
+            ViewModelProvider(requireActivity())[TripPlannerViewModel::class.java]
         binding.apply {
             editTextFrom.clearFocus()
             editTextTo.clearFocus()
@@ -202,7 +253,8 @@ class TripPlannerFragment : Fragment() {
                 typeAheadBundle.putBoolean("directions", false)
                 typeAheadFragment.arguments = typeAheadBundle
                 if (tripPlannerAdapter.itemCount > 0) TripPlannerTitle.text =
-                    resources.getString(R.string.tripPlannerTitle).format(editTextFrom.text, editTextTo.text)
+                    resources.getString(R.string.tripPlannerTitle)
+                        .format(editTextFrom.text, editTextTo.text)
             }
             mainViewModel.actualLocation.observe(viewLifecycleOwner) { location ->
                 actualLocation = location
@@ -215,11 +267,13 @@ class TripPlannerFragment : Fragment() {
             }
             tripPlannerViewModel.clear()
             tripPlannerViewModel.selectedFromStop.observe(viewLifecycleOwner) {
-                activity?.window?.statusBarColor = MaterialColors.getColor(view, R.attr.colorMyBackground)
+                activity?.window?.statusBarColor =
+                    MaterialColors.getColor(view, R.attr.colorMyBackground)
                 if (selectedTrip.from != it?.id && it != null) {
                     editTextFrom.setText(it.name)
                     tripPlannerAdapter.setFromTo(newFrom = it.name)
                     if (editTextTo.text.isNullOrEmpty()) {
+                        setSelectedTrip(from = it.id)
                         Handler(Looper.getMainLooper()).postDelayed({
                             editTextTo.requestFocus()
                         }, 200)
@@ -233,7 +287,8 @@ class TripPlannerFragment : Fragment() {
 
             }
             tripPlannerViewModel.selectedToStop.observe(viewLifecycleOwner) {
-                activity?.window?.statusBarColor = MaterialColors.getColor(view, R.attr.colorMyBackground)
+                activity?.window?.statusBarColor =
+                    MaterialColors.getColor(view, R.attr.colorMyBackground)
                 if (selectedTrip.to != it?.id && it != null) {
                     editTextTo.setText(it.name)
                     getTrip(to = it.id)
@@ -242,7 +297,8 @@ class TripPlannerFragment : Fragment() {
             }
 
             activity?.supportFragmentManager?.addOnBackStackChangedListener {
-                val fragment = activity?.supportFragmentManager?.findFragmentById(R.id.tripSearchFragmentLayout)
+                val fragment =
+                    activity?.supportFragmentManager?.findFragmentById(R.id.tripSearchFragmentLayout)
                 if (fragment == null) {
                     _binding?.editTextFrom?.clearFocus()
                     _binding?.editTextTo?.clearFocus()
@@ -258,7 +314,7 @@ class TripPlannerFragment : Fragment() {
                         if (!loadingMore) {
                             loadingMore = true
                             val lastTrip = tripPlannerAdapter.TripPlannerItemList.last()
-                            getTrip(date = lastTrip.date, time = lastTrip.departure)
+                            getTrip(date = lastTrip.date, time = addOneMinute(lastTrip.departure), save = false)
                         }
                     }
                 }
@@ -274,10 +330,15 @@ class TripPlannerFragment : Fragment() {
                 )
                 getTrip(
                     date = "${selectedTripCalendar.get(Calendar.YEAR)}-${
-                        (selectedTripCalendar.get(Calendar.MONTH) + 1).toString().padStart(2, Char(48))
-                    }-${selectedTripCalendar.get(Calendar.DAY_OF_MONTH).toString().padStart(2, Char(48))}",
+                        (selectedTripCalendar.get(Calendar.MONTH) + 1).toString()
+                            .padStart(2, Char(48))
+                    }-${
+                        selectedTripCalendar.get(Calendar.DAY_OF_MONTH).toString()
+                            .padStart(2, Char(48))
+                    }",
                     time = "${
-                        selectedTripCalendar.get(Calendar.HOUR_OF_DAY).toString().padStart(2, Char(48))
+                        selectedTripCalendar.get(Calendar.HOUR_OF_DAY).toString()
+                            .padStart(2, Char(48))
                     }:${selectedTripCalendar.get(Calendar.MINUTE).toString().padStart(2, Char(48))}"
                 )
             }
@@ -287,14 +348,16 @@ class TripPlannerFragment : Fragment() {
                     val tempText = editTextFrom.text
                     editTextFrom.text = editTextTo.text
                     editTextTo.text = tempText
-                    val tempValue = selectedTrip.to
-                    selectedTrip.to = selectedTrip.from
-                    selectedTrip.from = tempValue
+                    setSelectedTrip(from = selectedTrip.to, to = selectedTrip.from)
                     if (selectedTrip.from != null && selectedTrip.to != null) {
                         getTrip()
                     }
                 } else {
-                    Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context?.getString(R.string.no_connection),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
 
             }
@@ -322,7 +385,11 @@ class TripPlannerFragment : Fragment() {
                         timePickerDialog.show()
                     }
                 } else {
-                    Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context?.getString(R.string.no_connection),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
 
@@ -339,7 +406,11 @@ class TripPlannerFragment : Fragment() {
                     getTrip()
                     Toast.makeText(context, "Set to time of $toastText.", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context?.getString(R.string.no_connection),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
 
             }
@@ -350,7 +421,11 @@ class TripPlannerFragment : Fragment() {
                         openTypeAhead(typeAheadFragment, "editTextFrom")
                     } else {
                         editTextFrom.clearFocus()
-                        Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            context?.getString(R.string.no_connection),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -363,7 +438,11 @@ class TripPlannerFragment : Fragment() {
                         openTypeAhead(typeAheadFragment, "editTextTo")
                     } else {
                         editTextTo.clearFocus()
-                        Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            context?.getString(R.string.no_connection),
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -372,9 +451,14 @@ class TripPlannerFragment : Fragment() {
                 if (stopList.isNotEmpty()) {
                     selectedTripCalendar = Calendar.getInstance()
                     getTrip(date = "", time = "")
-                    Toast.makeText(context, "Changed to current date and time.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Changed to current date and time.", Toast.LENGTH_SHORT)
+                        .show()
                 } else {
-                    Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        context?.getString(R.string.no_connection),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
                 true
             }
@@ -386,7 +470,8 @@ class TripPlannerFragment : Fragment() {
         listState = savedInstanceState?.getParcelable("tripPlannerAdapter")
         val thar = savedInstanceState?.getParcelableArray("tripHolder") as? Array<Trip>
         tripHolder = thar?.toMutableList() ?: tripHolder
-        selectedTrip = savedInstanceState?.getSerializable("selectedTrip") as? SelectedTrip ?: selectedTrip
+        selectedTrip =
+            savedInstanceState?.getSerializable("selectedTrip") as? SelectedTrip ?: selectedTrip
     }
 
     override fun onResume() {
@@ -408,7 +493,8 @@ class TripPlannerFragment : Fragment() {
         super.onSaveInstanceState(outState)
         outState.putSerializable("selectedTrip", selectedTrip)
         outState.putParcelableArray("tripHolder", tripHolder.toTypedArray())
-        listState = activity?.findViewById<RecyclerView>(R.id.TripPlannerList)?.layoutManager?.onSaveInstanceState()
+        listState =
+            activity?.findViewById<RecyclerView>(R.id.TripPlannerList)?.layoutManager?.onSaveInstanceState()
         outState.putParcelable("tripPlannerAdapter", listState)
     }
 

@@ -14,6 +14,7 @@ import eu.magicsk.transi.R
 import org.json.JSONArray
 import java.text.Normalizer
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
@@ -65,7 +66,15 @@ fun getDate(plusDays: Long = 0, format: String = "yyyyMMdd"): String {
 fun getMinutes(): Int {
     val current = LocalDateTime.now()
     return current.minute + current.hour * 60
+}
 
+fun addOneMinute(timeString: String): String {
+    return try {
+        val time = LocalTime.parse(timeString)
+        time.plusMinutes(1).toString().substring(0, 5)
+    } catch (e: Exception) {
+        timeString
+    }
 }
 
 fun animatedAlphaChange(from: Float, to: Float, offset: Long, View: View) {
