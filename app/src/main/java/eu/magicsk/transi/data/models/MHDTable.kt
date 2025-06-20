@@ -1,5 +1,6 @@
 package eu.magicsk.transi.data.models
 
+import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -8,13 +9,11 @@ class MHDTable {
     val sortedTabs = mutableListOf<MHDTableData>()
     val vehicleInfo = mutableListOf<MHDTableVehicle>()
 
-    fun addTabs(data: JSONObject): MutableList<MHDTableData> {
+    fun addTabs(data: JSONArray): MutableList<MHDTableData> {
         tabs.clear()
-        val keys = data.keys()
-        while (keys.hasNext()) {
+        for (j in 0 until data.length()) {
             val platform: MutableList<MHDTableData> = mutableListOf()
-            val key = keys.next()
-            val tab = data.getJSONObject(key).getJSONArray("tab")
+            val tab = data.getJSONObject(j).getJSONArray("tab")
             for (i in 0 until tab.length()) {
                 val item = MHDTableData(
                     try {
@@ -27,7 +26,11 @@ class MHDTable {
                     } catch (e: JSONException) {
                         "Err"
                     },
-                    key,
+                    try {
+                        data.getJSONObject(j).getInt("nastupiste").toString()
+                    } catch (e: JSONException) {
+                        "0"
+                    },
                     try {
                         tab.getJSONObject(i).getString("issi")
                     } catch (e: JSONException) {

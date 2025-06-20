@@ -32,6 +32,8 @@ class TypeAheadFragment : Fragment() {
     private var showDirections = false
     private var stopsList: Stops = Stops()
     private val filterHandler = Handler(Looper.getMainLooper())
+    private var eText: EditText? = null
+    private var listener: TextWatcher? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -44,6 +46,24 @@ class TypeAheadFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        if (eText != null) {
+            eText?.removeTextChangedListener(listener)
+            val tripPlannerViewModel =
+                ViewModelProvider(requireActivity())[TripPlannerViewModel::class.java]
+            if (origin == "editTextFrom") {
+                val fromStopName = tripPlannerViewModel.selectedFromStop.value?.name
+                if (fromStopName != null && eText?.text.toString() != fromStopName) {
+                    eText?.setText(fromStopName)
+                }
+            }
+            if (origin == "editTextTo") {
+                val toStopName = tripPlannerViewModel.selectedToStop.value?.name
+                if (toStopName != null && eText?.text.toString() != toStopName) {
+                    eText?.setText(toStopName)
+                }
+            }
+            filterHandler.removeCallbacksAndMessages(null)
+        }
         _binding = null
     }
 
@@ -130,19 +150,26 @@ class TypeAheadFragment : Fragment() {
         binding.StopList.adapter = typeAheadAdapter
         binding.StopList.layoutManager = LinearLayoutManager(context)
 
-        val eText: EditText? = when (origin) {
+        eText = when (origin) {
             "editTextFrom" -> activity?.findViewById(R.id.editTextFrom)
             "editTextTo" -> activity?.findViewById(R.id.editTextTo)
             else -> activity?.findViewById(R.id.editText)
+        }
+
+        if (origin != "editText") {
+            filterHandler.postDelayed({
+                typeAheadAdapter.filter(eText?.text.toString().trim())
+            }, 200)
         }
 
         eText?.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(p0: Editable?) {}
             override fun onTextChanged(s: CharSequence?, p1: Int, p2: Int, p3: Int) {
+                if (listener == null) listener = this
                 filterHandler.removeCallbacksAndMessages(null)
                 filterHandler.postDelayed({
-                    typeAheadAdapter.filter(s.toString())
+                    typeAheadAdapter.filter(s.toString().trim())
                 }, 200)
             }
         })

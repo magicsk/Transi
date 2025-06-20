@@ -53,6 +53,8 @@ class TripPlannerFragment : Fragment() {
     private var loadingMore: Boolean = false
     private var loadingNewTrip: Boolean = false
     private var listState: Parcelable? = null
+    private var lastFrom: String = ""
+    private var lastTo: String = ""
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -271,6 +273,7 @@ class TripPlannerFragment : Fragment() {
                     MaterialColors.getColor(view, R.attr.colorMyBackground)
                 if (selectedTrip.from != it?.id && it != null) {
                     editTextFrom.setText(it.name)
+                    lastFrom = it.name
                     tripPlannerAdapter.setFromTo(newFrom = it.name)
                     if (editTextTo.text.isNullOrEmpty()) {
                         setSelectedTrip(from = it.id)
@@ -291,6 +294,7 @@ class TripPlannerFragment : Fragment() {
                     MaterialColors.getColor(view, R.attr.colorMyBackground)
                 if (selectedTrip.to != it?.id && it != null) {
                     editTextTo.setText(it.name)
+                    lastTo = it.name
                     getTrip(to = it.id)
                     tripPlannerAdapter.setFromTo(newTo = it.name)
                 }

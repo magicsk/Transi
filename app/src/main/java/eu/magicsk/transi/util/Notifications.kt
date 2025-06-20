@@ -107,7 +107,7 @@ fun tableNotification(stop: Stop, connectionId: Long, context: Context) {
                 .emit("infoStart")
         }
         .on("tabs") {
-            mhdTable.addTabs(JSONObject(it[0].toString()))
+            mhdTable.addTabs(JSONArray(it[0].toString()))
             var exists = false
             for (platform in mhdTable.tabs) {
                 if (platform.Id == connectionId) {

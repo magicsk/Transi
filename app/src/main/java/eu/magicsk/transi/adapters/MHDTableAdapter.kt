@@ -168,8 +168,9 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                 updateTimeStamp = System.currentTimeMillis()
                 activity.runOnUiThread {
                     try {
-                        addItems(mhdTable.addTabs(JSONObject(it[0].toString())))
-                    } catch (_: JSONException) {
+                        addItems(mhdTable.addTabs(JSONArray(it[0].toString())))
+                    } catch (e: JSONException) {
+                        println(e.message)
                     }
                     if (mhdTable.sortedTabs.size > 1) {
                         connectInfo.visibility = View.GONE
