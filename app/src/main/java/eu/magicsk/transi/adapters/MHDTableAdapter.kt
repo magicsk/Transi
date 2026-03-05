@@ -25,6 +25,7 @@ import eu.magicsk.transi.databinding.TableListItemBinding
 import eu.magicsk.transi.util.*
 import eu.magicsk.transi.view_models.MainViewModel
 import io.socket.client.IO
+import io.socket.client.Manager
 import io.socket.client.Socket
 import org.json.JSONArray
 import org.json.JSONException
@@ -115,16 +116,10 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
 
     fun ioAddObservers(activity: Activity) {
         socket.off()
+        socket.io().off()
         val mainViewModel = ViewModelProvider(activity as ViewModelStoreOwner)[MainViewModel::class.java]
         val connectInfo = activity.findViewById<TextView>(R.id.MHDTableListConnectInfo)
         socket
-            .on(Socket.EVENT_CONNECTING) {
-                println("connecting")
-                activity.runOnUiThread {
-                    connectInfo?.visibility = View.VISIBLE
-                    connectInfo?.text = activity.getString(R.string.connecting)
-                }
-            }
             .on(Socket.EVENT_CONNECT) {
                 connected = true
                 println("connected")
@@ -141,22 +136,12 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                     connectInfo?.text = activity.getString(R.string.disconnected)
                 }
             }
-            .on(Socket.EVENT_RECONNECTING) {
+            .on(Socket.EVENT_CONNECT_ERROR) {
+                println("connect error")
                 activity.runOnUiThread {
                     connectInfo?.visibility = View.VISIBLE
-                    connectInfo?.text = activity.getString(R.string.reconnecting)
+                    connectInfo?.text = activity.getString(R.string.connecting)
                 }
-            }
-            .on(Socket.EVENT_RECONNECT) {
-                connected = true
-                println("reconnected")
-                activity.runOnUiThread {
-                    connectInfo?.visibility = View.VISIBLE
-                    connectInfo?.text = activity.getString(R.string.loading)
-                }
-                socket
-                    .emit("tabStart", tabArgs)
-                    .emit("infoStart")
             }
             .on("vInfo") {
                 try {
@@ -187,6 +172,24 @@ class MHDTableAdapter : RecyclerView.Adapter<MHDTableAdapter.MHDTableViewHolder>
                     } catch (_: JSONException) {
                     }
                 }
+            }
+        socket.io()
+            .on(Manager.EVENT_RECONNECT_ATTEMPT) {
+                activity.runOnUiThread {
+                    connectInfo?.visibility = View.VISIBLE
+                    connectInfo?.text = activity.getString(R.string.reconnecting)
+                }
+            }
+            .on(Manager.EVENT_RECONNECT) {
+                connected = true
+                println("reconnected")
+                activity.runOnUiThread {
+                    connectInfo?.visibility = View.VISIBLE
+                    connectInfo?.text = activity.getString(R.string.loading)
+                }
+                socket
+                    .emit("tabStart", tabArgs)
+                    .emit("infoStart")
             }
     }
 

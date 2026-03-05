@@ -16,6 +16,7 @@ import eu.magicsk.transi.data.models.MHDTableData
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.receivers.MHDTableCancelNotificationReceiver
 import io.socket.client.IO
+import io.socket.client.Manager
 import io.socket.client.Socket
 import org.json.JSONArray
 import org.json.JSONObject
@@ -46,6 +47,7 @@ fun cancelTableNotification(context: Context) {
     val notificationManager = context.getSystemService(NotificationManager::class.java) as NotificationManager
     notificationManager.cancel(TABLE_NOTIFICATION_ID)
     socket.off()
+    socket.io().off()
     socket.close()
     connected = false
     wakeLock?.release()
@@ -88,6 +90,7 @@ fun tableNotification(stop: Stop, connectionId: Long, context: Context) {
     tabArgs.put(1, "*")
     if (observersInitialized) {
         socket.off()
+        socket.io().off()
     }
     socket
         .on(Socket.EVENT_CONNECT) {
@@ -98,13 +101,6 @@ fun tableNotification(stop: Stop, connectionId: Long, context: Context) {
         .on(Socket.EVENT_DISCONNECT) {
             connected = false
             sendTableNotification(lastInfo, context, true, "Reconnecting")
-        }
-        .on(Socket.EVENT_RECONNECT) {
-            connected = true
-            sendTableNotification(lastInfo, context, true, force = true)
-            socket
-                .emit("tabStart", tabArgs)
-                .emit("infoStart")
         }
         .on("tabs") {
             mhdTable.addTabs(JSONArray(it[0].toString()))
@@ -123,6 +119,14 @@ fun tableNotification(stop: Stop, connectionId: Long, context: Context) {
         }
         .on("vInfo") {
             mhdTable.addVehicleInfo(JSONObject(it[0].toString()))
+        }
+    socket.io()
+        .on(Manager.EVENT_RECONNECT) {
+            connected = true
+            sendTableNotification(lastInfo, context, true, force = true)
+            socket
+                .emit("tabStart", tabArgs)
+                .emit("infoStart")
         }
     socket.connect()
 }
