@@ -140,7 +140,7 @@ class TypeAheadFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        activity?.window?.statusBarColor = MaterialColors.getColor(view, R.attr.colorSurface)
+        activity?.window?.statusBarColor = MaterialColors.getColor(view, com.google.android.material.R.attr.colorSurface)
 
         typeAheadAdapter = TypeAheadAdapter(mutableListOf(),
             showDirections,

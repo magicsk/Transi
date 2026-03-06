@@ -176,7 +176,7 @@ class TimetableDetailFragment : Fragment() {
                         hourTextView.gravity = Gravity.CENTER
                         val colorPrimaryContainer = TypedValue()
                         context.theme.resolveAttribute(
-                            R.attr.colorPrimaryContainer,
+                            com.google.android.material.R.attr.colorPrimaryContainer,
                             colorPrimaryContainer,
                             true
                         )

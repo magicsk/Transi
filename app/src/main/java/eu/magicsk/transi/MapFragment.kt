@@ -108,6 +108,7 @@ class MapFragment : SupportMapFragment() {
         override fun getPosition(): LatLng = latLng
         override fun getTitle(): String = name
         override fun getSnippet(): String = name
+        override fun getZIndex(): Float = 0f
     }
 
 

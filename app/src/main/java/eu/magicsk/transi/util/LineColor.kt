@@ -51,7 +51,7 @@ fun getLineColor(lineNum: String, dark: Boolean): Int {
         "737" -> return R.color.l737
         "298", "299", "598", "599", "699", "798", "799" -> return R.color.night_regional
         "Záhoráčik" -> return R.color.train
-        "►" -> return if (dark) R.color.gray else R.color.cardview_light_background
+        "►" -> return if (dark) R.color.gray else R.color.white
         else -> {
             if (lineNum.startsWith("S") || lineNum.startsWith("R")) return R.color.train
             if (lineNum.startsWith("AT")) return R.color.AT_train
@@ -88,7 +88,7 @@ fun getLineTextColor(lineNum: String): Int {
         "N93" -> return R.color.ln93
         "N95" -> return R.color.ln95
         "N99" -> return R.color.ln99
-        "►" -> return R.color.material_on_surface_emphasis_high_type
+        "►" -> return R.color.on_surface_high
         "298", "299", "598", "599", "699", "798", "799" -> return R.color.white
         else -> {
             if (lineNum.startsWith("X")) return R.color.replacement_text
