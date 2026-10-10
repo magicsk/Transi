@@ -48,7 +48,9 @@ enum class TimetableCategory(@StringRes val title: Int) {
 fun LocalDate.serviceDate(): String = format(DateTimeFormatter.BASIC_ISO_DATE)
 
 /** `HH:mm` of [minutes] after the service day's midnight (GTFS noon minus 12 h, as on iOS); 1440 and later wrap. */
-fun formatServiceTime(minutes: Int): String = "%02d:%02d".format(minutes / 60 % 24, minutes % 60)
+// padStart keeps ASCII digits whatever the device locale (String.format would localise them).
+fun formatServiceTime(minutes: Int): String =
+    "${(minutes / 60 % 24).toString().padStart(2, '0')}:${(minutes % 60).toString().padStart(2, '0')}"
 
 /** Index of the first trip departing after [now] (minute of day), else the first trip. */
 fun nextTripIndex(departures: List<Int>, now: LocalTime): Int =

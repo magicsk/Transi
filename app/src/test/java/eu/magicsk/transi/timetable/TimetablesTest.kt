@@ -39,6 +39,13 @@ class TimetablesTest {
         assertEquals("23:59", formatServiceTime(1439))
         assertEquals("00:00", formatServiceTime(1440))
         assertEquals("01:30", formatServiceTime(1530))
+        val locale = java.util.Locale.getDefault()
+        try {
+            java.util.Locale.setDefault(java.util.Locale.forLanguageTag("ar-EG"))
+            assertEquals("07:05", formatServiceTime(425))
+        } finally {
+            java.util.Locale.setDefault(locale)
+        }
     }
 
     @Test
