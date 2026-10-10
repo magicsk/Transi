@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement"
+  short_description: "Plan, build, review, prove, and merge via worktrees"
+  default_prompt: "Use $implement to plan and deliver these Transi changes end to end."

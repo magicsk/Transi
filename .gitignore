@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+# Claude Code
+.claude/
+# Local verification artifacts
+/.artifacts/

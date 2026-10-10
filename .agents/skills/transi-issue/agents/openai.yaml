@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fix Transi Issue"
+  short_description: "Reproduce, fix, prove, and review an issue"
+  default_prompt: "Use $transi-issue to reproduce and fix this Transi issue."

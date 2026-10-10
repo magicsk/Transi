@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build Transi Feature"
+  short_description: "Plan, build, prove, and review a feature"
+  default_prompt: "Use $transi-feature to implement this Transi feature end to end."

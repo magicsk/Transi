@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prove Transi UI"
+  short_description: "Capture UI evidence and share it on Tailnet"
+  default_prompt: "Use $transi-visual-proof to capture and share visual proof of these changes."
