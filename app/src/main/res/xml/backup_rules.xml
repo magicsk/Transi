@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and lower: back up only the app's own settings file, not Firebase identifiers. -->
+<full-backup-content>
+    <include
+        domain="sharedpref"
+        path="Transi.xml" />
+</full-backup-content>

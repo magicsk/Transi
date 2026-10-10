@@ -54,7 +54,6 @@ class DataRepository @Inject constructor(
                 format
             )
         } catch (e: Exception) {
-            println(e)
             return Resource.Error("An unknown error occurred. $e")
         }
         return Resource.Success(response)
@@ -64,10 +63,8 @@ class DataRepository @Inject constructor(
         val response = try {
             idsbkApi.getIdsbkSession()
         } catch (e: Exception) {
-            println(e)
             return Resource.Error("An unknown error occurred. $e")
         }
-        println(response)
         return Resource.Success(response)
     }
 
