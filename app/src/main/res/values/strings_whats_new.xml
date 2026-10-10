@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="whats_new_title">What\'s New in Transi</string>
+    <string name="whats_new_version">Version %1$s</string>
+    <string name="whats_new_continue">Continue</string>
+</resources>

@@ -16,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.location.LocationManagerCompat
+import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
@@ -30,6 +31,7 @@ import eu.magicsk.transi.databinding.ActivityMainBinding
 import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.util.UpdateAlert
 import eu.magicsk.transi.util.hasLocationPermission
+import eu.magicsk.transi.util.WhatsNewSheet
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.ReleaseInfoViewModel
 import kotlin.math.max
@@ -108,6 +110,11 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val versionName = BuildConfig.VERSION_NAME
+        // A fresh install has no update to describe; checked before MainViewModel can cache a stops version.
+        val prefs = Prefs.get(this)
+        if (!prefs.contains(Prefs.CHANGELOG_VERSION) && !prefs.contains(Prefs.STOPS_VERSION)) {
+            prefs.edit { putString(Prefs.CHANGELOG_VERSION, versionName) }
+        }
         releaseInfoViewModel.releaseInfo.observe(this) { releaseInfo ->
             val version = releaseInfo?.tag_name?.removePrefix("v")
             val downloadUrl = releaseInfo?.assets?.firstOrNull()?.browser_download_url
@@ -116,6 +123,9 @@ class MainActivity : AppCompatActivity() {
             ) {
                 UpdateAlert.newInstance(version, releaseInfo.body.orEmpty(), downloadUrl)
                     .show(supportFragmentManager, "updateAlert")
+            } else if (version == versionName) {
+                // ponytail: only the latest release is fetched, so builds behind it get its notes in the Update dialog instead
+                WhatsNewSheet.showOnce(this, releaseInfo.body)
             }
         }
         _binding = ActivityMainBinding.inflate(layoutInflater)

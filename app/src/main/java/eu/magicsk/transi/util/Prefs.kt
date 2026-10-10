@@ -11,6 +11,7 @@ object Prefs {
     /** Stops JSON kept in prefs before the cache moved to files/stops.json; migrated once, then removed. */
     const val LEGACY_STOP_LIST = "stopList"
     const val MAGIC_API_URL_OVERRIDE = "magic_api_url_override"
+    const val CHANGELOG_VERSION = "changelog_version"
 
     const val DISPLAY_TABLE_CLOCK = "display_table_clock"
     const val DISPLAY_SOCKET_STATUS = "display_socket_status"

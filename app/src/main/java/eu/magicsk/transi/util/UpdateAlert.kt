@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import android.widget.Toast.LENGTH_LONG
 import androidx.core.content.FileProvider
+import androidx.core.content.edit
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
@@ -76,6 +77,8 @@ class UpdateAlert : DialogFragment() {
                 dismissNow()
             }
             AlertConfirmButton.setOnClickListener {
+                // These notes were just read here, so What's New won't repeat them after the update.
+                Prefs.get(requireContext()).edit { putString(Prefs.CHANGELOG_VERSION, requireArguments().getString(ARG_VERSION)) }
                 startDownload()
             }
         }
