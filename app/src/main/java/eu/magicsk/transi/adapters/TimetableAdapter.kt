@@ -1,61 +1,46 @@
 package eu.magicsk.transi.adapters
 
-import android.annotation.SuppressLint
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import eu.magicsk.transi.data.remote.responses.idsbk.Departure
+import eu.magicsk.transi.data.remote.responses.idsbk.DirectionDeparture
 import eu.magicsk.transi.databinding.TimetableListItemBinding
 
+/** The stops of one trip, each paired with its formatted departure time. */
 class TimetableAdapter(
-    private var DepartureList: Departure,
-    private val onItemClicked: (stationId: Int, stationName: String) -> Unit
-) : RecyclerView.Adapter<TimetableAdapter.TimetableViewHolder>() {
-    class TimetableViewHolder(
-        val binding: TimetableListItemBinding,
-        private val DepartureList: Departure,
-        private val onItemClicked: (stationId: Int, stationName: String) -> Unit
-    ) :
-        RecyclerView.ViewHolder(binding.root), View.OnClickListener {
-        init {
-            binding.root.setOnClickListener(this)
-        }
+    private val onStopClicked: (DirectionDeparture) -> Unit
+) : ListAdapter<Pair<DirectionDeparture, String>, TimetableAdapter.TimetableViewHolder>(Diff) {
 
-        override fun onClick(v: View?) {
-            val stationId = DepartureList.direction_departures[adapterPosition].station_id
-            val stationName = DepartureList.direction_departures[adapterPosition].station_name
-            onItemClicked(stationId, stationName)
-        }
-    }
-
-    private var _binding: TimetableListItemBinding? = null
-    private val binding get() = _binding!!
-
-    @SuppressLint("NotifyDataSetChanged")
-    fun replaceList(new: Departure) {
-        DepartureList = new
-        notifyDataSetChanged()
-    }
+    class TimetableViewHolder(val binding: TimetableListItemBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TimetableViewHolder {
-        _binding = TimetableListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return TimetableViewHolder(binding, DepartureList, onItemClicked)
+        val holder = TimetableViewHolder(
+            TimetableListItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        )
+        holder.binding.root.setOnClickListener {
+            val position = holder.bindingAdapterPosition
+            if (position != RecyclerView.NO_POSITION) onStopClicked(getItem(position).first)
+        }
+        return holder
     }
 
     override fun onBindViewHolder(holder: TimetableViewHolder, position: Int) {
-        val current = DepartureList.direction_departures[position]
-        val departureTime = current.departure
-        holder.binding.apply {
-            TimetableListItemStopName.text = current.station_name
-            TimetableListItemTime.text =
-                "${departureTime / 60}:${
-                    (departureTime % 60).toString().padStart(2, Char(48))
-                }"
-        }
+        val (stop, time) = getItem(position)
+        holder.binding.TimetableListItemStopName.text = stop.station_name
+        holder.binding.TimetableListItemTime.text = time
     }
 
-    override fun getItemCount(): Int {
-        return DepartureList.direction_departures.size
+    private object Diff : DiffUtil.ItemCallback<Pair<DirectionDeparture, String>>() {
+        override fun areItemsTheSame(
+            oldItem: Pair<DirectionDeparture, String>,
+            newItem: Pair<DirectionDeparture, String>,
+        ) = oldItem.first.station_id == newItem.first.station_id
+
+        override fun areContentsTheSame(
+            oldItem: Pair<DirectionDeparture, String>,
+            newItem: Pair<DirectionDeparture, String>,
+        ) = oldItem == newItem
     }
 }

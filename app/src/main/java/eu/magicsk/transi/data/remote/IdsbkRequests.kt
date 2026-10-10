@@ -78,7 +78,7 @@ interface IdsbkRequests {
         @Header("Cache-Control") cacheControl: String = "no-cache",
     ): TimetableDirections
 
-    @GET("route/{route}/{ad}/{direction}/{date}/0/1440")
+    @GET("route/{route}/{ad}/{direction}/{date}/0/1440/")
     suspend fun getTimetable(
         @Path("route") route: Int,
         @Path("ad") arrivalDeparture: String,
@@ -97,7 +97,7 @@ interface IdsbkRequests {
         @Header("Cache-Control") cacheControl: String = "no-cache",
     ): Timetable
 
-    @GET("route/{route}/{ad}/{direction}/{date}/{stop}")
+    @GET("route/{route}/{ad}/{direction}/{date}/{stop}/")
     suspend fun getTimetableDetail(
         @Path("route") route: Int,
         @Path("ad") arrivalDeparture: String,

@@ -8,6 +8,7 @@ import eu.magicsk.transi.data.remote.ImhdRequests
 import eu.magicsk.transi.data.remote.responses.ReleaseInfo
 import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.data.remote.responses.StopsVersion
+import eu.magicsk.transi.data.remote.responses.TimetableManifest
 import eu.magicsk.transi.data.remote.responses.idsbk.*
 import eu.magicsk.transi.util.Resource
 import javax.inject.Inject
@@ -143,6 +144,15 @@ class DataRepository @Inject constructor(
     suspend fun getStopsVersion(): Resource<StopsVersion> {
         val response = try {
             api.getStopsVersion()
+        } catch (e: Exception) {
+            return Resource.Error("An unknown error occurred. $e")
+        }
+        return Resource.Success(response)
+    }
+
+    suspend fun getTimetableManifest(): Resource<TimetableManifest> {
+        val response = try {
+            api.getTimetableManifest()
         } catch (e: Exception) {
             return Resource.Error("An unknown error occurred. $e")
         }

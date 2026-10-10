@@ -19,6 +19,8 @@ import javax.inject.Singleton
 
 /** Points a Magic API request at the developer override base URL; an empty or invalid override keeps it unchanged. */
 fun magicApiUrl(original: HttpUrl, override: String?): HttpUrl {
+    // Absolute URLs on other hosts (e.g. timetable downloads served elsewhere) are left alone.
+    if (original.host != "api.magicsk.eu") return original
     val base = override?.toHttpUrlOrNull() ?: return original
     return original.newBuilder()
         .scheme(base.scheme)

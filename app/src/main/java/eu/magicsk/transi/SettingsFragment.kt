@@ -10,6 +10,7 @@ import androidx.core.view.updatePadding
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import eu.magicsk.transi.timetable.bindTimetablesPreferences
 import eu.magicsk.transi.util.Prefs
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
@@ -19,10 +20,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         preferenceManager.sharedPreferencesName = Prefs.FILE
         // One XML per section, in the iOS order.
         val sections = listOf(
+            R.xml.prefs_timetables,
             R.xml.prefs_developer,
         )
         setPreferencesFromResource(sections.first(), rootKey)
         sections.drop(1).forEach(::addPreferencesFromResource)
+        bindTimetablesPreferences(this)
         bindDeveloper()
     }
 

@@ -1,214 +1,279 @@
 package eu.magicsk.transi
 
+import android.os.Build
 import android.os.Bundle
-import android.view.LayoutInflater
+import android.view.HapticFeedbackConstants
 import android.view.View
-import android.view.ViewGroup
+import androidx.annotation.StringRes
 import androidx.core.view.isVisible
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.chip.Chip
+import com.google.android.material.datepicker.MaterialDatePicker
 import eu.magicsk.transi.adapters.TimetableAdapter
-import eu.magicsk.transi.data.remote.responses.idsbk.Session
+import eu.magicsk.transi.data.remote.responses.idsbk.Departure
+import eu.magicsk.transi.data.remote.responses.idsbk.DirectionDeparture
+import eu.magicsk.transi.data.remote.responses.idsbk.TimetableDirection
 import eu.magicsk.transi.databinding.FragmentTimetableBinding
-import eu.magicsk.transi.util.*
+import eu.magicsk.transi.timetable.ARG_DATE
+import eu.magicsk.transi.timetable.ARG_DIRECTION_ID
+import eu.magicsk.transi.timetable.ARG_DIRECTION_NAME
+import eu.magicsk.transi.timetable.ARG_OFFLINE
+import eu.magicsk.transi.timetable.ARG_ROUTE_ID
+import eu.magicsk.transi.timetable.ARG_SHORT_NAME
+import eu.magicsk.transi.timetable.ARG_STATION_ID
+import eu.magicsk.transi.timetable.ARG_STATION_NAME
+import eu.magicsk.transi.timetable.ARG_STOP_CODE
+import eu.magicsk.transi.timetable.BRATISLAVA
+import eu.magicsk.transi.timetable.formatServiceTime
+import eu.magicsk.transi.timetable.nextTripIndex
+import eu.magicsk.transi.timetable.showTimetableError
+import eu.magicsk.transi.util.customizeLineText
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TimetablesViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
-class TimetableFragment : Fragment() {
+/**
+ * One line: date, direction and a trip picked with the slider; lists the trip's stops. The state lives in the
+ * fragment, so it survives the trip to a stop's timetable and back; date, direction and trip survive recreation.
+ */
+class TimetableFragment : Fragment(R.layout.fragment_timetable) {
+    private val viewModel: TimetablesViewModel by activityViewModels()
+    private val mainViewModel: MainViewModel by activityViewModels()
 
-    private var _binding: FragmentTimetableBinding? = null
-    private val binding get() = _binding!!
+    private var binding: FragmentTimetableBinding? = null
+    private var adapter: TimetableAdapter? = null
+    private var job: Job? = null
 
+    private var date: LocalDate = LocalDate.now(BRATISLAVA)
+    private var directions: List<TimetableDirection>? = null
+    private var directionIndex = 0
+    private var departures: List<Departure>? = null
+    private var tripIndex = NEXT_TRIP
+    private var loading = false
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View {
-        _binding = FragmentTimetableBinding.inflate(inflater, container, false)
-        return binding.root
+    @StringRes
+    private var error: Int? = null
+
+    private val routeId get() = requireArguments().getInt(ARG_ROUTE_ID)
+    private val shortName get() = requireArguments().getString(ARG_SHORT_NAME).orEmpty()
+    private val offline get() = requireArguments().getBoolean(ARG_OFFLINE)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        savedInstanceState?.let {
+            date = LocalDate.ofEpochDay(it.getLong(STATE_DATE))
+            directionIndex = it.getInt(STATE_DIRECTION)
+            tripIndex = it.getInt(STATE_TRIP)
+        }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putLong(STATE_DATE, date.toEpochDay())
+        outState.putInt(STATE_DIRECTION, directionIndex)
+        outState.putInt(STATE_TRIP, tripIndex)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val routeId = requireArguments().getInt("route_id")
-        val lineNum = requireArguments().getString("short_name") ?: "Error"
-        val lineDirections = requireArguments().getString("long_name") ?: "Error"
-        binding.apply {
-            TimetableError.isVisible = false
-            TimetableNoDeparturesInfo.isVisible = false
-            val timetablesViewModel =
-                ViewModelProvider(requireActivity())[TimetablesViewModel::class.java]
-            val context = root.context
-            val resources = root.resources
-            customizeLineText(TimetableTitleLine, lineNum, context, resources)
-            TimetableTitleDirections.text = lineDirections
-            TimetableTitleDirections.isSelected = true
-            val mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
-            mainViewModel.idsbkSession.observe(viewLifecycleOwner) { idsbkSession ->
-                idsbkSession?.let {
-                    TimetableErrorBtn.setOnClickListener {
-                        TimetableError.isVisible = false
-                        animatedAlphaChange(0F, 1F, 0, TimetableLoadingIndicator)
-                        fetchTimetableDirection(
-                            timetablesViewModel, routeId, idsbkSession, lineNum
-                        )
-                    }
-                    fetchTimetableDirection(timetablesViewModel, routeId, idsbkSession, lineNum)
-                }
+        val binding = FragmentTimetableBinding.bind(view)
+        val adapter = TimetableAdapter(::openStop)
+        this.binding = binding
+        this.adapter = adapter
+
+        customizeLineText(binding.TimetableTitleLine, shortName, requireContext(), resources)
+        binding.TimetableTitleLine.contentDescription = getString(R.string.timetable_line_description, shortName)
+        binding.TimetableStops.adapter = adapter
+        binding.TimetableDateButton.setOnClickListener { pickDate() }
+        binding.TimetableDirections.setOnCheckedStateChangeListener { group, checkedIds ->
+            val index = checkedIds.firstOrNull()?.let { group.indexOfChild(group.findViewById(it)) }
+            if (index != null && index != directionIndex) {
+                directionIndex = index
+                tripIndex = NEXT_TRIP
+                load { fetchDepartures() }
             }
+        }
+        binding.TimetableTripSlider.addOnChangeListener { slider, value, fromUser ->
+            if (fromUser) {
+                slider.performHapticFeedback(TRIP_HAPTIC)
+                selectTrip(value.toInt())
+            }
+        }
+        binding.TimetableTripMinus.setOnClickListener { stepTrip(-1) }
+        binding.TimetableTripPlus.setOnClickListener { stepTrip(1) }
+        // Its listener belonged to the previous view; reopening is one tap.
+        (childFragmentManager.findFragmentByTag(DATE_PICKER) as? DialogFragment)?.dismiss()
+
+        render()
+        val pendingError = error
+        when {
+            pendingError != null -> showError(pendingError)
+            directions == null -> loadDirections()
+            departures == null -> load { fetchDepartures() }
         }
     }
 
-    private fun fetchTimetableDirection(
-        timetablesViewModel: TimetablesViewModel,
-        routeId: Int,
-        idsbkSession: Session,
-        lineNum: String
-    ) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val directions =
-                timetablesViewModel.getTimetableDirections(routeId, idsbkSession)?.directions
-            binding.apply {
-                CoroutineScope(Dispatchers.Main).launch {
-                    if (!directions.isNullOrEmpty()) {
-                        TimetableDirection1.text = directions[0].direction
-                        if (directions.size > 1) {
-                            TimetableDirection2.isVisible = true
-                            TimetableDirection2.text = directions[1].direction
-                        } else {
-                            TimetableDirection2.isVisible = false
-                        }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // The view's coroutine scope is cancelled with it; anything it did not finish is loaded again.
+        loading = false
+        binding = null
+        adapter = null
+    }
 
-                        val timetableDetailBundle = Bundle()
-                        timetableDetailBundle.putInt("route_id", routeId)
-                        timetableDetailBundle.putString("short_name", lineNum)
-
-                        TimetableDirectionToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
-                            if (isChecked) {
-                                when (checkedId) {
-                                    R.id.TimetableDirection1 -> {
-                                        animatedAlphaChange(
-                                            0F, 1F, 0, TimetableLoadingIndicator
-                                        )
-                                        timetableDetailBundle.putString(
-                                            "long_name", directions[0].direction
-                                        )
-                                        fetchTimetable(
-                                            timetablesViewModel,
-                                            routeId,
-                                            directions[0].direction_id,
-                                            idsbkSession,
-                                            timetableDetailBundle
-                                        )
-                                    }
-
-                                    R.id.TimetableDirection2 -> {
-                                        animatedAlphaChange(
-                                            0F, 1F, 0, TimetableLoadingIndicator
-                                        )
-                                        timetableDetailBundle.putString(
-                                            "long_name", directions[1].direction
-                                        )
-                                        fetchTimetable(
-                                            timetablesViewModel,
-                                            routeId,
-                                            directions[1].direction_id,
-                                            idsbkSession,
-                                            timetableDetailBundle
-                                        )
-                                    }
-
-                                }
-                            }
-                        }
-                        TimetableDirectionToggle.clearChecked()
-                        TimetableDirectionToggle.check(R.id.TimetableDirection1)
-                    } else {
-                        TimetableError.isVisible = true
-                    }
-                }
-            }
+    private fun load(block: suspend () -> Unit) {
+        job?.cancel()
+        loading = true
+        error = null
+        render()
+        job = viewLifecycleOwner.lifecycleScope.launch {
+            block()
+            loading = false
+            render()
+            error?.let(::showError)
         }
     }
 
+    private fun loadDirections() = load {
+        val result = viewModel.directions(routeId, offline, mainViewModel.idsbkSession.value)
+        if (result == null) {
+            error = R.string.timetable_directions_error
+            return@load
+        }
+        directions = result
+        directionIndex = directionIndex.coerceIn(0, (result.size - 1).coerceAtLeast(0))
+        if (result.isEmpty()) departures = emptyList() else fetchDepartures()
+    }
 
-    private fun fetchTimetable(
-        timetablesViewModel: TimetablesViewModel,
-        routeId: Int,
-        direction: Int,
-        idsbkSession: Session,
-        timetableDetailBundle: Bundle
-    ) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val timetable = timetablesViewModel.getTimetable(
-                routeId, "departures", direction, getDate(), idsbkSession
-            )
-            val departures = timetable?.departures
-            binding.apply {
-                CoroutineScope(Dispatchers.Main).launch {
-                    if (!departures.isNullOrEmpty()) {
-                        val valueTo = (departures.size - 1).toFloat()
-                        TimetableTimeSlider.valueFrom = 0F
-                        TimetableTimeSlider.valueTo = if (valueTo > 0F) valueTo else 1F
-                        TimetableTimeSlider.value = 0F
-                        TimetableTimeSlider.stepSize = 1F
-                        val minutes = getMinutes()
-                        var tooLate = true
-                        departures.forEachIndexed { i, d ->
-                            if (d.departure - minutes > 1 && tooLate) {
-                                tooLate = false
-                                TimetableTimeSlider.value = i.toFloat()
-                            }
-                        }
-                        if (tooLate) TimetableTimeSlider.value = (departures.size - 1).toFloat()
-                        TimetableTimeSlider.setLabelFormatter { value ->
-                            val departureTime = departures[value.toInt()].departure
-                            return@setLabelFormatter "${departureTime / 60}:${
-                                (departureTime % 60).toString().padStart(2, Char(48))
-                            }"
-                        }
+    private suspend fun fetchDepartures() {
+        val direction = directions?.getOrNull(directionIndex) ?: return
+        departures = null
+        render()
+        val result = viewModel.departures(routeId, offline, direction, date, mainViewModel.idsbkSession.value)
+        if (result == null) {
+            error = R.string.timetable_error
+            return
+        }
+        departures = result
+        if (tripIndex !in result.indices) tripIndex = nextTripIndex(result.map { it.departure }, LocalTime.now(BRATISLAVA))
+    }
 
-                        val timetableAdapter =
-                            TimetableAdapter(departures[TimetableTimeSlider.value.toInt()]) { stationId, stationName ->
-                                timetableDetailBundle.putInt("direction", direction)
-                                timetableDetailBundle.putInt("station_id", stationId)
-                                timetableDetailBundle.putString("station_name", stationName)
-                                findNavController().navigate(
-                                    R.id.action_navigationTimetable_to_navigationTimetableDetail,
-                                    timetableDetailBundle
-                                )
-                            }
-                        TimetableStopsList.adapter = timetableAdapter
-                        TimetableStopsList.layoutManager = LinearLayoutManager(context)
-                        TimetableTimeSlider.addOnChangeListener { _, value, _ ->
-                            if (value < departures.size) timetableAdapter.replaceList(departures[value.toInt()])
-                        }
-                        TimetableTimePlusButton.setOnClickListener {
-                            val newValue = TimetableTimeSlider.value + 1F
-                            if (newValue <= (departures.size - 1).toFloat()) TimetableTimeSlider.value =
-                                newValue
-                        }
-                        TimetableTimeMinusButton.setOnClickListener {
-                            val newValue = TimetableTimeSlider.value - 1F
-                            if (newValue >= 0F) TimetableTimeSlider.value = newValue
-                        }
-                    } else if (departures == null) {
-                        TimetableError.isVisible = true
-                    } else {
-                        TimetableNoDeparturesInfo.isVisible = true
-                    }
-                    animatedAlphaChange(1F, 0F, 100, TimetableLoadingIndicator)
-                }
+    private fun showError(@StringRes title: Int) = showTimetableError(
+        title,
+        onRetry = { if (directions == null) loadDirections() else load { fetchDepartures() } },
+        onCancel = { findNavController().popBackStack() },
+    )
+
+    private fun render() {
+        val binding = binding ?: return
+        if (loading) binding.TimetableLoading.show() else binding.TimetableLoading.hide()
+
+        val label = date.format(DATE_LABEL)
+        binding.TimetableDateButton.text = label
+        binding.TimetableDateButton.contentDescription = getString(R.string.timetable_date_description, label)
+
+        val group = binding.TimetableDirections
+        val directions = directions.orEmpty()
+        if (group.childCount != directions.size) {
+            group.removeAllViews()
+            directions.forEach { direction ->
+                val chip = layoutInflater.inflate(R.layout.timetable_direction_chip, group, false) as Chip
+                chip.id = View.generateViewId()
+                chip.text = direction.direction
+                group.addView(chip)
             }
+        }
+        group.getChildAt(directionIndex)?.let { if (group.checkedChipId != it.id) group.check(it.id) }
+
+        val departures = departures.orEmpty()
+        val last = (departures.size - 1).coerceAtLeast(0)
+        binding.TimetableTripSlider.apply {
+            valueTo = last.coerceAtLeast(1).toFloat()
+            value = tripIndex.coerceIn(0, last).toFloat()
+            isEnabled = departures.size > 1
+            setLabelFormatter { departures.getOrNull(it.toInt())?.let { trip -> formatServiceTime(trip.departure, date) }.orEmpty() }
+        }
+        binding.TimetableEmpty.isVisible = this.departures?.isEmpty() == true
+        renderTrip()
+    }
+
+    private fun renderTrip() {
+        val binding = binding ?: return
+        val departures = departures.orEmpty()
+        val stops = departures.getOrNull(tripIndex)?.direction_departures.orEmpty()
+        adapter?.submitList(stops.map { it to formatServiceTime(it.departure, date) })
+        binding.TimetableTripMinus.isEnabled = tripIndex > 0
+        binding.TimetableTripPlus.isEnabled = tripIndex < departures.size - 1
+    }
+
+    private fun selectTrip(index: Int) {
+        tripIndex = index
+        renderTrip()
+    }
+
+    private fun stepTrip(delta: Int) {
+        val binding = binding ?: return
+        val index = tripIndex + delta
+        if (index !in departures.orEmpty().indices) return
+        binding.TimetableTripSlider.value = index.toFloat()
+        binding.TimetableTripSlider.performHapticFeedback(TRIP_HAPTIC)
+        selectTrip(index)
+    }
+
+    private fun pickDate() {
+        val picker = MaterialDatePicker.Builder.datePicker()
+            .setSelection(date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
+            .build()
+        picker.addOnPositiveButtonClickListener { selection ->
+            val picked = Instant.ofEpochMilli(selection).atZone(ZoneOffset.UTC).toLocalDate()
+            if (picked != date) {
+                date = picked
+                tripIndex = NEXT_TRIP
+                load { fetchDepartures() }
+            }
+        }
+        picker.show(childFragmentManager, DATE_PICKER)
+    }
+
+    private fun openStop(stop: DirectionDeparture) {
+        val direction = directions?.getOrNull(directionIndex) ?: return
+        findNavController().navigate(
+            R.id.action_navigationTimetable_to_navigationTimetableDetail,
+            Bundle().apply {
+                putInt(ARG_ROUTE_ID, routeId)
+                putString(ARG_SHORT_NAME, shortName)
+                putBoolean(ARG_OFFLINE, offline)
+                putInt(ARG_DIRECTION_ID, direction.direction_id)
+                putString(ARG_DIRECTION_NAME, direction.direction)
+                putInt(ARG_STATION_ID, stop.station_id)
+                putString(ARG_STATION_NAME, stop.station_name)
+                putString(ARG_STOP_CODE, stop.stop_code)
+                putLong(ARG_DATE, date.toEpochDay())
+            },
+        )
+    }
+
+    private companion object {
+        const val NEXT_TRIP = -1
+        const val STATE_DATE = "date"
+        const val STATE_DIRECTION = "direction"
+        const val STATE_TRIP = "trip"
+        const val DATE_PICKER = "timetableDatePicker"
+        val DATE_LABEL: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM yyyy")
+        val TRIP_HAPTIC = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            HapticFeedbackConstants.SEGMENT_TICK
+        } else {
+            HapticFeedbackConstants.CLOCK_TICK
         }
     }
 }

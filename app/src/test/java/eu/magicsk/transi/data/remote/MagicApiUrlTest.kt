@@ -13,6 +13,8 @@ class MagicApiUrlTest {
         assertEquals(original, magicApiUrl(original, ""))
         assertEquals(original, magicApiUrl(original, "not a url"))
         assertEquals(original, magicApiUrl(original, "ftp://10.0.2.2:3000"))
+        val elsewhere = "https://cdn.example/base.db.gz".toHttpUrl()
+        assertEquals(elsewhere, magicApiUrl(elsewhere, "http://10.0.2.2:3000"))
     }
 
     @Test

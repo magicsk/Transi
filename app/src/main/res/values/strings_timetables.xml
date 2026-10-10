@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="timetables_error">Failed to fetch timetables</string>
+    <string name="timetable_error">Failed to fetch timetable</string>
+    <string name="timetable_directions_error">Failed to fetch timetable directions</string>
+    <string name="timetable_error_message">Check your internet connection or try again later.</string>
+    <string name="timetable_retry">Retry</string>
+    <string name="timetable_no_timetable">No timetable found for selected date.</string>
+    <string name="timetable_line_description">Line %1$s</string>
+    <string name="timetable_date_description">Timetable date %1$s. Change date</string>
+    <string name="timetable_previous_trip">Previous trip</string>
+    <string name="timetable_next_trip">Next trip</string>
+
+    <string name="timetable_db_checking">Checking for updates…</string>
+    <string name="timetable_db_downloading">Downloading timetable database…</string>
+    <string name="timetable_db_downloading_progress">Downloading timetable database… %1$d%%</string>
+    <string name="timetable_db_decompressing">Decompressing database…</string>
+    <string name="timetable_db_check_failed">Failed to check for updates</string>
+    <string name="timetable_db_download_failed">Download failed</string>
+    <string name="timetable_db_ready">Timetable database is ready</string>
+
+    <string name="offline_timetables">Offline timetables</string>
+    <string name="offline_timetables_summary">Download timetables to browse them without internet</string>
+    <string name="timetable_delete_database">Delete database</string>
+    <string name="timetable_delete_database_title">Delete timetable database?</string>
+    <string name="timetable_delete_database_message">Downloaded timetables are removed and offline timetables are turned off.</string>
+    <string name="timetable_delete">Delete</string>
+</resources>

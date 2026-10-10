@@ -1,220 +1,79 @@
 package eu.magicsk.transi
 
-import android.content.Context
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
 import android.os.Bundle
-import android.util.TypedValue
-import android.view.Gravity
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TableLayout
-import android.widget.TableRow
-import android.widget.TextView
-import androidx.core.content.ContextCompat
-import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
-import androidx.viewpager.widget.PagerAdapter
-import eu.magicsk.transi.data.remote.responses.idsbk.Session
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import eu.magicsk.transi.databinding.FragmentTimetableDetailBinding
-import eu.magicsk.transi.util.*
+import eu.magicsk.transi.databinding.TimetableHourItemBinding
+import eu.magicsk.transi.timetable.ARG_DATE
+import eu.magicsk.transi.timetable.ARG_DIRECTION_ID
+import eu.magicsk.transi.timetable.ARG_DIRECTION_NAME
+import eu.magicsk.transi.timetable.ARG_OFFLINE
+import eu.magicsk.transi.timetable.ARG_ROUTE_ID
+import eu.magicsk.transi.timetable.ARG_SHORT_NAME
+import eu.magicsk.transi.timetable.ARG_STATION_ID
+import eu.magicsk.transi.timetable.ARG_STATION_NAME
+import eu.magicsk.transi.timetable.ARG_STOP_CODE
+import eu.magicsk.transi.timetable.groupByHour
+import eu.magicsk.transi.timetable.showTimetableError
+import eu.magicsk.transi.util.customizeLineText
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TimetablesViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
-class TimetableDetailFragment : Fragment() {
-    private var _binding: FragmentTimetableDetailBinding? = null
-    private val binding get() = _binding!!
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = FragmentTimetableDetailBinding.inflate(inflater, container, false)
-        return binding.root
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
+/** A stop's departures of one direction on the chosen day, one row per hour. */
+class TimetableDetailFragment : Fragment(R.layout.fragment_timetable_detail) {
+    private val viewModel: TimetablesViewModel by activityViewModels()
+    private val mainViewModel: MainViewModel by activityViewModels()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val routeId = requireArguments().getInt("route_id")
-        val lineNum = requireArguments().getString("short_name") ?: "Error"
-        val lineDirection = requireArguments().getString("long_name") ?: "Error"
-        val directionId = requireArguments().getInt("direction")
-        val stationId = requireArguments().getInt("station_id")
-        val stationName = requireArguments().getString("station_name")
-        binding.apply {
-            val context = root.context
-            val resources = root.resources
-            customizeLineText(TimetableDetailTitleLine, lineNum, context, resources)
-            TimetableDetailTitleDirection.text = lineDirection
-            TimetableDetailTitleDirection.isSelected = true
-            TimetableDetailSubtitleText.text = stationName
-            TimetableDetailSubtitleText.isSelected = true
-            val timetablesViewModel =
-                ViewModelProvider(requireActivity())[TimetablesViewModel::class.java]
-            val mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
-            mainViewModel.idsbkSession.observe(viewLifecycleOwner) { idsbkSession ->
-                idsbkSession?.let {
-                    val timetablePagerAdapter =
-                        TimetablePagerAdapter(
-                            context,
-                            binding,
-                            idsbkSession,
-                            timetablesViewModel,
-                            routeId,
-                            directionId,
-                            stationId
-                        )
-                    TimetableDetailDeparturesContainer.adapter = timetablePagerAdapter
-                }
+        val binding = FragmentTimetableDetailBinding.bind(view)
+        val args = requireArguments()
+        val shortName = args.getString(ARG_SHORT_NAME).orEmpty()
+        customizeLineText(binding.TimetableDetailLine, shortName, requireContext(), resources)
+        binding.TimetableDetailLine.contentDescription = getString(R.string.timetable_line_description, shortName)
+        binding.TimetableDetailDirection.text = args.getString(ARG_DIRECTION_NAME)
+        binding.TimetableDetailStop.text = args.getString(ARG_STATION_NAME)
+        load(binding, args)
+    }
+
+    private fun load(binding: FragmentTimetableDetailBinding, args: Bundle) {
+        binding.TimetableDetailLoading.show()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val minutes = viewModel.stopTimes(
+                routeId = args.getInt(ARG_ROUTE_ID),
+                offline = args.getBoolean(ARG_OFFLINE),
+                directionId = args.getInt(ARG_DIRECTION_ID),
+                directionName = args.getString(ARG_DIRECTION_NAME).orEmpty(),
+                date = LocalDate.ofEpochDay(args.getLong(ARG_DATE)),
+                stationId = args.getInt(ARG_STATION_ID),
+                stopCode = args.getString(ARG_STOP_CODE),
+                session = mainViewModel.idsbkSession.value,
+            )
+            binding.TimetableDetailLoading.hide()
+            if (minutes == null) {
+                showTimetableError(
+                    R.string.timetable_error,
+                    onRetry = { load(binding, args) },
+                    onCancel = { findNavController().popBackStack() },
+                )
+                return@launch
+            }
+            binding.TimetableDetailHours.removeAllViews()
+            groupByHour(minutes).forEach { (hour, times) ->
+                val row = TimetableHourItemBinding.inflate(layoutInflater, binding.TimetableDetailHours, true)
+                row.TimetableHourItemHour.text = hour
+                row.TimetableHourItemMinutes.text = times.joinToString(MINUTE_SEPARATOR)
             }
         }
     }
 
-
-    class TimetablePagerAdapter(
-        val context: Context,
-        val binding:  FragmentTimetableDetailBinding,
-        private val idsbkSession: Session,
-        private val timetablesViewModel: TimetablesViewModel,
-        private val routeId: Int,
-        private val directionId: Int,
-        private val stationId: Int
-    ) : PagerAdapter() {
-        private val views = mutableMapOf<String, ViewGroup>()
-        override fun isViewFromObject(view: View, `object`: Any): Boolean {
-            return view === `object`
-        }
-
-        override fun instantiateItem(container: ViewGroup, position: Int): Any {
-            val pageView = getViewGroup(
-                position,
-                context,
-                timetablesViewModel,
-                routeId,
-                directionId,
-                stationId
-            )
-            if (pageView.parent != null) {
-                val parent = pageView.parent as ScrollView
-                parent.removeView(pageView)
-            }
-            val scrollView = ScrollView(context)
-            scrollView.addView(pageView)
-            container.addView(scrollView)
-            return scrollView
-        }
-
-        override fun destroyItem(container: ViewGroup, position: Int, `object`: Any) {
-            container.removeView(`object` as View)
-        }
-
-        override fun getCount(): Int {
-            return 10
-        }
-
-        private fun getViewGroup(
-            day: Int,
-            context: Context,
-            timetablesViewModel: TimetablesViewModel,
-            routeId: Int,
-            directionId: Int,
-            stationId: Int
-        ): ViewGroup {
-            val date = getDate(day.toLong())
-            val existingView = views[date]
-            if (existingView != null) return existingView
-
-            val tableLayout = TableLayout(context)
-            tableLayout.setPadding(15f.dpToPx(context))
-            val headerText = TextView(context)
-            headerText.text =
-                if (date == getDate()) "Today" else getDate(day.toLong(), "dd.MM.yyyy")
-            headerText.setPadding(20f.dpToPx(context))
-            headerText.gravity = Gravity.CENTER
-            tableLayout.addView(headerText)
-            CoroutineScope(Dispatchers.IO).launch {
-                val data =
-                    timetablesViewModel.getTimetableDetail(
-                        routeId,
-                        "departures",
-                        directionId,
-                        date,
-                        stationId,
-                        idsbkSession
-                    )
-                println("fetched $date")
-                CoroutineScope(Dispatchers.Main).launch {
-                    animatedAlphaChange(1F, 0F, 100, binding.TimetableDetailLoadingIndicator)
-                    val departureTimes = mutableListOf<Pair<Int, String>>()
-                    val hours = mutableSetOf<Int>()
-                    var lastTableRow: TableRow? = null
-                    data?.departures?.forEach {
-                        val hour = it.t / 60
-                        val minute = (it.t % 60).toString().padStart(2, Char(48))
-                        departureTimes.add(Pair(hour, minute))
-                        hours.add(hour)
-                    }
-                    hours.forEachIndexed { index, hour ->
-                        if (lastTableRow != null) tableLayout.addView(lastTableRow)
-                        val hourTextView = TextView(context)
-                        hourTextView.text = hour.toString()
-                        hourTextView.width = 30f.dpToPx(context)
-                        hourTextView.setPadding(5f.dpToPx(context))
-                        hourTextView.gravity = Gravity.CENTER
-                        val colorPrimaryContainer = TypedValue()
-                        context.theme.resolveAttribute(
-                            com.google.android.material.R.attr.colorPrimaryContainer,
-                            colorPrimaryContainer,
-                            true
-                        )
-                        val hourBackground =
-                            ContextCompat.getDrawable(
-                                context,
-                                getBackgroundDrawable(index, hours.size)
-                            )
-                        hourBackground?.colorFilter =
-                            PorterDuffColorFilter(colorPrimaryContainer.data, PorterDuff.Mode.SRC)
-                        hourTextView.background = hourBackground
-                        lastTableRow = TableRow(context)
-                        lastTableRow!!.addView(hourTextView)
-                        val spacer = LinearLayout(context)
-                        spacer.setPadding(2f.dpToPx(context))
-                        lastTableRow!!.addView(spacer)
-                        departureTimes.forEach { departureTime ->
-                            if (departureTime.first == hour) {
-                                val minuteTextView = TextView(context)
-                                minuteTextView.text = departureTime.second
-                                minuteTextView.setPadding(5f.dpToPx(context))
-                                lastTableRow!!.addView(minuteTextView)
-                            }
-                        }
-                    }
-                    if (lastTableRow != null) tableLayout.addView(lastTableRow)
-                }
-            }
-            views[date] = tableLayout
-            return tableLayout
-        }
-
-        private fun getBackgroundDrawable(index: Int, size: Int): Int {
-            return when (index) {
-                0 -> R.drawable.round_shape_top_only_25
-                size - 1 -> R.drawable.round_shape_bottom_only_25
-                else -> R.drawable.basic_shape
-            }
-        }
+    private companion object {
+        const val MINUTE_SEPARATOR = "   "
     }
 }

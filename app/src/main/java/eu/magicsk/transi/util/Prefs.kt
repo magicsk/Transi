@@ -11,5 +11,12 @@ object Prefs {
     const val STOPS_VERSION = "stopsVersion"
     const val MAGIC_API_URL_OVERRIDE = "magic_api_url_override"
 
+    /** Boolean, default false: use the downloaded timetable database and keep it updated. */
+    const val OFFLINE_TIMETABLES = "offline_timetables"
+
+    /** SHA-256 of the installed gzipped base.db and schedule.db; absent when not installed. */
+    const val TIMETABLE_BASE_DB_SHA = "timetable_base_db_sha"
+    const val TIMETABLE_SCHEDULE_DB_SHA = "timetable_schedule_db_sha"
+
     fun get(context: Context): SharedPreferences = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 }
