@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <base-config cleartextTrafficPermitted="false" />
+    <!-- imhd.sk chains only to Sectigo Public Server Authentication Root R46, which Android ships from Android 15 on. -->
+    <domain-config>
+        <domain includeSubdomains="true">imhd.sk</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/sectigo_public_server_authentication_root_r46" />
+        </trust-anchors>
+    </domain-config>
 </network-security-config>
