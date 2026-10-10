@@ -2,15 +2,12 @@ package eu.magicsk.transi.util
 
 import android.content.Intent
 import android.os.Bundle
-import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import android.widget.Toast.LENGTH_LONG
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
-import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
@@ -30,9 +27,17 @@ import java.net.URL
 // GitHub release assets redirect from github.com to one of the asset hosts.
 private val updateHosts = setOf("github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com")
 
-fun isAllowedUpdateUrl(url: String): Boolean {
-    val uri = runCatching { URI(url) }.getOrNull() ?: return false
-    return uri.scheme.equals("https", ignoreCase = true) && uri.host?.lowercase() in updateHosts
+private fun httpsHost(url: String): String? {
+    val uri = runCatching { URI(url) }.getOrNull() ?: return null
+    return uri.host?.lowercase()?.takeIf { uri.scheme.equals("https", ignoreCase = true) }
+}
+
+fun isAllowedUpdateUrl(url: String) = httpsHost(url) in updateHosts
+
+// GitHub has moved release assets to new githubusercontent.com hosts before, so the final URL after redirects may use any of them.
+fun isAllowedFinalUpdateUrl(url: String): Boolean {
+    val host = httpsHost(url) ?: return false
+    return host == "github.com" || host.endsWith(".githubusercontent.com")
 }
 
 class UpdateAlert : DialogFragment() {
@@ -40,13 +45,11 @@ class UpdateAlert : DialogFragment() {
     private val binding get() = _binding!!
     private val apkFile
         get() = File(
-            File(requireContext().cacheDir, UPDATES_DIR),
+            File(requireContext().cacheDir, "updates"),
             "eu.magicsk.transi.${requireArguments().getString(ARG_VERSION)}.apk"
         )
-    private val unknownSourcesSettings =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (requireContext().packageManager.canRequestPackageInstalls()) install()
-        }
+    // Closed with the view so a download blocked on the network stops as soon as the dialog goes away.
+    private var connection: HttpURLConnection? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         dialog!!.window?.setBackgroundDrawableResource(R.drawable.round_shape)
@@ -80,6 +83,7 @@ class UpdateAlert : DialogFragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        connection?.disconnect()
         _binding = null
     }
 
@@ -102,6 +106,8 @@ class UpdateAlert : DialogFragment() {
             try {
                 download(url, apk)
             } catch (_: IOException) {
+                // Dismissing closes the connection; that is a cancellation, not a failure to report.
+                ensureActive()
                 fail()
                 return@launch
             }
@@ -117,39 +123,46 @@ class UpdateAlert : DialogFragment() {
         }
     }
 
-    private suspend fun download(url: String, target: File) = withContext(Dispatchers.IO) {
-        val connection = URL(url).openConnection() as HttpURLConnection
-        try {
-            // After the response arrives, connection.url is the final URL after redirects.
-            if (connection.responseCode != HttpURLConnection.HTTP_OK || !isAllowedUpdateUrl(connection.url.toString())) {
-                throw IOException("Unexpected update download response")
-            }
-            val totalSize = connection.contentLengthLong
-            target.parentFile?.run {
-                deleteRecursively()
-                mkdirs()
-            }
-            var downloaded = 0L
-            var shownPercent = -1
-            connection.inputStream.use { input ->
-                target.outputStream().use { output ->
-                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                    while (true) {
-                        ensureActive()
-                        val read = input.read(buffer)
-                        if (read < 0) break
-                        output.write(buffer, 0, read)
-                        downloaded += read
-                        val percent = if (totalSize > 0) (downloaded * 100 / totalSize).toInt() else 0
-                        if (percent != shownPercent) {
-                            shownPercent = percent
-                            withContext(Dispatchers.Main) { showProgress(percent) }
+    private suspend fun download(url: String, target: File) {
+        // Opening does no network I/O; doing it on the main thread lets onDestroyView close this connection.
+        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 15_000
+            readTimeout = 30_000
+        }
+        this.connection = connection
+        withContext(Dispatchers.IO) {
+            try {
+                // After the response arrives, connection.url is the final URL after redirects.
+                if (connection.responseCode != HttpURLConnection.HTTP_OK || !isAllowedFinalUpdateUrl(connection.url.toString())) {
+                    throw IOException("Unexpected update download response")
+                }
+                val totalSize = connection.contentLengthLong
+                target.parentFile?.run {
+                    deleteRecursively()
+                    mkdirs()
+                }
+                var downloaded = 0L
+                var shownPercent = -1
+                connection.inputStream.use { input ->
+                    target.outputStream().use { output ->
+                        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                        while (true) {
+                            ensureActive()
+                            val read = input.read(buffer)
+                            if (read < 0) break
+                            output.write(buffer, 0, read)
+                            downloaded += read
+                            val percent = if (totalSize > 0) (downloaded * 100 / totalSize).toInt() else 0
+                            if (percent != shownPercent) {
+                                shownPercent = percent
+                                withContext(Dispatchers.Main) { showProgress(percent) }
+                            }
                         }
                     }
                 }
+            } finally {
+                connection.disconnect()
             }
-        } finally {
-            connection.disconnect()
         }
     }
 
@@ -165,14 +178,9 @@ class UpdateAlert : DialogFragment() {
         dismiss()
     }
 
+    // The system installer asks for the "Install unknown apps" permission itself and then continues the install.
     private fun install() {
         val context = requireContext()
-        if (!context.packageManager.canRequestPackageInstalls()) {
-            unknownSourcesSettings.launch(
-                Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, "package:${context.packageName}".toUri())
-            )
-            return
-        }
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", apkFile)
         startActivity(
             Intent(Intent.ACTION_VIEW)
@@ -182,7 +190,6 @@ class UpdateAlert : DialogFragment() {
     }
 
     companion object {
-        private const val UPDATES_DIR = "updates"
         private const val ARG_VERSION = "version"
         private const val ARG_CHANGELOG = "changelog"
         private const val ARG_URL = "downloadUrl"
