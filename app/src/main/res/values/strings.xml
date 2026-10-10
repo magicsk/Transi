@@ -11,6 +11,7 @@
     <string name="update_downloaded">Update downloaded</string>
     <string name="downloading">Downloading %1$s</string>
     <string name="finish_update">Finish update by installing new version</string>
+    <string name="update_failed">Update download failed</string>
     <string name="no_connection">No internet connection available</string>
     <string name="network_error">Network error</string>
     <string name="no_location">GPS location no available yet</string>
