@@ -7,7 +7,11 @@ import eu.magicsk.transi.util.nearestStopId
  * Which stop the table shows (iOS StopsListProvider default/nearest rules and VirtualTableController.changeStop),
  * kept free of Android types so the order in which stops and the location arrive can be tested.
  */
-class TableStopChooser(private val defaultStopId: () -> Int) {
+class TableStopChooser(
+    /** A stop picked before process death, shown with the first stop list. */
+    private var restoredStopId: Int? = null,
+    private val defaultStopId: () -> Int,
+) {
     /** All stops, nearest first once [located]. */
     var stops: List<Stop> = emptyList()
         private set
@@ -26,6 +30,8 @@ class TableStopChooser(private val defaultStopId: () -> Int) {
         if (sorted.isEmpty()) return
         stops = sorted
         this.located = located
+        restoredStopId?.let(::change)
+        restoredStopId = null
         when {
             located -> showNearestStop()
             downloaded || locationAvailable == false -> setDefaultStopIfNeeded()

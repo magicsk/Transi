@@ -7,14 +7,12 @@ import android.graphics.drawable.Animatable
 import android.graphics.drawable.GradientDrawable
 import android.text.format.DateFormat
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.view.AccessibilityDelegateCompat
 import androidx.core.view.ViewCompat
-import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -77,25 +75,9 @@ class MHDTableAdapter(
             if (position != RecyclerView.NO_POSITION) onLongClick(getItem(position))
             position != RecyclerView.NO_POSITION
         }
-        ViewCompat.setAccessibilityDelegate(card, object : AccessibilityDelegateCompat() {
-            override fun onInitializeAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfoCompat) {
-                super.onInitializeAccessibilityNodeInfo(host, info)
-                val position = holder.bindingAdapterPosition
-                val isExpanded = position != RecyclerView.NO_POSITION && getItem(position).id in expanded
-                val context = host.context
-                info.addAction(
-                    AccessibilityNodeInfoCompat.AccessibilityActionCompat(
-                        AccessibilityNodeInfoCompat.ACTION_CLICK,
-                        context.getString(if (isExpanded) R.string.table_hide_details else R.string.table_show_details)
-                    )
-                )
-                info.addAction(
-                    AccessibilityNodeInfoCompat.AccessibilityActionCompat(
-                        AccessibilityNodeInfoCompat.ACTION_LONG_CLICK, context.getString(R.string.table_departure_actions)
-                    )
-                )
-            }
-        })
+        ViewCompat.replaceAccessibilityAction(
+            card, AccessibilityActionCompat.ACTION_LONG_CLICK, parent.context.getString(R.string.table_departure_actions), null
+        )
         return holder
     }
 
@@ -153,6 +135,10 @@ class MHDTableAdapter(
                 MHDTableListVehicleImg.isVisible = false
             }
             MHDTableListDetailLayout.setExpanded(isExpanded, animate)
+            ViewCompat.replaceAccessibilityAction(
+                MHDTableListLayout, AccessibilityActionCompat.ACTION_CLICK,
+                context.getString(if (isExpanded) R.string.table_hide_details else R.string.table_show_details), null
+            )
         }
     }
 

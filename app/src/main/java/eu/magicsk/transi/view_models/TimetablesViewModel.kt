@@ -10,6 +10,7 @@ import eu.magicsk.transi.data.remote.responses.idsbk.Route
 import eu.magicsk.transi.data.remote.responses.idsbk.Session
 import eu.magicsk.transi.data.remote.responses.idsbk.TimetableDirection
 import eu.magicsk.transi.repository.DataRepository
+import eu.magicsk.transi.repository.IdsbkSession
 import eu.magicsk.transi.timetable.TimetableDatabase
 import eu.magicsk.transi.timetable.serviceDate
 import kotlinx.coroutines.launch
@@ -27,6 +28,7 @@ data class TimetableRoutes(val routes: List<Route>, val offline: Boolean)
 @HiltViewModel
 class TimetablesViewModel @Inject constructor(
     private val repository: DataRepository,
+    private val idsbk: IdsbkSession,
     private val database: TimetableDatabase,
 ) : ViewModel() {
 
@@ -109,7 +111,6 @@ class TimetablesViewModel @Inject constructor(
             .data?.departures?.map { it.t }
     }
 
-    // The shared session is null when its startup request failed; try a fresh one rather than failing for good.
-    private suspend fun token(session: Session?): String =
-        (session ?: repository.getIdsbkSession().data)?.session.orEmpty()
+    // The launch session is null when its startup request failed; the shared one tries again.
+    private suspend fun token(session: Session?): String = session?.session ?: idsbk.token().orEmpty()
 }

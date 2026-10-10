@@ -71,12 +71,11 @@ class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
             }
         })
 
-        // The stops, session and location reach the planner before its state is drawn.
+        // The stops and location reach the planner before its state is drawn.
         mainViewModel.stopList.observe(viewLifecycleOwner) { stops ->
             stopList = stops
             viewModel.setStops(stops)
         }
-        mainViewModel.idsbkSession.observe(viewLifecycleOwner) { viewModel.setSession(it?.session) }
         mainViewModel.actualLocation.observe(viewLifecycleOwner) { viewModel.onLocationAvailable() }
         viewModel.state.observe(viewLifecycleOwner) { render(binding, pagerAdapter, it) }
 

@@ -1,10 +1,8 @@
 package eu.magicsk.transi
 
-import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -37,7 +35,6 @@ import eu.magicsk.transi.adapters.TypeAheadAdapter
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.FragmentTypeAheadBinding
-import eu.magicsk.transi.util.actualLocationStop
 import eu.magicsk.transi.util.favoriteStopIds
 import eu.magicsk.transi.util.hasLocationPermission
 import eu.magicsk.transi.util.readCachedStops
@@ -227,20 +224,22 @@ class TypeAheadFragment : Fragment() {
     }
 
     private fun lastKnownLocation(): Location? {
-        val context = context ?: return null
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-        ) return null
+        val context = context?.takeIf { it.hasLocationPermission() } ?: return null
         val manager = context.getSystemService(LocationManager::class.java) ?: return null
-        return manager.getProviders(true).mapNotNull { manager.getLastKnownLocation(it) }.maxByOrNull { it.time }
+        // Lint does not see the check above as a permission check, so the call handles the exception explicitly.
+        return try {
+            manager.getProviders(true).mapNotNull { manager.getLastKnownLocation(it) }.maxByOrNull { it.time }
+        } catch (_: SecurityException) {
+            null
+        }
     }
 
-    // Pinned first: Actual location while location is allowed (table and picker), the trip planner's own
-    // Actual position (id 0), and From map.
+    // Pinned first: Actual location while location is allowed (table and picker; picking it follows the nearest
+    // stop, iOS Stop.actualLocation), the trip planner's own Actual position (id 0), and From map.
     private fun pinnedStops(): List<Stop> {
-        val context = requireContext()
         val fromMap = Stop(0, 0, getString(R.string.table_from_map), "", "map", 0, 0.0, 0.0, null)
-        val actualLocation = actualLocationStop(context).takeIf { context.hasLocationPermission() }
+        val actualLocation = Stop(-1, -1, getString(R.string.table_actual_location), "", "location", 0, 0.0, 0.0, null)
+            .takeIf { requireContext().hasLocationPermission() }
         return when (origin) {
             "editText" -> listOfNotNull(actualLocation, fromMap)
             ORIGIN_PICKER -> listOfNotNull(actualLocation)

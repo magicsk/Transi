@@ -4,6 +4,7 @@ import android.content.Context
 import android.location.Location
 import androidx.core.content.edit
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,6 +13,7 @@ import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.data.remote.responses.idsbk.Session
 import eu.magicsk.transi.repository.DataRepository
+import eu.magicsk.transi.repository.IdsbkSession
 import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.util.readCachedStops
 import eu.magicsk.transi.util.saveCachedStops
@@ -26,6 +28,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val repository: DataRepository,
+    private val idsbk: IdsbkSession,
+    private val savedState: SavedStateHandle,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -43,7 +47,7 @@ class MainViewModel @Inject constructor(
     val idsbkSession: MutableLiveData<Session?> = idsbkSessionData
 
     private val prefs = Prefs.get(context)
-    private val chooser = TableStopChooser { prefs.getInt(Prefs.DEFAULT_STOP_ID, -1) }
+    private val chooser = TableStopChooser(savedState[SAVED_TABLE_STOP_ID]) { prefs.getInt(Prefs.DEFAULT_STOP_ID, -1) }
     private var unmodifiedStops: List<Stop> = emptyList()
     private var lastLocation: Location? = null
     private var publishJob: Job? = null
@@ -60,9 +64,6 @@ class MainViewModel @Inject constructor(
         choose { chooser.onLocationAvailable(value) }
     }
 
-    /** A stop picked on the map or in the search. */
-    fun setSelectedStop(value: Stop) = changeTableStop(value.id)
-
     /** -1 follows the nearest stop; any other stop turns following off. */
     fun changeTableStop(stopId: Int) = choose { chooser.change(stopId) }
 
@@ -70,6 +71,8 @@ class MainViewModel @Inject constructor(
 
     private fun choose(action: () -> Unit) {
         action()
+        // Kept across process death: the stop picked by hand, or null while following the nearest stop.
+        chooser.current?.let { savedState[SAVED_TABLE_STOP_ID] = it.id.takeIf { !chooser.follow } }
         if (followLocation.value != chooser.follow) followLocation.value = chooser.follow
         if (tableStop.value !== chooser.current) tableStop.value = chooser.current
     }
@@ -104,8 +107,7 @@ class MainViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val session = repository.getIdsbkSession()
-            idsbkSessionData.value = session.data
+            idsbkSessionData.value = idsbk.token()?.let(::Session)
         }
         viewModelScope.launch {
             val cached = withContext(Dispatchers.IO) { readCachedStops(context) }
@@ -120,5 +122,9 @@ class MainViewModel @Inject constructor(
                 delay(5_000) // ponytail: fixed 5 s like iOS, add backoff if the extra requests ever matter
             }
         }
+    }
+
+    private companion object {
+        const val SAVED_TABLE_STOP_ID = "tableStopId"
     }
 }

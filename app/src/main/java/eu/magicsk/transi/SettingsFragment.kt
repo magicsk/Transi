@@ -7,6 +7,7 @@ import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.widget.Toast
+import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
@@ -20,14 +21,17 @@ import androidx.preference.SwitchPreferenceCompat
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.timetable.TimetableDatabase
 import eu.magicsk.transi.timetable.TimetableDownloadState
 import eu.magicsk.transi.timetable.showWhileViewExists
 import eu.magicsk.transi.timetable.text
 import eu.magicsk.transi.util.Prefs
-import eu.magicsk.transi.util.bindGeneralPreferences
 import eu.magicsk.transi.util.bindTripPlannerPreferences
+import eu.magicsk.transi.util.readCachedStops
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import javax.inject.Inject
 
@@ -47,7 +51,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         )
         setPreferencesFromResource(sections.first(), rootKey)
         sections.drop(1).forEach(::addPreferencesFromResource)
-        bindGeneralPreferences(this)
+        bindGeneral()
         bindTimetables()
         bindTripPlannerPreferences(this)
         bindDeveloper()
@@ -100,6 +104,36 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     )
                 }
             }
+        }
+    }
+
+    // The default stop summary and its stop picker.
+    private fun bindGeneral() {
+        val preference = requireNotNull(findPreference<Preference>(Prefs.DEFAULT_STOP_ID))
+        val prefs = Prefs.get(requireContext())
+        var stops: List<Stop>? = null
+        fun updateSummary() {
+            val stopId = prefs.getInt(Prefs.DEFAULT_STOP_ID, -1)
+            preference.summary = when {
+                stopId <= 0 -> getString(R.string.table_actual_location)
+                else -> stops?.let { list -> list.firstOrNull { it.id == stopId }?.name ?: getString(R.string.pref_unknown_stop) }
+            }
+        }
+        val picker = registerForActivityResult(StopPickerActivity.PickStop()) { stopId ->
+            if (stopId != null) {
+                prefs.edit { putInt(Prefs.DEFAULT_STOP_ID, stopId) }
+                updateSummary()
+            }
+        }
+        preference.setOnPreferenceClickListener {
+            picker.launch(Unit)
+            true
+        }
+        updateSummary()
+        val context = requireContext().applicationContext
+        lifecycleScope.launch {
+            stops = withContext(Dispatchers.IO) { readCachedStops(context) }.orEmpty()
+            updateSummary()
         }
     }
 

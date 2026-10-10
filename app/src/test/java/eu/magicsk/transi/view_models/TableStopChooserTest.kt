@@ -76,6 +76,17 @@ class TableStopChooserTest {
     }
 
     @Test
+    fun restoredStopKeepsNotFollowing() {
+        val chooser = TableStopChooser(10) { 20 }
+        chooser.onLocationAvailable(true)
+        chooser.onStops(sorted, located = true, downloaded = true)
+        assertEquals(10, chooser.current?.id)
+        assertFalse(chooser.follow)
+        chooser.onStops(sorted, located = true, downloaded = false)
+        assertEquals(10, chooser.current?.id)
+    }
+
+    @Test
     fun missingDefaultStopFollowsNearest() {
         val chooser = TableStopChooser { 99 }
         chooser.onLocationAvailable(true)

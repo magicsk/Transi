@@ -157,7 +157,7 @@ class MapFragment : SupportMapFragment() {
 
                     else -> {
                         activity?.supportFragmentManager?.popBackStack("typeAhead", 1)
-                        mainViewModel.setSelectedStop(stop)
+                        mainViewModel.changeTableStop(stop.id)
                     }
                 }
             }

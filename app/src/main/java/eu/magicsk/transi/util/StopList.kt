@@ -7,6 +7,7 @@ import android.location.Location
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.google.gson.Gson
+import com.google.gson.JsonIOException
 import com.google.gson.JsonParseException
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.remote.responses.Stop
@@ -40,12 +41,17 @@ fun readCachedStops(context: Context): Stops? {
 fun saveCachedStops(context: Context, stops: List<Stop>): Boolean {
     val file = stopsFile(context)
     val temp = File(context.filesDir, "stops.json.tmp")
-    return try {
+    val saved = try {
         temp.bufferedWriter().use { Gson().toJson(stops, it) }
         temp.renameTo(file)
     } catch (_: IOException) {
         false
+    } catch (_: JsonIOException) {
+        // Gson wraps a failed write, such as a full disk, in this unchecked exception.
+        false
     }
+    if (!saved) temp.delete()
+    return saved
 }
 
 fun sortedByDistance(stops: List<Stop>, location: Location): List<Stop> {
@@ -62,10 +68,6 @@ fun nearestStopId(stops: List<Stop>): Int = stops.firstOrNull { it.id > 0 }?.id 
 fun Context.hasLocationPermission(): Boolean =
     ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
         ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-
-/** Picking it makes the table follow the nearest stop (iOS Stop.actualLocation). */
-fun actualLocationStop(context: Context) =
-    Stop(-1, -1, context.getString(R.string.table_actual_location), "", "location", 0, 0.0, 0.0, null)
 
 fun favoriteStopIds(context: Context): List<Int> =
     Prefs.get(context)

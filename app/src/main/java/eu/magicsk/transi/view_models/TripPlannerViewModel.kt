@@ -24,6 +24,7 @@ import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.idsbk.RaptorRequest
 import eu.magicsk.transi.data.remote.responses.idsbk.RaptorResponse
 import eu.magicsk.transi.repository.DataRepository
+import eu.magicsk.transi.repository.IdsbkSession
 import eu.magicsk.transi.util.FetchSource
 import eu.magicsk.transi.util.PagingDates
 import eu.magicsk.transi.util.Prefs
@@ -73,6 +74,7 @@ data class TripPlannerState(
 @HiltViewModel
 class TripPlannerViewModel @Inject constructor(
     private val repository: DataRepository,
+    private val idsbk: IdsbkSession,
     private val savedStateHandle: SavedStateHandle,
     @ApplicationContext context: Context,
 ) : ViewModel() {
@@ -87,7 +89,6 @@ class TripPlannerViewModel @Inject constructor(
     private val prefs = Prefs.get(context)
     private val actualLocation = Stop(0, 0, context.getString(R.string.actual_position), "", "location", 0, 0.0, 0.0, null)
     private var stops: List<Stop> = emptyList()
-    private var session: String? = null
     private var hasLocation = false
     private var recentsLoaded = false
     private var persistJob: Job? = null
@@ -113,10 +114,6 @@ class TripPlannerViewModel @Inject constructor(
     fun setStops(value: List<Stop>) {
         stops = value
         runPendingSearch()
-    }
-
-    fun setSession(value: String?) {
-        session = value
     }
 
     /** The first location fix fills an empty "From" with the actual location. */
@@ -245,7 +242,7 @@ class TripPlannerViewModel @Inject constructor(
         val toStop = search.to?.let { if (it.isActualLocation) nearest else it } ?: return
         if (source != FetchSource.INITIAL && !pagingSources.add(source)) return
 
-        val raptorSession = session?.takeIf { source != FetchSource.MORE_IMHD && BuildConfig.R_API_KEY.isNotEmpty() }
+        val withRaptor = source != FetchSource.MORE_IMHD && BuildConfig.R_API_KEY.isNotEmpty()
         val withImhd = source != FetchSource.MORE_RAPTOR
         val raptorDate = if (source == FetchSource.INITIAL) search.date else paging.raptor ?: search.date
         val imhdDate = if (source == FetchSource.INITIAL) search.date else paging.imhd ?: search.date
@@ -256,7 +253,7 @@ class TripPlannerViewModel @Inject constructor(
 
         viewModelScope.launch {
             val raptor = async {
-                raptorSession?.let {
+                (if (withRaptor) idsbk.token() else null)?.let {
                     val body = raptorRequest(
                         fromStop.station_id, toStop.station_id, raptorDate, search.arrivalDeparture,
                         prefs.intPref(Prefs.TRIP_MAX_WALK_DURATION, Prefs.TRIP_MAX_WALK_DURATION_DEFAULT),

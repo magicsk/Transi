@@ -17,7 +17,8 @@ object Prefs {
     const val DISPLAY_SOCKET_STATUS = "display_socket_status"
     const val DEFAULT_STOP_ID = "default_stop_id"
     const val FAVORITE_STOP_IDS = "favorite_stop_ids"
-    const val READ_INFO_TEXTS = "readInfoTexts"
+    /** String set of the service info texts already read; replaced the JSON in "readInfoTexts". */
+    const val READ_INFO_TEXTS = "read_info_texts"
 
     /** Boolean, default false: use the downloaded timetable database and keep it updated. */
     const val OFFLINE_TIMETABLES = "offline_timetables"

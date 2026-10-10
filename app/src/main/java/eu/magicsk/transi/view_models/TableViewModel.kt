@@ -5,8 +5,6 @@ import androidx.core.content.edit
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
-import com.google.gson.JsonParseException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import eu.magicsk.transi.data.models.MHDTableData
@@ -18,20 +16,15 @@ import eu.magicsk.transi.data.models.regionalDepartures
 import eu.magicsk.transi.data.models.replacePlatforms
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.repository.DataRepository
+import eu.magicsk.transi.repository.IdsbkSession
 import eu.magicsk.transi.util.Prefs
 import io.socket.client.IO
 import io.socket.client.Manager
 import io.socket.client.Socket
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URI
@@ -43,6 +36,7 @@ import javax.inject.Inject
 @HiltViewModel
 class TableViewModel @Inject constructor(
     private val repository: DataRepository,
+    private val idsbk: IdsbkSession,
     @ApplicationContext context: Context,
 ) : ViewModel() {
     enum class Status { CONNECTING, CONNECTED, DISCONNECTED }
@@ -54,14 +48,12 @@ class TableViewModel @Inject constructor(
     val empty = MutableLiveData(false)
     val infoTexts = MutableLiveData<List<String>>(emptyList())
     val unreadInfoCount = MutableLiveData(0)
-    /** The IDS BK session token; the regional board waits up to 10 s for it, like iOS getSessionToken. */
-    val session = MutableStateFlow<String?>(null)
 
     private val prefs = Prefs.get(context)
-    private val readInfoTexts = loadReadInfoTexts()
-    private var stop: Stop? = null
+    private val readInfoTexts = prefs.getStringSet(Prefs.READ_INFO_TEXTS, null).orEmpty().toMutableSet()
+    // Read by emitStart on the socket thread.
     @Volatile
-    private var stopId = 0
+    private var stop: Stop? = null
     private var socketRows = emptyList<MHDTableData>()
     private var regionalRows = emptyList<MHDTableData>()
     private var loadedStatus = 0
@@ -95,7 +87,7 @@ class TableViewModel @Inject constructor(
         socket.on("tabs") { args ->
             val message = (args.firstOrNull() as? JSONArray)?.let { parseTabs(it) }
             viewModelScope.launch {
-                socketRows = if (message == null) emptyList() else replacePlatforms(socketRows, message)
+                socketRows = if (message == null) emptyList() else replacePlatforms(socketRows, message, stop?.id ?: 0)
                 loadedStatus++
                 publish()
             }
@@ -145,7 +137,6 @@ class TableViewModel @Inject constructor(
     fun setStop(newStop: Stop?) {
         val changed = newStop?.id != stop?.id
         stop = newStop
-        stopId = newStop?.id ?: 0
         if (!changed) return
         socketRows = emptyList()
         regionalRows = emptyList()
@@ -159,18 +150,13 @@ class TableViewModel @Inject constructor(
 
     fun markInfoTextsRead() {
         readInfoTexts.addAll(infoTexts.value.orEmpty())
-        prefs.edit { putString(Prefs.READ_INFO_TEXTS, Gson().toJson(readInfoTexts)) }
+        // A copy: the preferences keep the set they are given and skip writing an equal one.
+        prefs.edit { putStringSet(Prefs.READ_INFO_TEXTS, readInfoTexts.toSet()) }
         unreadInfoCount.value = 0
     }
 
-    private fun loadReadInfoTexts(): MutableSet<String> = try {
-        Gson().fromJson(prefs.getString(Prefs.READ_INFO_TEXTS, null), Array<String>::class.java)?.toMutableSet()
-    } catch (_: JsonParseException) {
-        null
-    } ?: mutableSetOf()
-
     private fun emitStart() {
-        socket.emit("tabStart", JSONArray().put(stopId).put("*"))
+        socket.emit("tabStart", JSONArray().put(stop?.id ?: 0).put("*"))
         socket.emit("infoStart")
     }
 
@@ -193,14 +179,13 @@ class TableViewModel @Inject constructor(
             loadedStatus++
             return
         }
-        val token = withTimeoutOrNull(10_000) { session.filterNotNull().first() }.orEmpty()
-        // The device's date and minutes since midnight, as iOS sends them.
-        val now = ZonedDateTime.now()
-        val response = repository.getStationDepartures(
-            token, stationId, now.toLocalDate().format(DateTimeFormatter.BASIC_ISO_DATE), now.hour * 60 + now.minute
-        ).data
-        // The repository turns a cancelled request into an error; a stopped board must not count it.
-        currentCoroutineContext().ensureActive()
+        val response = idsbk.token()?.let { token ->
+            // The device's date and minutes since midnight, as iOS sends them.
+            val now = ZonedDateTime.now()
+            repository.getStationDepartures(
+                token, stationId, now.toLocalDate().format(DateTimeFormatter.BASIC_ISO_DATE), now.hour * 60 + now.minute
+            ).data
+        }
         if (stop.id != this.stop?.id) return
         if (response != null) regionalRows = regionalDepartures(response.current.orEmpty(), stop, ZonedDateTime.now())
         loadedStatus++

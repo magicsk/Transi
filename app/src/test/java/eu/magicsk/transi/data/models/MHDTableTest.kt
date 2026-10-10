@@ -83,8 +83,17 @@ class MHDTableTest {
         val replaced = departure("2", 2, "10:00")
         val cleared = departure("3", 3, "10:00")
         val incoming = departure("4", 2, "10:05")
-        val rows = replacePlatforms(listOf(kept, replaced, cleared), mapOf(2 to listOf(incoming), 3 to emptyList()))
+        val rows = replacePlatforms(listOf(kept, replaced, cleared), mapOf(82 to mapOf(2 to listOf(incoming), 3 to emptyList())), 82)
         assertEquals(listOf(kept, incoming), rows)
+    }
+
+    @Test
+    fun ignoresTabsOfThePreviousStop() {
+        val current = departure("1", 1, "10:00")
+        val stale = departure("2", 1, "10:05").copy(stopId = 81)
+        val message = mapOf(81 to mapOf(1 to listOf(stale), 2 to emptyList()))
+        assertEquals(listOf(current), replacePlatforms(listOf(current), message, 82))
+        assertEquals(emptyList<MHDTableData>(), replacePlatforms(emptyList(), message, 82))
     }
 
     @Test

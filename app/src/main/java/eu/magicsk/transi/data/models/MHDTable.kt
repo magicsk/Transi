@@ -17,7 +17,7 @@ class MHDTable {
 
     fun addTabs(data: JSONArray): MutableList<MHDTableData> {
         tabs.clear()
-        tabs.addAll(parseTabs(data).values.flatten())
+        tabs.addAll(parseTabs(data).values.flatMap { it.values.flatten() })
         return tabs
     }
 
@@ -30,20 +30,23 @@ class MHDTable {
 
 private fun JSONObject.stringOrNull(name: String): String? = if (isNull(name)) null else optString(name)
 
-/** One `tabs` message: the departures of every platform it lists, including platforms that have none left. */
-fun parseTabs(data: JSONArray): Map<Int, List<MHDTableData>> {
-    val platforms = mutableMapOf<Int, List<MHDTableData>>()
+/**
+ * One `tabs` message by stop id (`zastavka`), then platform: the departures of every platform it lists, including
+ * platforms that have none left.
+ */
+fun parseTabs(data: JSONArray): Map<Int, Map<Int, List<MHDTableData>>> {
+    val stops = mutableMapOf<Int, MutableMap<Int, List<MHDTableData>>>()
     for (j in 0 until data.length()) {
         val platformObject = data.optJSONObject(j) ?: continue
         val tab = platformObject.optJSONArray("tab")
         if (platformObject.isNull("nastupiste") || platformObject.isNull("zastavka") || tab == null) continue
         val platform = platformObject.optInt("nastupiste")
         val stopId = platformObject.optInt("zastavka")
-        platforms[platform] = (0 until tab.length()).mapNotNull { i ->
+        stops.getOrPut(stopId) { mutableMapOf() }[platform] = (0 until tab.length()).mapNotNull { i ->
             tab.optJSONObject(i)?.let { parseDeparture(it, platform, stopId) }
         }
     }
-    return platforms
+    return stops
 }
 
 private fun parseDeparture(json: JSONObject, platform: Int, stopId: Int): MHDTableData {
@@ -77,9 +80,14 @@ fun parseVehicle(json: JSONObject) = MHDTableVehicle(
     issi = json.stringOrNull("issi") ?: "error",
 )
 
-/** The socket replaces every row of each platform present in a `tabs` message and keeps the other platforms. */
-fun replacePlatforms(rows: List<MHDTableData>, message: Map<Int, List<MHDTableData>>): List<MHDTableData> =
-    rows.filter { it.platform !in message.keys } + message.values.flatten()
+/**
+ * The socket replaces every row of each platform of [stopId] present in a `tabs` message and keeps the other
+ * platforms. A message for another stop, sent before a stop change reached the server, changes nothing.
+ */
+fun replacePlatforms(rows: List<MHDTableData>, message: Map<Int, Map<Int, List<MHDTableData>>>, stopId: Int): List<MHDTableData> {
+    val platforms = message[stopId].orEmpty()
+    return rows.filter { it.platform !in platforms.keys } + platforms.values.flatten()
+}
 
 /**
  * The socket and regional feeds share no trip id and their timetables can be up to 3 minutes apart. That is close
@@ -117,8 +125,9 @@ fun mergeDepartures(socket: List<MHDTableData>, regional: List<MHDTableData>, no
 fun regionalDepartures(departures: List<RegionalDeparture>, stop: Stop, now: ZonedDateTime): List<MHDTableData> {
     val startOfToday = now.toLocalDate().atStartOfDay(now.zone)
     val nowMillis = now.toInstant().toEpochMilli()
-    return departures.map { departure ->
-        val delayMinutes = (departure.trip_delay ?: 0) / 60
+    // Like iOS, only rows with live data (a delay) are kept.
+    return departures.mapNotNull { departure ->
+        val delayMinutes = (departure.trip_delay ?: return@mapNotNull null) / 60
         val scheduled = startOfToday.plusMinutes(departure.departure.toLong())
         val scheduledSeconds = scheduled.toEpochSecond()
         MHDTableData(
@@ -134,14 +143,14 @@ fun regionalDepartures(departures: List<RegionalDeparture>, stop: Stop, now: Zon
             departureTimeCP = scheduledSeconds,
             departureTime = scheduled.plusMinutes(delayMinutes.toLong()).toInstant().toEpochMilli(),
             delay = delayMinutes,
-            type = if (departure.trip_delay == null) "cp" else "online",
+            type = "online",
             currentStopId = -1,
             lastStopId = departure.last_station_id ?: -1,
             lastStopName = departure.last_station ?: "none",
             stuck = false,
         )
     }.filterNot {
-        it.departureTime < nowMillis + 15_000 || it.type != "online" || terminates(it.headsign, stop.name)
+        it.departureTime < nowMillis + 15_000 || terminates(it.headsign, stop.name)
     }
 }
 

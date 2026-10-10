@@ -88,7 +88,6 @@ class MainFragment : Fragment() {
             }
             mainViewModel.followLocation.observe(viewLifecycleOwner) { updatePositionButton() }
             mainViewModel.actualLocation.observe(viewLifecycleOwner) { updatePositionButton() }
-            mainViewModel.idsbkSession.observe(viewLifecycleOwner) { tableViewModel.session.value = it?.session }
 
             tableViewModel.departures.observe(viewLifecycleOwner) { departures ->
                 tableAdapter.submitList(departures)
