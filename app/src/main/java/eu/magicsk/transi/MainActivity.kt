@@ -28,17 +28,22 @@ import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.databinding.ActivityMainBinding
+import eu.magicsk.transi.timetable.TimetableDatabase
 import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.util.UpdateAlert
 import eu.magicsk.transi.util.hasLocationPermission
 import eu.magicsk.transi.util.WhatsNewSheet
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.ReleaseInfoViewModel
+import javax.inject.Inject
 import kotlin.math.max
 
 @AndroidEntryPoint
 @SuppressLint("MissingPermission")
 class MainActivity : AppCompatActivity() {
+    @Inject
+    lateinit var timetableDatabase: TimetableDatabase
+
     private val releaseInfoViewModel: ReleaseInfoViewModel by viewModels()
     private val mainViewModel: MainViewModel by viewModels()
     private var _binding: ActivityMainBinding? = null
@@ -75,6 +80,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         updateLocation()
+        timetableDatabase.retryIfFailed()
     }
 
     override fun onStop() {

@@ -9,6 +9,7 @@ import dagger.hilt.components.SingletonComponent
 import eu.magicsk.transi.repository.DataRepository
 import eu.magicsk.transi.util.Prefs
 import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -17,10 +18,12 @@ import retrofit2.converter.scalars.ScalarsConverterFactory
 import javax.inject.Named
 import javax.inject.Singleton
 
+const val MAGIC_API_URL = "https://api.magicsk.eu/"
+
 /** Points a Magic API request at the developer override base URL; an empty or invalid override keeps it unchanged. */
 fun magicApiUrl(original: HttpUrl, override: String?): HttpUrl {
     // Absolute URLs on other hosts (e.g. timetable downloads served elsewhere) are left alone.
-    if (original.host != "api.magicsk.eu") return original
+    if (original.host != MAGIC_API_URL.toHttpUrl().host) return original
     val base = override?.toHttpUrlOrNull() ?: return original
     return original.newBuilder()
         .scheme(base.scheme)
@@ -64,7 +67,7 @@ object ApiModule {
         return Retrofit.Builder()
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
-            .baseUrl("https://api.magicsk.eu/")
+            .baseUrl(MAGIC_API_URL)
             .build()
             .create(ApiRequests::class.java)
     }

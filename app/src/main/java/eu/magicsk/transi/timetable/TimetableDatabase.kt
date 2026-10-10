@@ -10,6 +10,7 @@ import androidx.annotation.StringRes
 import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import eu.magicsk.transi.R
+import eu.magicsk.transi.data.remote.MAGIC_API_URL
 import eu.magicsk.transi.data.remote.responses.TimetableDatabaseInfo
 import eu.magicsk.transi.data.remote.responses.idsbk.Departure
 import eu.magicsk.transi.data.remote.responses.idsbk.DirectionDeparture
@@ -33,10 +34,12 @@ import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okio.HashingSink
+import okio.blackholeSink
+import okio.buffer
+import okio.source
 import java.io.File
 import java.io.IOException
-import java.io.InputStream
-import java.security.MessageDigest
 import java.time.LocalDate
 import java.util.Locale
 import java.util.zip.GZIPInputStream
@@ -71,7 +74,7 @@ class TimetableDatabase @Inject constructor(
     private val mutableState = MutableStateFlow<TimetableDownloadState>(TimetableDownloadState.Idle)
     val state: StateFlow<TimetableDownloadState> = mutableState.asStateFlow()
 
-    private val prefs = context.getSharedPreferences(Prefs.FILE, Context.MODE_PRIVATE)
+    private val prefs = Prefs.get(context)
     private val dir = File(context.filesDir, "timetable_db")
     private var job: Job? = null
 
@@ -90,19 +93,25 @@ class TimetableDatabase @Inject constructor(
     @MainThread
     fun start() = serially { if (isOfflineEnabled) openAndUpdate() }
 
+    /** Starts again after a failed download or update check; a running one is left alone. */
+    @MainThread
+    fun retryIfFailed() {
+        if (isOfflineEnabled && !isReady && state.value is TimetableDownloadState.Error) start()
+    }
+
     @MainThread
     fun setOfflineEnabled(enabled: Boolean) {
         prefs.edit { putBoolean(Prefs.OFFLINE_TIMETABLES, enabled) }
         serially { if (enabled) openAndUpdate() else close() }
     }
 
-    /** Closes and removes base.db and schedule.db with their installed versions; turns offline timetables off. */
+    /** Closes and removes the databases, download leftovers and installed versions; turns offline timetables off. */
     @MainThread
     fun delete() {
         prefs.edit { putBoolean(Prefs.OFFLINE_TIMETABLES, false) }
         serially {
             close()
-            DbFile.entries.forEach { File(dir, it.fileName).delete() }
+            dir.deleteRecursively()
             prefs.edit { DbFile.entries.forEach { remove(it.shaKey) } }
         }
     }
@@ -290,10 +299,10 @@ class TimetableDatabase @Inject constructor(
      * Directions across every route sharing the short name: by direction_id with its most common headsign,
      * or, when no trip has a direction_id, one per headsign with the synthetic id -(rank by trip count).
      */
-    suspend fun queryDirections(routeRowid: Int): List<TimetableDirection>? = read { db ->
+    suspend fun queryDirections(shortName: String): List<TimetableDirection>? = read { db ->
         var hasRealDirectionIds = false
         val rows = mutableListOf<Triple<Int?, String, Int>>()
-        for (route in db.routeVariants(routeRowid)) {
+        for (route in db.routeVariants(shortName)) {
             db.select(
                 """
                 SELECT direction_id, trip_headsign, COUNT(*) as cnt
@@ -327,9 +336,9 @@ class TimetableDatabase @Inject constructor(
     }
 
     /** The day's trips in a direction, each with its ordered stops; times in minutes after the service day's midnight. */
-    suspend fun queryDepartures(routeRowid: Int, directionId: Int, directionName: String, date: LocalDate): List<Departure>? =
+    suspend fun queryDepartures(shortName: String, directionId: Int, directionName: String, date: LocalDate): List<Departure>? =
         read { db ->
-            val routes = db.routeVariants(routeRowid)
+            val routes = db.routeVariants(shortName)
             val routeType = routes.firstOrNull()?.routeType ?: return@read emptyList()
             val departures = mutableListOf<Departure>()
             for (route in routes) {
@@ -376,37 +385,11 @@ class TimetableDatabase @Inject constructor(
             departures.sortedBy { it.departure }
         }
 
-    /** The day's departures (minutes after the service day's midnight) of a direction from the GTFS stop [gtfsStopId]. */
-    suspend fun queryTimetableDetail(
-        routeRowid: Int,
-        directionId: Int,
-        directionName: String,
-        date: LocalDate,
-        gtfsStopId: String,
-    ): List<Int>? = read { db ->
-        val minutes = mutableListOf<Int>()
-        for (route in db.routeVariants(routeRowid)) {
-            val services = db.activeServiceIds(route.feed, date)
-            if (services.isEmpty()) continue
-            for ((tripId, _) in db.trips(route, directionId, directionName, services)) {
-                db.select(
-                    "SELECT departure_time FROM stop_times WHERE trip_id = ? AND feed = ? AND stop_id = ?",
-                    tripId, route.feed, gtfsStopId,
-                ).use { c ->
-                    while (c.moveToNext()) c.int("departure_time")?.let { minutes += it / 60 }
-                }
-            }
-        }
-        minutes.sorted()
-    }
-
     private class RouteVariant(val routeId: String, val feed: String, val routeType: Int)
 
-    private fun SQLiteDatabase.routeVariants(routeRowid: Int): List<RouteVariant> {
-        val shortName = select("SELECT route_short_name FROM base.routes WHERE rowid = ?", routeRowid)
-            .use { c -> if (c.moveToFirst()) c.string("route_short_name") else null }
-            ?: return emptyList()
-        return select("SELECT route_id, feed, route_type FROM base.routes WHERE route_short_name = ?", shortName)
+    // Keyed by short name, not rowid: a rowid in a screen's arguments may name another line after an update.
+    private fun SQLiteDatabase.routeVariants(shortName: String): List<RouteVariant> =
+        select("SELECT route_id, feed, route_type FROM base.routes WHERE route_short_name = ?", shortName)
             .use { c ->
                 buildList {
                     while (c.moveToNext()) {
@@ -417,7 +400,6 @@ class TimetableDatabase @Inject constructor(
                     }
                 }
             }
-    }
 
     /** (trip_id, trip_headsign) of the route's trips in the direction (by headsign for synthetic ids) running on one of [services]. */
     private fun SQLiteDatabase.trips(
@@ -451,9 +433,10 @@ class TimetableDatabase @Inject constructor(
 
     private fun SQLiteDatabase.activeServiceIds(feed: String, date: LocalDate): Set<String> {
         val day = date.serviceDate()
-        // The weekday column comes from a fixed set of names, never from user input.
+        // The weekday column (`monday` … `sunday`) comes from a fixed set of names, never from user input.
+        val weekday = date.dayOfWeek.name.lowercase(Locale.ROOT)
         val calendar = select(
-            "SELECT service_id FROM calendar WHERE feed = ? AND start_date <= ? AND end_date >= ? AND ${weekdayColumn(date)} = 1",
+            "SELECT service_id FROM calendar WHERE feed = ? AND start_date <= ? AND end_date >= ? AND $weekday = 1",
             feed, day, day,
         ).use { c -> buildList { while (c.moveToNext()) c.string("service_id")?.let(::add) } }
         val exceptions = select(
@@ -474,7 +457,6 @@ class TimetableDatabase @Inject constructor(
     // endregion
 
     private companion object {
-        const val MAGIC_API_URL = "https://api.magicsk.eu/"
         const val BUFFER_SIZE = 64 * 1024
     }
 }
@@ -512,16 +494,14 @@ fun activeServiceIds(calendar: List<String>, exceptions: List<Pair<String, Int>>
         }
     }
 
-/** GTFS `calendar` weekday column (`monday` … `sunday`) of the service date. */
-fun weekdayColumn(date: LocalDate): String = date.dayOfWeek.name.lowercase(Locale.ROOT)
-
 /**
  * Verifies the SHA-256 (lowercase hex) of the gzip file [gz], then inflates it into [destination] through a temporary
  * file and an atomic rename, so a failure never leaves a partial database behind.
  */
 fun installGzip(gz: File, expectedSha256: String, destination: File) {
-    val actual = gz.inputStream().use(::sha256Hex)
-    if (actual != expectedSha256) throw IOException("SHA-256 mismatch")
+    val sha256 = HashingSink.sha256(blackholeSink())
+    gz.source().buffer().use { it.readAll(sha256) }
+    if (sha256.hash.hex() != expectedSha256) throw IOException("SHA-256 mismatch")
     val part = File(destination.path + ".part")
     try {
         GZIPInputStream(gz.inputStream().buffered()).use { input -> part.outputStream().use { input.copyTo(it) } }
@@ -529,15 +509,4 @@ fun installGzip(gz: File, expectedSha256: String, destination: File) {
     } finally {
         part.delete()
     }
-}
-
-fun sha256Hex(input: InputStream): String {
-    val digest = MessageDigest.getInstance("SHA-256")
-    val buffer = ByteArray(64 * 1024)
-    while (true) {
-        val read = input.read(buffer)
-        if (read < 0) break
-        digest.update(buffer, 0, read)
-    }
-    return digest.digest().joinToString("") { "%02x".format(it) }
 }

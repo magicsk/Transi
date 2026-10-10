@@ -145,7 +145,7 @@ class TimetableFragment : Fragment(R.layout.fragment_timetable) {
     }
 
     private fun loadDirections() = load {
-        val result = viewModel.directions(routeId, offline, mainViewModel.idsbkSession.value)
+        val result = viewModel.directions(routeId, shortName, offline, mainViewModel.idsbkSession.value)
         if (result == null) {
             error = R.string.timetable_directions_error
             return@load
@@ -159,7 +159,7 @@ class TimetableFragment : Fragment(R.layout.fragment_timetable) {
         val direction = directions?.getOrNull(directionIndex) ?: return
         departures = null
         render()
-        val result = viewModel.departures(routeId, offline, direction, date, mainViewModel.idsbkSession.value)
+        val result = viewModel.departures(routeId, shortName, offline, direction, date, mainViewModel.idsbkSession.value)
         if (result == null) {
             error = R.string.timetable_error
             return
@@ -170,9 +170,12 @@ class TimetableFragment : Fragment(R.layout.fragment_timetable) {
 
     private fun showError(@StringRes title: Int) = showTimetableError(
         title,
-        onRetry = { if (directions == null) loadDirections() else load { fetchDepartures() } },
+        onRetry = ::reload,
         onCancel = { findNavController().popBackStack() },
     )
+
+    // Before the directions arrive there are no departures to refetch; load the directions (and then them) again.
+    private fun reload() = if (directions == null) loadDirections() else load { fetchDepartures() }
 
     private fun render() {
         val binding = binding ?: return
@@ -201,7 +204,7 @@ class TimetableFragment : Fragment(R.layout.fragment_timetable) {
             valueTo = last.coerceAtLeast(1).toFloat()
             value = tripIndex.coerceIn(0, last).toFloat()
             isEnabled = departures.size > 1
-            setLabelFormatter { departures.getOrNull(it.toInt())?.let { trip -> formatServiceTime(trip.departure, date) }.orEmpty() }
+            setLabelFormatter { departures.getOrNull(it.toInt())?.let { trip -> formatServiceTime(trip.departure) }.orEmpty() }
         }
         binding.TimetableEmpty.isVisible = this.departures?.isEmpty() == true
         renderTrip()
@@ -211,7 +214,7 @@ class TimetableFragment : Fragment(R.layout.fragment_timetable) {
         val binding = binding ?: return
         val departures = departures.orEmpty()
         val stops = departures.getOrNull(tripIndex)?.direction_departures.orEmpty()
-        adapter?.submitList(stops.map { it to formatServiceTime(it.departure, date) })
+        adapter?.submitList(stops.map { it to formatServiceTime(it.departure) })
         binding.TimetableTripMinus.isEnabled = tripIndex > 0
         binding.TimetableTripPlus.isEnabled = tripIndex < departures.size - 1
     }
@@ -239,7 +242,7 @@ class TimetableFragment : Fragment(R.layout.fragment_timetable) {
             if (picked != date) {
                 date = picked
                 tripIndex = NEXT_TRIP
-                load { fetchDepartures() }
+                reload()
             }
         }
         picker.show(childFragmentManager, DATE_PICKER)

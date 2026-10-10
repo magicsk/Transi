@@ -2,21 +2,39 @@ package eu.magicsk.transi
 
 import android.os.Bundle
 import android.text.InputType
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import eu.magicsk.transi.timetable.bindTimetablesPreferences
+import androidx.preference.SwitchPreferenceCompat
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import dagger.hilt.android.AndroidEntryPoint
+import eu.magicsk.transi.timetable.TimetableDatabase
+import eu.magicsk.transi.timetable.TimetableDownloadState
+import eu.magicsk.transi.timetable.showWhileViewExists
+import eu.magicsk.transi.timetable.text
 import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.util.bindGeneralPreferences
 import eu.magicsk.transi.util.bindTripPlannerPreferences
+import kotlinx.coroutines.launch
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class SettingsFragment : PreferenceFragmentCompat() {
+    @Inject
+    lateinit var timetableDatabase: TimetableDatabase
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         preferenceManager.sharedPreferencesName = Prefs.FILE
@@ -30,7 +48,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         setPreferencesFromResource(sections.first(), rootKey)
         sections.drop(1).forEach(::addPreferencesFromResource)
         bindGeneralPreferences(this)
-        bindTimetablesPreferences(this)
+        bindTimetables()
         bindTripPlannerPreferences(this)
         bindDeveloper()
     }
@@ -44,6 +62,44 @@ class SettingsFragment : PreferenceFragmentCompat() {
             )
             list.updatePadding(left = bars.left, right = bars.right, bottom = bars.bottom)
             insets
+        }
+    }
+
+    // The switch summary follows the download state.
+    private fun bindTimetables() {
+        val offline = requireNotNull(findPreference<SwitchPreferenceCompat>(Prefs.OFFLINE_TIMETABLES))
+        val delete = requireNotNull(findPreference<Preference>("timetable_delete_database"))
+        offline.isChecked = timetableDatabase.isOfflineEnabled
+        offline.setOnPreferenceChangeListener { _, enabled ->
+            timetableDatabase.setOfflineEnabled(enabled == true)
+            true
+        }
+        val deleteTitle = getString(R.string.timetable_delete_database)
+        val errorColor = MaterialColors.getColor(requireContext(), androidx.appcompat.R.attr.colorError, deleteTitle)
+        delete.title = SpannableString(deleteTitle).apply {
+            setSpan(ForegroundColorSpan(errorColor), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        delete.setOnPreferenceClickListener {
+            showWhileViewExists(
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.timetable_delete_database_title)
+                    .setMessage(R.string.timetable_delete_database_message)
+                    .setNegativeButton(R.string.cancel, null)
+                    .setPositiveButton(R.string.timetable_delete) { _, _ ->
+                        timetableDatabase.delete()
+                        offline.isChecked = false
+                    }
+            )
+            true
+        }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                timetableDatabase.state.collect { state ->
+                    offline.summary = state.text(requireContext()) ?: getString(
+                        if (state == TimetableDownloadState.Ready) R.string.timetable_db_ready else R.string.offline_timetables_summary
+                    )
+                }
+            }
         }
     }
 

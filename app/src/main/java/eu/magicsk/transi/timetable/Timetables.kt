@@ -10,12 +10,9 @@ import eu.magicsk.transi.R
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 val BRATISLAVA: ZoneId = ZoneId.of("Europe/Bratislava")
-
-private val TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm")
 
 const val ARG_ROUTE_ID = "route_id"
 const val ARG_SHORT_NAME = "short_name"
@@ -50,12 +47,8 @@ enum class TimetableCategory(@StringRes val title: Int) {
 /** `yyyyMMdd`, the date format of the IDS BK API and of GTFS. */
 fun LocalDate.serviceDate(): String = format(DateTimeFormatter.BASIC_ISO_DATE)
 
-/** Wall-clock `HH:mm` in Bratislava of [minutes] after midnight of the service day [date]; 1440 and later fall on the next day. */
-fun formatServiceTime(minutes: Int, date: LocalDate): String = ZonedDateTime.of(
-    date.plusDays(minutes / 1440L),
-    LocalTime.of(minutes % 1440 / 60, minutes % 60),
-    BRATISLAVA,
-).format(TIME_FORMAT)
+/** `HH:mm` of [minutes] after the service day's midnight (GTFS noon minus 12 h, as on iOS); 1440 and later wrap. */
+fun formatServiceTime(minutes: Int): String = "%02d:%02d".format(minutes / 60 % 24, minutes % 60)
 
 /** Index of the first trip departing after [now] (minute of day), else the first trip. */
 fun nextTripIndex(departures: List<Int>, now: LocalTime): Int =
@@ -78,10 +71,12 @@ fun TimetableDownloadState.text(context: Context, withProgress: Boolean = true):
     is TimetableDownloadState.Error -> context.getString(message)
 }
 
-/** Shows the dialog until the fragment's view is destroyed, so it never outlives the screen. */
+/** Shows the dialog until the fragment's view is destroyed, so it never outlives the screen; without a view, nothing. */
 fun Fragment.showWhileViewExists(builder: MaterialAlertDialogBuilder) {
+    val lifecycle = viewLifecycleOwnerLiveData.value?.lifecycle ?: return
+    if (!lifecycle.currentState.isAtLeast(Lifecycle.State.INITIALIZED)) return
     val dialog = builder.show()
-    viewLifecycleOwner.lifecycle.addObserver(LifecycleEventObserver { _, event ->
+    lifecycle.addObserver(LifecycleEventObserver { _, event ->
         if (event == Lifecycle.Event.ON_DESTROY) dialog.dismiss()
     })
 }

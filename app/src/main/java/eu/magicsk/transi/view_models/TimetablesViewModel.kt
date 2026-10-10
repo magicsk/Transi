@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
 
-/** Routes and where they came from: offline route ids are base.db rowids, online ones IDS BK route ids. */
+/** Routes and where they came from: online route ids are IDS BK route ids; offline lines are looked up by short name. */
 data class TimetableRoutes(val routes: List<Route>, val offline: Boolean)
 
 /**
@@ -66,21 +66,22 @@ class TimetablesViewModel @Inject constructor(
         routesFailedData.value = false
     }
 
-    suspend fun directions(routeId: Int, offline: Boolean, session: Session?): List<TimetableDirection>? =
+    suspend fun directions(routeId: Int, shortName: String, offline: Boolean, session: Session?): List<TimetableDirection>? =
         if (offline) {
-            database.queryDirections(routeId)
+            database.queryDirections(shortName)
         } else {
             repository.getTimetableDirections(token(session), routeId).data?.directions
         }
 
     suspend fun departures(
         routeId: Int,
+        shortName: String,
         offline: Boolean,
         direction: TimetableDirection,
         date: LocalDate,
         session: Session?,
     ): List<Departure>? = if (offline) {
-        database.queryDepartures(routeId, direction.direction_id, direction.direction, date)
+        database.queryDepartures(shortName, direction.direction_id, direction.direction, date)
     } else {
         repository.getTimetable(token(session), routeId, "departures", direction.direction_id, date.serviceDate())
             .data?.departures
@@ -89,6 +90,7 @@ class TimetablesViewModel @Inject constructor(
     /** Departure minutes of a direction from one stop: online by IDS BK station id, offline by GTFS stop id. */
     suspend fun stopTimes(
         routeId: Int,
+        shortName: String,
         offline: Boolean,
         directionId: Int,
         directionName: String,
@@ -97,7 +99,11 @@ class TimetablesViewModel @Inject constructor(
         stopCode: String?,
         session: Session?,
     ): List<Int>? = if (offline) {
-        stopCode?.let { database.queryTimetableDetail(routeId, directionId, directionName, date, it) }
+        stopCode?.let { code ->
+            database.queryDepartures(shortName, directionId, directionName, date)
+                ?.flatMap { trip -> trip.direction_departures.filter { it.stop_code == code }.map { it.departure } }
+                ?.sorted()
+        }
     } else {
         repository.getTimetableDetail(token(session), routeId, "departures", directionId, date.serviceDate(), stationId)
             .data?.departures?.map { it.t }

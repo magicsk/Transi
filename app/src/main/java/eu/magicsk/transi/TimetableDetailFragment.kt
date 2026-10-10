@@ -47,6 +47,7 @@ class TimetableDetailFragment : Fragment(R.layout.fragment_timetable_detail) {
         viewLifecycleOwner.lifecycleScope.launch {
             val minutes = viewModel.stopTimes(
                 routeId = args.getInt(ARG_ROUTE_ID),
+                shortName = args.getString(ARG_SHORT_NAME).orEmpty(),
                 offline = args.getBoolean(ARG_OFFLINE),
                 directionId = args.getInt(ARG_DIRECTION_ID),
                 directionName = args.getString(ARG_DIRECTION_NAME).orEmpty(),
@@ -68,12 +69,8 @@ class TimetableDetailFragment : Fragment(R.layout.fragment_timetable_detail) {
             groupByHour(minutes).forEach { (hour, times) ->
                 val row = TimetableHourItemBinding.inflate(layoutInflater, binding.TimetableDetailHours, true)
                 row.TimetableHourItemHour.text = hour
-                row.TimetableHourItemMinutes.text = times.joinToString(MINUTE_SEPARATOR)
+                row.TimetableHourItemMinutes.text = times.joinToString("   ")
             }
         }
-    }
-
-    private companion object {
-        const val MINUTE_SEPARATOR = "   "
     }
 }
