@@ -33,6 +33,15 @@ class TimetablesTest {
     }
 
     @Test
+    fun linesSortByLeadingNumberThenName() {
+        val names = listOf("S8", "N99", "ŠK6", "R20", "139", "N44", "9", "S20", "N72", "21", "R", "N21", "S70", "4")
+        assertEquals(
+            listOf("4", "9", "21", "139", "N21", "N44", "N72", "N99", "R", "R20", "S20", "S70", "S8", "ŠK6"),
+            names.sortedWith(LINE_ORDER),
+        )
+    }
+
+    @Test
     fun serviceMinutesFormatAsHoursAndMinutes() {
         assertEquals("00:00", formatServiceTime(0))
         assertEquals("07:05", formatServiceTime(425))

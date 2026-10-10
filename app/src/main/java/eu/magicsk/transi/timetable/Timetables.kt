@@ -5,6 +5,7 @@ import androidx.annotation.StringRes
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import eu.magicsk.transi.R
 import java.time.LocalDate
@@ -44,6 +45,13 @@ enum class TimetableCategory(@StringRes val title: Int) {
     }
 }
 
+/**
+ * Order of line short names within a section, the IDS BK list's: by the leading number (names without one last),
+ * then by name. Applied to both sources, so the offline list matches the online one.
+ */
+val LINE_ORDER: Comparator<String> =
+    compareBy({ name -> name.takeWhile { it in '0'..'9' }.toIntOrNull() ?: Int.MAX_VALUE }, { it })
+
 /** `yyyyMMdd`, the date format of the IDS BK API and of GTFS. */
 fun LocalDate.serviceDate(): String = format(DateTimeFormatter.BASIC_ISO_DATE)
 
@@ -81,6 +89,16 @@ fun Fragment.showWhileViewExists(builder: MaterialAlertDialogBuilder) {
     lifecycle.addObserver(LifecycleEventObserver { _, event ->
         if (event == Lifecycle.Event.ON_DESTROY) dialog.dismiss()
     })
+}
+
+/**
+ * A screen opened from the offline database goes back to the line list once that database is no longer the source
+ * (deleted, turned off or closed for an update); the list reloads from the current source. True when it left.
+ */
+fun Fragment.leftClosedOfflineDatabase(offline: Boolean, offlineSource: Boolean): Boolean {
+    if (!offline || offlineSource) return false
+    findNavController().popBackStack(R.id.navigationTimetables, false)
+    return true
 }
 
 fun Fragment.showTimetableError(@StringRes title: Int, onRetry: () -> Unit, onCancel: () -> Unit) =

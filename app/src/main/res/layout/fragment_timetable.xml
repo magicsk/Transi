@@ -120,6 +120,5 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:indeterminate="true"
-        android:visibility="invisible"
-        app:showDelay="250" />
+        android:visibility="invisible" />
 </FrameLayout>

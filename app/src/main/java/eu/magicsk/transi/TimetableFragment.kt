@@ -29,6 +29,7 @@ import eu.magicsk.transi.timetable.ARG_STATION_NAME
 import eu.magicsk.transi.timetable.ARG_STOP_CODE
 import eu.magicsk.transi.timetable.BRATISLAVA
 import eu.magicsk.transi.timetable.formatServiceTime
+import eu.magicsk.transi.timetable.leftClosedOfflineDatabase
 import eu.magicsk.transi.timetable.nextTripIndex
 import eu.magicsk.transi.timetable.showTimetableError
 import eu.magicsk.transi.util.customizeLineText
@@ -132,6 +133,7 @@ class TimetableFragment : Fragment(R.layout.fragment_timetable) {
     }
 
     private fun load(block: suspend () -> Unit) {
+        if (leftClosedOfflineDatabase(offline, viewModel.isOfflineSource)) return
         job?.cancel()
         loading = true
         error = null
@@ -179,7 +181,8 @@ class TimetableFragment : Fragment(R.layout.fragment_timetable) {
 
     private fun render() {
         val binding = binding ?: return
-        if (loading) binding.TimetableLoading.show() else binding.TimetableLoading.hide()
+        // Not show()/hide(): hide() on a shown indicator keeps a repeated show()'s delayed show pending (Material 1.14).
+        binding.TimetableLoading.isVisible = loading
 
         val label = date.format(DATE_LABEL)
         binding.TimetableDateButton.text = label

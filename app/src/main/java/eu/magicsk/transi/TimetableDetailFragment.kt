@@ -2,6 +2,7 @@ package eu.magicsk.transi
 
 import android.os.Bundle
 import android.view.View
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -18,6 +19,7 @@ import eu.magicsk.transi.timetable.ARG_STATION_ID
 import eu.magicsk.transi.timetable.ARG_STATION_NAME
 import eu.magicsk.transi.timetable.ARG_STOP_CODE
 import eu.magicsk.transi.timetable.groupByHour
+import eu.magicsk.transi.timetable.leftClosedOfflineDatabase
 import eu.magicsk.transi.timetable.showTimetableError
 import eu.magicsk.transi.util.customizeLineText
 import eu.magicsk.transi.view_models.MainViewModel
@@ -43,7 +45,8 @@ class TimetableDetailFragment : Fragment(R.layout.fragment_timetable_detail) {
     }
 
     private fun load(binding: FragmentTimetableDetailBinding, args: Bundle) {
-        binding.TimetableDetailLoading.show()
+        if (leftClosedOfflineDatabase(args.getBoolean(ARG_OFFLINE), viewModel.isOfflineSource)) return
+        binding.TimetableDetailLoading.isVisible = true
         viewLifecycleOwner.lifecycleScope.launch {
             val minutes = viewModel.stopTimes(
                 routeId = args.getInt(ARG_ROUTE_ID),
@@ -56,7 +59,7 @@ class TimetableDetailFragment : Fragment(R.layout.fragment_timetable_detail) {
                 stopCode = args.getString(ARG_STOP_CODE),
                 session = mainViewModel.idsbkSession.value,
             )
-            binding.TimetableDetailLoading.hide()
+            binding.TimetableDetailLoading.isVisible = false
             if (minutes == null) {
                 showTimetableError(
                     R.string.timetable_error,

@@ -11,6 +11,7 @@ import eu.magicsk.transi.data.remote.responses.idsbk.Session
 import eu.magicsk.transi.data.remote.responses.idsbk.TimetableDirection
 import eu.magicsk.transi.repository.DataRepository
 import eu.magicsk.transi.repository.IdsbkSession
+import eu.magicsk.transi.timetable.LINE_ORDER
 import eu.magicsk.transi.timetable.TimetableDatabase
 import eu.magicsk.transi.timetable.serviceDate
 import kotlinx.coroutines.launch
@@ -42,9 +43,12 @@ class TimetablesViewModel @Inject constructor(
     val downloadState = database.state
     val showDownloadBanner: Boolean get() = database.isOfflineEnabled && !database.isReady
 
+    /** The offline database is on and open: the route list, and the screens opened from it, read it. */
+    val isOfflineSource: Boolean get() = database.isOfflineEnabled && database.isReady
+
     /** No-op while loading, while a failure waits for Retry or Cancel, and when the cached list has the right source. */
     fun loadRoutes(session: Session?) {
-        val offline = database.isOfflineEnabled && database.isReady
+        val offline = isOfflineSource
         if (routesLoadingData.value == true || routesFailedData.value == true || routesData.value?.offline == offline) return
         routesLoadingData.value = true
         viewModelScope.launch {
@@ -58,7 +62,7 @@ class TimetablesViewModel @Inject constructor(
                 routesFailedData.value = true
                 return@launch
             }
-            routesData.value = TimetableRoutes(routes, offline)
+            routesData.value = TimetableRoutes(routes.sortedWith(compareBy(LINE_ORDER, Route::short_name)), offline)
             // The database may have opened or closed meanwhile.
             loadRoutes(session)
         }

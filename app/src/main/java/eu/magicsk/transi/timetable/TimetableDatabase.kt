@@ -250,7 +250,7 @@ class TimetableDatabase @Inject constructor(
 
     // region Timetable queries (TimetableDatabase.swift 257-576)
 
-    /** Routes deduplicated by short name, keeping the variant with the most trips; regional buses get type 700. */
+    /** Routes deduplicated by short name, keeping the variant with the most trips; regional buses get type 700. Unordered. */
     suspend fun queryRoutes(): List<Route>? = read { db ->
         db.select(
             """
@@ -267,9 +267,6 @@ class TimetableDatabase @Inject constructor(
                 ORDER BY COUNT(t.trip_id) DESC
                 LIMIT 1
             )
-            ORDER BY r.route_type,
-                CASE WHEN r.route_short_name GLOB '[0-9]*' THEN CAST(r.route_short_name AS INTEGER) ELSE 999999 END,
-                r.route_short_name
             """
         ).use { c ->
             buildList {
