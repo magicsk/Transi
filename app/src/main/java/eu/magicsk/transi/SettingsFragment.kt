@@ -7,6 +7,7 @@ import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -18,6 +19,7 @@ import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SeekBarPreference
 import androidx.preference.SwitchPreferenceCompat
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -33,7 +35,6 @@ import eu.magicsk.transi.timetable.TimetableDownloadState
 import eu.magicsk.transi.timetable.showWhileViewExists
 import eu.magicsk.transi.timetable.text
 import eu.magicsk.transi.util.Prefs
-import eu.magicsk.transi.util.bindTripPlannerPreferences
 import eu.magicsk.transi.util.readCachedStops
 import eu.magicsk.transi.util.seasonPass
 import java.time.Instant
@@ -66,7 +67,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         sections.drop(1).forEach(::addPreferencesFromResource)
         bindGeneral()
         bindTimetables()
-        bindTripPlannerPreferences(this)
+        bindTripPlanner()
         bindMyPass()
         bindDeveloper()
     }
@@ -225,6 +226,21 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         update()
         TicketCatalogueProvider.from(requireContext()).load()
+    }
+
+    // The seek bars show their value in their titles.
+    private fun bindTripPlanner() {
+        showValueInTitle(Prefs.TRIP_MAX_WALK_DURATION, R.string.trip_planner_max_walk)
+        showValueInTitle(Prefs.TRIP_MAX_TRANSFERS, R.string.trip_planner_max_transfers)
+    }
+
+    private fun showValueInTitle(key: String, @StringRes format: Int) {
+        val preference = requireNotNull(findPreference<SeekBarPreference>(key))
+        preference.title = getString(format, preference.value)
+        preference.setOnPreferenceChangeListener { _, newValue ->
+            preference.title = getString(format, newValue as? Int ?: preference.value)
+            true
+        }
     }
 
     private fun bindDeveloper() {

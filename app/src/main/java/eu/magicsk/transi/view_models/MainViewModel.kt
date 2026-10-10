@@ -53,10 +53,10 @@ class MainViewModel @Inject constructor(
     private var publishJob: Job? = null
 
     // A location fix and the stop list can arrive in either order; whichever comes second picks the stop.
+    // A fix goes out after the stops sorted for it, so its observers read the nearest stop for that fix.
     fun setActualLocation(value: Location) {
-        actualLocation.value = value
         lastLocation = value
-        publishStops()
+        if (unmodifiedStops.isEmpty()) actualLocation.value = value else publishStops()
     }
 
     fun setLocationAvailable(value: Boolean) {
@@ -85,6 +85,7 @@ class MainViewModel @Inject constructor(
         publishJob = viewModelScope.launch {
             val sorted = if (location == null) stops else withContext(Dispatchers.Default) { sortedByDistance(stops, location) }
             stopList.value = Stops().apply { addAll(sorted) }
+            if (location != null && actualLocation.value !== location) actualLocation.value = location
             choose { chooser.onStops(sorted, located = location != null, downloaded = downloaded) }
         }
     }

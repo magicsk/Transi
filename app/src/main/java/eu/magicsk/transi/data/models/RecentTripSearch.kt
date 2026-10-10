@@ -6,15 +6,16 @@ import java.time.Duration
 import java.time.Instant
 
 const val RECENT_SEARCH_LIMIT = 10
+/** Journeys kept per recent search, to keep the backed-up prefs file small. */
+const val CACHED_JOURNEY_LIMIT = 30
 
+/** Stored as "arrival"/"departure" in the recents JSON. */
 enum class ArrivalDeparture {
     @SerializedName("arrival")
     ARRIVAL,
 
     @SerializedName("departure")
-    DEPARTURE;
-
-    val raw get() = name.lowercase()
+    DEPARTURE,
 }
 
 data class RecentTripSearch(
@@ -29,22 +30,9 @@ data class RecentTripSearch(
 ) {
     val id get() = searchId(from, to)
 
-    /** iOS: "{id}:{arrival|departure}:{bit pattern of the seconds since 2001 | now}". */
-    val cacheID: String
-        get() {
-            val date = if (arrivalDepartureCustomDate) {
-                val sinceReferenceDate = (arrivalDepartureDate.epochSecond - APPLE_REFERENCE_EPOCH_SECOND) +
-                    arrivalDepartureDate.nano / 1e9
-                sinceReferenceDate.toRawBits().toULong().toString()
-            } else {
-                "now"
-            }
-            return "$id:${arrivalDeparture.raw}:$date"
-        }
+    /** Tells the search whose journeys were cached last from another search between the same stops. */
+    val cacheID get() = "$id:$arrivalDeparture:${if (arrivalDepartureCustomDate) arrivalDepartureDate else "now"}"
 }
-
-/** 2001-01-01T00:00:00Z, Apple's reference date. */
-private const val APPLE_REFERENCE_EPOCH_SECOND = 978_307_200L
 
 fun searchId(from: Stop?, to: Stop?) = "${from?.id}:${to?.id}"
 

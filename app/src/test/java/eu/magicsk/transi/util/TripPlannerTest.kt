@@ -3,6 +3,7 @@ package eu.magicsk.transi.util
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import eu.magicsk.transi.adapters.tripPlannerPages
 import eu.magicsk.transi.data.models.ArrivalDeparture
 import eu.magicsk.transi.data.models.BRATISLAVA
 import eu.magicsk.transi.data.models.Journey
@@ -18,6 +19,7 @@ import eu.magicsk.transi.data.models.restorable
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.idsbk.RaptorResponse
 import eu.magicsk.transi.data.remote.responses.idsbk.StopGps
+import eu.magicsk.transi.view_models.TripPlannerState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -157,7 +159,7 @@ class TripPlannerTest {
     }
 
     @Test
-    fun journeysAreEqualAsOnIos() {
+    fun journeysAreTheSameRidesAsOnIos() {
         val ride = ride("2026-10-05T06:00:00Z", "2026-10-05T06:21:00Z", "72", "Hronská", "Rajská")
         val raptor = journey("r-1", walk("2026-10-05T05:50:00Z", "2026-10-05T05:58:00Z", "A", "Hronská"), ride)
         val imhd = journey(
@@ -166,12 +168,12 @@ class TripPlannerTest {
             ride.copy(startDeparture = Instant.parse("2026-10-05T06:00:40Z"), routeType = 1, startStopCode = "A", delaySeconds = 60),
         )
 
-        assertEquals("Ids, walks and seconds don't count", raptor, imhd)
-        assertEquals(raptor.hashCode(), imhd.hashCode())
-        assertNotEquals(raptor, journey("r-2", raptor.parts[0], ride.copy(startDeparture = Instant.parse("2026-10-05T06:01:00Z"))))
-        assertNotEquals(raptor, journey("r-3", raptor.parts[0], ride.copy(routeShortName = "73")))
-        assertNotEquals(raptor, journey("r-4", raptor.parts[0], ride.copy(endStopName = "Zochova")))
-        assertNotEquals(raptor, journey("r-5", ride))
+        assertEquals("Ids, walks and seconds don't count", raptor.sameRidesKey, imhd.sameRidesKey)
+        assertNotEquals("Data class equality for the list diffs", raptor, imhd)
+        assertNotEquals(raptor.sameRidesKey, journey("r-2", raptor.parts[0], ride.copy(startDeparture = Instant.parse("2026-10-05T06:01:00Z"))).sameRidesKey)
+        assertNotEquals(raptor.sameRidesKey, journey("r-3", raptor.parts[0], ride.copy(routeShortName = "73")).sameRidesKey)
+        assertNotEquals(raptor.sameRidesKey, journey("r-4", raptor.parts[0], ride.copy(endStopName = "Zochova")).sameRidesKey)
+        assertNotEquals(raptor.sameRidesKey, journey("r-5", ride).sameRidesKey)
     }
 
     @Test
@@ -241,17 +243,17 @@ class TripPlannerTest {
     }
 
     @Test
-    fun cepoDateAndTimeAreBratislavaWallClock() {
+    fun cepoDateAndClockAreBratislavaWallClock() {
         assertEquals("2026-10-06", cepoDate(Instant.parse("2026-10-05T22:30:00Z")))
-        assertEquals("00:30", cepoTime(Instant.parse("2026-10-05T22:30:00Z")))
+        assertEquals("00:30", clock(Instant.parse("2026-10-05T22:30:00Z")))
         assertEquals("2027-01-01", cepoDate(Instant.parse("2026-12-31T23:30:00Z")))
-        assertEquals("00:30", cepoTime(Instant.parse("2026-12-31T23:30:00Z")))
+        assertEquals("00:30", clock(Instant.parse("2026-12-31T23:30:00Z")))
         // Summer time starts 2026-03-29 at 01:00 UTC and ends 2026-10-25 at 01:00 UTC.
-        assertEquals("01:59", cepoTime(Instant.parse("2026-03-29T00:59:00Z")))
-        assertEquals("03:00", cepoTime(Instant.parse("2026-03-29T01:00:00Z")))
-        assertEquals("02:30", cepoTime(Instant.parse("2026-10-25T00:30:00Z")))
-        assertEquals("02:30", cepoTime(Instant.parse("2026-10-25T01:30:00Z")))
-        assertEquals("08:05", cepoTime(Instant.parse("2026-01-15T07:05:59Z")))
+        assertEquals("01:59", clock(Instant.parse("2026-03-29T00:59:00Z")))
+        assertEquals("03:00", clock(Instant.parse("2026-03-29T01:00:00Z")))
+        assertEquals("02:30", clock(Instant.parse("2026-10-25T00:30:00Z")))
+        assertEquals("02:30", clock(Instant.parse("2026-10-25T01:30:00Z")))
+        assertEquals("08:05", clock(Instant.parse("2026-01-15T07:05:59Z")))
     }
 
     @Test
@@ -270,12 +272,19 @@ class TripPlannerTest {
     }
 
     @Test
-    fun cacheIdIsTheIosOne() {
-        val custom = RecentTripSearch(
-            stop(1), stop(2), ArrivalDeparture.ARRIVAL, Instant.ofEpochSecond(978_307_200L + 800_000_000L, 250_000_000), true
-        )
-        assertEquals("1:2:arrival:4739994094768488448", custom.cacheID)
-        assertEquals("1:2:departure:now", custom.copy(arrivalDeparture = ArrivalDeparture.DEPARTURE, arrivalDepartureCustomDate = false).cacheID)
+    fun aNewSearchIsSelectedBeforeTheFullRecentsMoveUp() {
+        fun currentIndex(state: TripPlannerState) = tripPlannerPages(state).indexOfFirst { it.isCurrent }
+        var recents = emptyList<RecentTripSearch>()
+        for (id in 1..10) recents = recents.remember(search(id, id + 1))
+        // Restored on launch: the newest recent, without journeys, on the last page.
+        val restored = TripPlannerState(from = stop(10), to = stop(11), customDate = true, recents = recents)
+        assertEquals(9, currentIndex(restored))
+
+        val picked = restored.copy(to = stop(20))
+        assertEquals("The new search's own page, not the newest recent's", 10, currentIndex(picked))
+        val searching = picked.copy(loading = true, recents = recents.remember(requireNotNull(picked.criteria)))
+        assertEquals("The oldest recent dropped: the page moves, so the pager follows", 9, currentIndex(searching))
+        assertEquals("10:20", tripPlannerPages(searching)[9].searchId)
     }
 
     @Test

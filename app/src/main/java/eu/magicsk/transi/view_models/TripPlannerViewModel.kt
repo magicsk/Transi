@@ -12,6 +12,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import eu.magicsk.transi.BuildConfig
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.models.ArrivalDeparture
+import eu.magicsk.transi.data.models.CACHED_JOURNEY_LIMIT
 import eu.magicsk.transi.data.models.Journey
 import eu.magicsk.transi.data.models.RECENT_SEARCH_LIMIT
 import eu.magicsk.transi.data.models.RecentTripSearch
@@ -29,7 +30,7 @@ import eu.magicsk.transi.util.FetchSource
 import eu.magicsk.transi.util.PagingDates
 import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.util.cepoDate
-import eu.magicsk.transi.util.cepoTime
+import eu.magicsk.transi.util.clock
 import eu.magicsk.transi.util.intPref
 import eu.magicsk.transi.util.isActualLocation
 import eu.magicsk.transi.util.mapCepoJourneys
@@ -48,7 +49,7 @@ import kotlinx.coroutines.withContext
 import java.time.Instant
 import javax.inject.Inject
 
-enum class TripPlannerError { NO_ROUTES, NO_LOCATION }
+enum class TripPlannerError { NO_ROUTES, NO_CONNECTION, NO_LOCATION }
 
 data class TripPlannerState(
     val from: Stop? = null,
@@ -158,7 +159,7 @@ class TripPlannerViewModel @Inject constructor(
     /** A recent search with its cached journeys, or searched again. */
     fun showRecentSearch(id: String) {
         val search = current.recents.firstOrNull { it.id == id } ?: return
-        open(search, search.trip, customDate = true)
+        open(search, search.trip)
     }
 
     /** Infinite scroll: the last journey of a source on screen loads that source's next page. */
@@ -214,7 +215,8 @@ class TripPlannerViewModel @Inject constructor(
         fetch(FetchSource.INITIAL)
     }
 
-    private fun open(search: RecentTripSearch, trip: List<Journey>?, customDate: Boolean) {
+    /** A search with its searched time, also one that ran "now". */
+    private fun open(search: RecentTripSearch, trip: List<Journey>?) {
         generation++
         pagingSources.clear()
         paging = pagingDatesFor(trip.orEmpty())
@@ -224,7 +226,7 @@ class TripPlannerViewModel @Inject constructor(
                 to = search.to,
                 arrivalDeparture = search.arrivalDeparture,
                 date = search.arrivalDepartureDate,
-                customDate = customDate,
+                customDate = true,
                 journeys = trip,
                 loading = false,
                 loadingMore = false,
@@ -246,8 +248,7 @@ class TripPlannerViewModel @Inject constructor(
         val withImhd = source != FetchSource.MORE_RAPTOR
         val raptorDate = if (source == FetchSource.INITIAL) search.date else paging.raptor ?: search.date
         val imhdDate = if (source == FetchSource.INITIAL) search.date else paging.imhd ?: search.date
-        // The activity sorts the stops list in place as the location changes.
-        val stopsSnapshot = stops.toList()
+        val stopsSnapshot = stops
         val fetchGeneration = generation
         if (source != FetchSource.INITIAL) setState { copy(loadingMore = true) }
 
@@ -265,7 +266,7 @@ class TripPlannerViewModel @Inject constructor(
             val imhd = async {
                 if (withImhd) {
                     val arrival = search.arrivalDeparture == ArrivalDeparture.ARRIVAL
-                    repository.getTrip("g${fromStop.id}", "g${toStop.id}", cepoDate(imhdDate), cepoTime(imhdDate), arrival).data
+                    repository.getTrip("g${fromStop.id}", "g${toStop.id}", cepoDate(imhdDate), clock(imhdDate), arrival).data
                 } else {
                     null
                 }
@@ -286,14 +287,16 @@ class TripPlannerViewModel @Inject constructor(
         val response = repository.getRaptorTrip(session, body).data ?: return null
         if (!response.journey.isNullOrEmpty()) return response
         val retry = body.widened() ?: return response
-        return repository.getRaptorTrip(session, retry).data
+        return repository.getRaptorTrip(session, retry).data ?: response
     }
 
     private fun onResults(source: FetchSource, raptorAnswered: Boolean, raptor: List<Journey>, imhd: List<Journey>?) {
         paging = nextPagingDates(source, paging, raptorAnswered, imhd != null, imhd.orEmpty())
         val found = raptor + imhd.orEmpty()
         if (source == FetchSource.INITIAL && found.isEmpty()) {
-            setState { copy(journeys = null, loading = false, loadingMore = false, error = TripPlannerError.NO_ROUTES) }
+            // Every source failed, rather than answered without journeys.
+            val error = if (!raptorAnswered && imhd == null) TripPlannerError.NO_CONNECTION else TripPlannerError.NO_ROUTES
+            setState { copy(journeys = null, loading = false, loadingMore = false, error = error) }
             return
         }
         val journeys = mergeJourneys(if (source == FetchSource.INITIAL) emptyList() else current.journeys.orEmpty(), found)
@@ -301,12 +304,12 @@ class TripPlannerViewModel @Inject constructor(
         cacheJourneys(journeys)
     }
 
-    /** The current search's recent keeps its journeys. */
+    /** The current search's recent keeps its first journeys. */
     private fun cacheJourneys(journeys: List<Journey>) {
         val index = current.recents.indexOfFirst { it.id == current.searchId }
         if (index < 0) return
         val recents = current.recents.toMutableList()
-        recents[index] = recents[index].copy(trip = journeys, tripSavedAt = Instant.now())
+        recents[index] = recents[index].copy(trip = journeys.take(CACHED_JOURNEY_LIMIT), tripSavedAt = Instant.now())
         setState { copy(recents = recents) }
         persistRecents(cacheId = recents[index].cacheID)
     }
@@ -322,14 +325,14 @@ class TripPlannerViewModel @Inject constructor(
         val from = current.from
         if (generation != 0 || current.to != null || (from != null && !from.isActualLocation)) return
         if (killedSearch != null) {
-            // Back after the process was killed: that search with its journeys, whatever the save duration.
+            // Back after the process was killed: that search at its time, with its journeys whatever the save duration.
             val trip = stored.firstOrNull { it.cacheID == killedSearch.cacheID }?.trip
-            open(killedSearch, trip, killedSearch.arrivalDepartureCustomDate)
+            open(killedSearch, trip)
             return
         }
         val restored = current.recents.firstOrNull { it.cacheID == savedCacheId } ?: current.recents.firstOrNull() ?: return
         if (restored.trip != null) {
-            open(restored, restored.trip, customDate = true)
+            open(restored, restored.trip)
         } else {
             setState {
                 copy(

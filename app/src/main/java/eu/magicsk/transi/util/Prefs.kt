@@ -66,3 +66,10 @@ fun SharedPreferences.seasonPass(): SeasonPass? = SeasonPass.fromStored(
     networkWide = getBoolean(Prefs.PASS_NETWORK_WIDE, false),
     bankCard = getBoolean(Prefs.PASS_BANK_CARD, false),
 )
+
+/** An Int setting, also when it was stored as a string (like a ListPreference value). */
+fun SharedPreferences.intPref(key: String, default: Int): Int = try {
+    getInt(key, default)
+} catch (_: ClassCastException) {
+    getString(key, null)?.toIntOrNull() ?: default
+}

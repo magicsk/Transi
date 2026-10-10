@@ -27,12 +27,13 @@ import eu.magicsk.transi.databinding.TripPlannerListStepTransitBinding
 import eu.magicsk.transi.databinding.TripPlannerListStepWalkingBinding
 import eu.magicsk.transi.databinding.TripPlannerLoadingMoreBinding
 import eu.magicsk.transi.databinding.TripPlannerPageBinding
+import eu.magicsk.transi.util.clock
 import eu.magicsk.transi.util.customizeLineText
 import eu.magicsk.transi.util.getLineColor
 import eu.magicsk.transi.util.isDarkTheme
 import eu.magicsk.transi.util.sendNotification
 import eu.magicsk.transi.view_models.TripPlannerError
-import java.time.Instant
+import eu.magicsk.transi.view_models.TripPlannerState
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -47,13 +48,30 @@ data class TripPlannerPage(
     val generation: Int = 0,
 )
 
+private const val CURRENT_PAGE = "current"
+
+/**
+ * The pages for [state]: the recent searches oldest to newest, then the current search while it is not a recent yet.
+ * A search gets its page as soon as it has both stops, so the pager is on it before the recents move up under it.
+ */
+fun tripPlannerPages(state: TripPlannerState): List<TripPlannerPage> {
+    fun current(id: String) =
+        TripPlannerPage(id, state.journeys, isCurrent = true, state.loading, state.loadingMore, state.error, state.generation)
+    val recentPages = state.recents.asReversed().map {
+        if (it.id == state.searchId) current(it.id) else TripPlannerPage(it.id, it.trip, isCurrent = false)
+    }
+    val showsCurrent = state.criteria != null || state.loading || state.journeys != null || state.error != null
+    return when {
+        recentPages.isEmpty() -> listOf(current(CURRENT_PAGE))
+        recentPages.none { it.isCurrent } && showsCurrent -> recentPages + current(state.searchId)
+        else -> recentPages
+    }
+}
+
 /** The results pager, one page per recent search. [onJourneyBound] drives the current page's infinite scroll. */
 class TripPlannerPagerAdapter(
     private val onJourneyBound: (Journey) -> Unit,
 ) : RecyclerView.Adapter<TripPlannerPagerAdapter.PageHolder>() {
-    /** Tapping a journey; journeys are not clickable while it is null. */
-    var onJourneyClick: ((Journey) -> Unit)? = null
-
     var pages: List<TripPlannerPage> = emptyList()
         private set
 
@@ -90,7 +108,6 @@ class TripPlannerPagerAdapter(
         val page = pages[position]
         val binding = holder.binding
         holder.journeys.onJourneyBound = if (page.isCurrent) onJourneyBound else null
-        holder.journeys.onJourneyClick = onJourneyClick
         val rows: List<TripPlannerRow> = page.journeys.orEmpty().map { TripPlannerRow.JourneyRow(it) } +
             if (page.loadingMore) listOf(TripPlannerRow.LoadingMore) else emptyList()
         // New results start at the top; a recent's cached ones that became current page on as if just shown.
@@ -106,6 +123,7 @@ class TripPlannerPagerAdapter(
         binding.TripPlannerStatus.isVisible = page.journeys.isNullOrEmpty() && !page.loading
         val (icon, title) = when (page.error) {
             TripPlannerError.NO_ROUTES -> R.drawable.ic_warning to R.string.trip_planner_no_routes
+            TripPlannerError.NO_CONNECTION -> R.drawable.ic_warning to R.string.no_connection
             TripPlannerError.NO_LOCATION -> R.drawable.ic_location_disabled to R.string.no_location
             null -> R.drawable.ic_trip_planner to R.string.trip_planner_empty
         }
@@ -130,7 +148,6 @@ sealed interface TripPlannerRow {
 /** A page's journeys, then a spinner while more load. */
 class TripPlannerAdapter : ListAdapter<TripPlannerRow, RecyclerView.ViewHolder>(RowDiff) {
     var onJourneyBound: ((Journey) -> Unit)? = null
-    var onJourneyClick: ((Journey) -> Unit)? = null
 
     class JourneyHolder(val binding: TripPlannerListBinding) : RecyclerView.ViewHolder(binding.root)
     class LoadingHolder(binding: TripPlannerLoadingMoreBinding) : RecyclerView.ViewHolder(binding.root)
@@ -166,13 +183,6 @@ class TripPlannerAdapter : ListAdapter<TripPlannerRow, RecyclerView.ViewHolder>(
         }
 
         val card = binding.TripPlannerCard
-        val onClick = onJourneyClick
-        if (onClick != null) {
-            card.setOnClickListener { onClick(journey) }
-        } else {
-            card.setOnClickListener(null)
-            card.isClickable = false
-        }
         card.setOnLongClickListener {
             notifyJourney(context, journey)
             true
@@ -200,11 +210,11 @@ class TripPlannerAdapter : ListAdapter<TripPlannerRow, RecyclerView.ViewHolder>(
             ColorStateList.valueOf(ContextCompat.getColor(context, getLineColor(line, isDarkTheme(context.resources))))
         row.TripPlannerListStepHeadsign.text = part.tripHeadsign ?: error
         row.TripPlannerListStepHeadsign.isSelected = true
-        row.TripPlannerListStepDepartureTime.text = formatClock(part.startDeparture)
+        row.TripPlannerListStepDepartureTime.text = clock(part.startDeparture)
         row.TripPlannerListStepDepartureStop.text = part.startStopName ?: error
         row.TripPlannerListStepDepartureStop.isSelected = true
         row.TripPlannerListStepDeparturePlatform.showPlatform(part.startStopCode)
-        row.TripPlannerListStepArrivalTime.text = formatClock(part.endArrival)
+        row.TripPlannerListStepArrivalTime.text = clock(part.endArrival)
         row.TripPlannerListStepArrivalStop.text = part.endStopName ?: error
         row.TripPlannerListStepArrivalStop.isSelected = true
         row.TripPlannerListStepArrivalPlatform.showPlatform(part.endStopCode)
@@ -233,17 +243,14 @@ private object RowDiff : DiffUtil.ItemCallback<TripPlannerRow>() {
     override fun areContentsTheSame(oldItem: TripPlannerRow, newItem: TripPlannerRow) = oldItem == newItem
 }
 
-private val clockFormat = DateTimeFormatter.ofPattern("HH:mm")
 private val dayFormat = DateTimeFormatter.ofPattern("EEE d MMM")
-
-private fun formatClock(time: Instant): String = time.atZone(BRATISLAVA).format(clockFormat)
 
 /** "{day if not today} HH:mm | {minutes} min | N zone(s)". */
 private fun journeyHeader(context: Context, journey: Journey): String {
     val first = journey.parts.firstOrNull()
     val last = journey.parts.lastOrNull()
     if (first == null || last == null) return context.getString(R.string.error)
-    val time = formatClock(first.startDeparture)
+    val time = clock(first.startDeparture)
     val today = LocalDate.now(BRATISLAVA)
     val day = when (val date = first.startDeparture.atZone(BRATISLAVA).toLocalDate()) {
         today -> null
@@ -286,8 +293,8 @@ private fun notifyJourney(context: Context, journey: Journey) {
             "🚶\t\t<b>${html(walkText(context, part))}</b>"
         } else {
             "<b>${html(part.routeShortName)}</b> ▶ <b>${html(part.tripHeadsign)}</b>" +
-                "<br>\t\t\t${formatClock(part.startDeparture)} ${html(part.startStopName)}" +
-                "<br>\t\t\t${formatClock(part.endArrival)} ${html(part.endStopName)}"
+                "<br>\t\t\t${clock(part.startDeparture)} ${html(part.startStopName)}" +
+                "<br>\t\t\t${clock(part.endArrival)} ${html(part.endStopName)}"
         }
     }
     val minutes = minutesBetween(first.startDeparture, last.endArrival)
@@ -298,7 +305,7 @@ private fun notifyJourney(context: Context, journey: Journey) {
     }
     context.getSystemService(NotificationManager::class.java).sendNotification(
         title,
-        context.getString(R.string.trip_notification_body, duration, formatClock(first.startDeparture), formatClock(last.endArrival)),
+        context.getString(R.string.trip_notification_body, duration, clock(first.startDeparture), clock(last.endArrival)),
         steps.parseAsHtml(),
         context.getString(R.string.trip_share_body, html(title), steps).parseAsHtml(),
         true,

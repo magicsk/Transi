@@ -27,8 +27,8 @@ import com.google.android.material.datepicker.MaterialPickerOnPositiveButtonClic
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import dagger.hilt.android.AndroidEntryPoint
-import eu.magicsk.transi.adapters.TripPlannerPage
 import eu.magicsk.transi.adapters.TripPlannerPagerAdapter
+import eu.magicsk.transi.adapters.tripPlannerPages
 import eu.magicsk.transi.data.models.ArrivalDeparture
 import eu.magicsk.transi.data.models.BRATISLAVA
 import eu.magicsk.transi.data.remote.responses.Stop
@@ -132,17 +132,7 @@ class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
         binding.timeDateBtn.text = date
         binding.timeDateBtn.contentDescription = getString(R.string.trip_planner_date_description, date)
 
-        // With recent searches, the results page through them, oldest to newest.
-        val recentPages = state.recents.asReversed().map {
-            if (it.id == state.searchId) currentPage(it.id, state) else TripPlannerPage(it.id, it.trip, isCurrent = false)
-        }
-        // A search that is not a recent one yet still shows its state, like a missing location, last.
-        val showsCurrent = state.loading || state.journeys != null || state.error != null
-        val pages = when {
-            recentPages.isEmpty() -> listOf(currentPage(CURRENT_PAGE, state))
-            recentPages.none { it.isCurrent } && showsCurrent -> recentPages + currentPage(state.searchId, state)
-            else -> recentPages
-        }
+        val pages = tripPlannerPages(state)
         pagerAdapter.submit(pages)
         val currentIndex = pages.indexOfFirst { it.isCurrent }
         if (currentIndex >= 0 && currentIndex != binding.TripPlannerPager.currentItem) {
@@ -150,10 +140,6 @@ class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
         }
         showPageDots(binding.TripPlannerPageDots, pages.size, currentIndex.coerceAtLeast(0), searching)
     }
-
-    private fun currentPage(id: String, state: TripPlannerState) = TripPlannerPage(
-        id, state.journeys, isCurrent = true, state.loading, state.loadingMore, state.error, state.generation
-    )
 
     private fun showPageDots(dots: LinearLayout, count: Int, selected: Int, searching: Boolean) {
         dots.removeAllViews()
@@ -289,7 +275,6 @@ class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
     private fun LocalDate.utcMillis() = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
     private companion object {
-        const val CURRENT_PAGE = "current"
         const val TYPE_AHEAD = "tripTypeAhead"
         // The type-ahead finds its field by these.
         const val ORIGIN_FROM = "editTextFrom"

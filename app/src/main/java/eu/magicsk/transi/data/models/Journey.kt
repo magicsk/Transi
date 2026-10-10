@@ -29,10 +29,7 @@ data class Journey(
     val isImhd get() = id.startsWith(IMHD_JOURNEY_PREFIX)
 
     /** The iOS `Journey ==`: the same rides at the same minutes between the same stops. Ids and walks don't count. */
-    override fun equals(other: Any?) = other is Journey && sameRidesKey == other.sameRidesKey
-    override fun hashCode() = sameRidesKey.hashCode()
-
-    private val sameRidesKey: List<Any?>
+    internal val sameRidesKey: List<Any?>
         get() = parts.map {
             if (it.isWalk) ROUTE_TYPE_WALK
             else listOf(it.startDeparture.epochMinute, it.endArrival.epochMinute, it.routeShortName, it.startStopName, it.endStopName)

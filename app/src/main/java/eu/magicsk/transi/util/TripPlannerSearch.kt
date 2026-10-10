@@ -12,7 +12,7 @@ import java.time.temporal.ChronoUnit
 private const val SEARCH_HOURS = 2
 private const val RETRY_SEARCH_HOURS = 8
 private val cepoDateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-private val cepoTimeFormat = DateTimeFormatter.ofPattern("HH:mm")
+private val clockFormat = DateTimeFormatter.ofPattern("HH:mm")
 
 enum class FetchSource { INITIAL, MORE_RAPTOR, MORE_IMHD }
 
@@ -56,12 +56,12 @@ fun RaptorRequest.widened(): RaptorRequest? = copy(
 /** I-API `pd`: the Bratislava date. */
 fun cepoDate(date: Instant): String = date.atZone(BRATISLAVA).format(cepoDateFormat)
 
-/** I-API `pt`: the Bratislava time. */
-fun cepoTime(date: Instant): String = date.atZone(BRATISLAVA).format(cepoTimeFormat)
+/** The Bratislava HH:mm: the I-API `pt` and the planner's times on screen. */
+fun clock(date: Instant): String = date.atZone(BRATISLAVA).format(clockFormat)
 
-/** Both lists without repeats ([Journey.equals]; the first one stays), soonest first. */
+/** Both lists without repeats ([Journey.sameRidesKey]; the first one stays), soonest first. */
 fun mergeJourneys(current: List<Journey>, new: List<Journey>): List<Journey> =
-    (current + new).distinct().sortedBy { it.parts.firstOrNull()?.startDeparture ?: Instant.MAX }
+    (current + new).distinctBy { it.sameRidesKey }.sortedBy { it.parts.firstOrNull()?.startDeparture ?: Instant.MAX }
 
 /**
  * The paging dates after a response, as iOS: the R-API moves on 2 hours per answer; the I-API 1 hour when it found
