@@ -13,7 +13,7 @@ Public transit app for Bratislava. This repository is the native Android app; it
 - Kotlin, single `:app` module, Android Views with ViewBinding. `MainActivity` hosts a `NavHostFragment` (`res/navigation/nav_graph.xml`) and the bottom navigation; feature screens are Fragments with RecyclerView adapters.
 - Hilt provides the Retrofit APIs and `DataRepository` (`data/remote/ApiModule.kt`). ViewModels are `@HiltViewModel` and expose `LiveData`; activity-scoped state is shared through `MainViewModel`.
 - Reuse the Retrofit interfaces in `data/remote/` and the `Resource` wrapper returned by `DataRepository`. Do not introduce a parallel networking abstraction or migrate unrelated code to another pattern.
-- Keep persisted settings in the `"Transi"` `SharedPreferences` file and the AndroidX preference screen. Keep keys in one place and give every new key a default where it is read.
+- Keep persisted settings in the `"Transi"` `SharedPreferences` file (`util/Prefs.kt` holds the file name and every key) and the AndroidX preference screen (`SettingsFragment` composes one `res/xml/prefs_<section>.xml` per section). Give every new key a default where it is read.
 - Network, parsing, database, and routing work stays off the main thread (coroutines on `Dispatchers.IO`/`Default`). Update views on the main thread and respect the Fragment view lifecycle (`viewLifecycleOwner`, nulling bindings in `onDestroyView`).
 - Reuse existing models, utils (`util/`), drawables, line colors (`util/LineColor.kt`), and installed libraries before adding code or dependencies. Ask before adding a production dependency.
 - Preserve the Socket.IO flows (`tabStart`, `infoStart`, `tabs`, `vInfo`, `iText` on `https://imhd.sk` path `/rt/sio2`), the IDS BK session (`startup` → `X-Session`), the stops cache and version check, the departure/trip notifications, and the GitHub release update flow when touching adjacent code.
@@ -22,7 +22,7 @@ Public transit app for Bratislava. This repository is the native Android app; it
 
 - Design and runtime quality target the newest stable Android release, currently Android 17 (API 37). Use current Material 3 components, dynamic color, edge-to-edge, and predictive back.
 - Keep `minSdk 26` until explicitly changed. Gate newer APIs with `Build.VERSION.SDK_INT` checks (or AndroidX compat helpers) and provide a correct, accessible fallback; older Android may look simpler or do less.
-- Preserve font scaling, contrast, system bar insets, 48dp touch targets, TalkBack labels for icon-only controls, reduced-motion (animator duration scale) behavior, and light/dark themes. Keep user-facing copy in `res/values/strings.xml`; do not hardcode new UI strings in code or layouts.
+- Preserve font scaling, contrast, system bar insets, 48dp touch targets, TalkBack labels for icon-only controls, reduced-motion (animator duration scale) behavior, and light/dark themes. Keep user-facing copy in string resources: `res/values/strings.xml` or a per-area `res/values/strings_<area>.xml` (preferred for new screens, so parallel work does not collide); do not hardcode new UI strings in code or layouts.
 
 ## Working agreement
 
@@ -49,7 +49,7 @@ Public transit app for Bratislava. This repository is the native Android app; it
 
 ## Secrets
 
-- `local.properties` is gitignored and holds `IDSBK_API_KEY` and `GOOGLE_MAPS_API_KEY`. Never print, copy, or commit it; symlink it into worktrees. Never put key values into logs, evidence pages, or commit messages.
+- `local.properties` is gitignored and holds `IDSBK_API_KEY`, `GOOGLE_MAPS_API_KEY`, `THUNDERFOREST_API_KEY` (map tiles) and `R_API_KEY` (raptor trip planner); a missing key degrades that feature instead of breaking the build. Never print, copy, or commit it; symlink it into worktrees. Never put key values into logs, evidence pages, or commit messages.
 
 ## Visual evidence and sharing
 
