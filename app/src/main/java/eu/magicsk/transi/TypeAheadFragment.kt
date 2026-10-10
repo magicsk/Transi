@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
@@ -46,6 +47,7 @@ class TypeAheadFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        activity?.findViewById<View>(R.id.statusBarBackground)?.background = null
         if (eText != null) {
             eText?.removeTextChangedListener(listener)
             val tripPlannerViewModel =
@@ -132,15 +134,17 @@ class TypeAheadFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        @Suppress("DEPRECATION")
-        stopsList = requireArguments().getSerializable("stopsList") as Stops
+        stopsList = BundleCompat.getSerializable(requireArguments(), "stopsList", Stops::class.java) ?: stopsList
         showDirections = requireArguments().getBoolean("directions")
         origin = requireArguments().getString("origin").toString()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        activity?.window?.statusBarColor = MaterialColors.getColor(view, com.google.android.material.R.attr.colorSurface)
+        // Extend the overlay surface into the status bar strip while the search is open.
+        activity?.findViewById<View>(R.id.statusBarBackground)?.setBackgroundColor(
+            MaterialColors.getColor(view, com.google.android.material.R.attr.colorSurface)
+        )
 
         typeAheadAdapter = TypeAheadAdapter(mutableListOf(),
             showDirections,

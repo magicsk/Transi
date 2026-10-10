@@ -28,12 +28,9 @@
         <item name="colorOnSurfaceInverse">@android:color/system_neutral1_800</item>
         <item name="colorPrimaryInverse">@color/md_theme_dark_primaryInverse</item>
         <item name="colorAccent">?colorPrimary</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">@android:color/system_neutral1_900</item>
         <!-- Customize your theme here. -->
         <item name="android:textColor">@android:color/system_accent1_10</item>
         <item name="android:windowBackground">@android:color/system_neutral1_900</item>
-        <item name="android:navigationBarColor">@android:color/system_neutral1_900</item>
         <item name="colorMyBackground">@android:color/system_neutral1_900</item>
         <item name="colorMyContainer">?colorPrimaryContainer</item>
         <item name="colorOnMyContainer">?colorOnPrimaryContainer</item>

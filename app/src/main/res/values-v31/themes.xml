@@ -28,11 +28,8 @@
         <item name="colorOnSurfaceInverse">@android:color/system_neutral1_10</item>
         <item name="colorPrimaryInverse">@color/md_theme_light_primaryInverse</item>
         <item name="colorAccent">?colorPrimary</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">@android:color/system_neutral1_50</item>
         <item name="android:windowLightStatusBar">true</item>
         <!-- Customize your theme here. -->
-        <item name="android:navigationBarColor">@android:color/system_neutral1_50</item>
         <item name="android:windowBackground">@android:color/system_neutral1_50</item>
         <item name="android:windowLightNavigationBar">true</item>
         <item name="android:textColor">@android:color/system_accent1_1000</item>

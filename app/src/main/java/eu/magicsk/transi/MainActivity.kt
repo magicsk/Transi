@@ -13,13 +13,20 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.ViewGroup
+import androidx.activity.addCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
+import androidx.core.view.updatePadding
+import androidx.fragment.app.FragmentManager
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
-import com.google.android.material.color.MaterialColors
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.data.remote.responses.Stop
@@ -133,36 +140,46 @@ class MainActivity : AppCompatActivity() {
         notificationManager.createNotificationChannel(notificationChannel)
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        window?.statusBarColor = MaterialColors.getColor(window.decorView, R.attr.colorMyBackground)
-        if (supportFragmentManager.backStackEntryCount > 0) {
-            supportFragmentManager.popBackStack("tripTypeAhead", 1)
-            supportFragmentManager.popBackStack("typeAhead", 1)
-        } else {
-            @Suppress("DEPRECATION")
-            super.onBackPressed()
-        }
+    // The only activity back stack entries are the stop search overlays opened by MainFragment and TripPlannerFragment.
+    private fun closeSearch() {
+        supportFragmentManager.popBackStackImmediate("typeAhead", FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        supportFragmentManager.popBackStackImmediate("tripTypeAhead", FragmentManager.POP_BACK_STACK_INCLUSIVE)
     }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val versionName = BuildConfig.VERSION_NAME
         releaseInfoViewModel.releaseInfo.observe(this) { releaseInfo ->
             val version = releaseInfo?.tag_name
-            if (versionName != version.toString().replace("v", "") && !version.isNullOrEmpty()) {
-                val updateAlert = UpdateAlert(
-                    version.toString().replace("v", ""),
-                    releaseInfo.body,
-                    releaseInfo.assets[0].browser_download_url
-                )
-                updateAlert.show(supportFragmentManager, "updateAlert")
+            val downloadUrl = releaseInfo?.assets?.firstOrNull()?.browser_download_url
+            if (versionName != version.toString().replace("v", "") && !version.isNullOrEmpty() &&
+                downloadUrl != null && supportFragmentManager.findFragmentByTag("updateAlert") == null
+            ) {
+                UpdateAlert.newInstance(version.replace("v", ""), releaseInfo.body, downloadUrl)
+                    .show(supportFragmentManager, "updateAlert")
             }
         }
         _binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
+        ViewCompat.setOnApplyWindowInsetsListener(view) { root, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            root.updatePadding(left = bars.left, right = bars.right, bottom = ime.bottom)
+            // The top margin is the status bar strip; statusBarBackground fills it.
+            binding.navHostFragment.updateLayoutParams<ViewGroup.MarginLayoutParams> { topMargin = bars.top }
+            // While the keyboard is open the root padding already clears the navigation bar.
+            binding.navView.updatePadding(bottom = (bars.bottom - ime.bottom).coerceAtLeast(0))
+            WindowInsetsCompat.CONSUMED
+        }
+        val closeSearchOnBack = onBackPressedDispatcher.addCallback(this, supportFragmentManager.backStackEntryCount > 0) {
+            closeSearch()
+        }
+        supportFragmentManager.addOnBackStackChangedListener {
+            closeSearchOnBack.isEnabled = supportFragmentManager.backStackEntryCount > 0
+        }
         sharedPreferences = getSharedPreferences("Transi", Context.MODE_PRIVATE)!!
         loadStopList()
 
@@ -171,11 +188,7 @@ class MainActivity : AppCompatActivity() {
         val navController = navHostFragment.navController
         binding.navView.setupWithNavController(navController)
         binding.navView.setOnItemSelectedListener { item ->
-            if (supportFragmentManager.backStackEntryCount > 0) {
-                window.statusBarColor = MaterialColors.getColor(view, R.attr.colorMyBackground)
-                supportFragmentManager.popBackStackImmediate("typeAhead", 1)
-                supportFragmentManager.popBackStackImmediate("tripTypeAhead", 1)
-            }
+            if (supportFragmentManager.backStackEntryCount > 0) closeSearch()
             NavigationUI.onNavDestinationSelected(item, navController)
             true
         }
@@ -241,11 +254,17 @@ class MainActivity : AppCompatActivity() {
         }
 
 
+        // Departure and trip notifications are posted later from long presses; ask for the permission up front.
+        val notificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            emptyArray()
+        }
         locationPermissionRequest.launch(
             arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION
-            )
+            ) + notificationPermission
         )
     }
 }
