@@ -459,6 +459,9 @@ class TimetableDatabase @Inject constructor(
     private companion object {
         const val BUFFER_SIZE = 64 * 1024
     }
+
+    /** Service ids of [feed] running on [date]; for queries run inside [read]. */
+    fun runningServiceIds(db: SQLiteDatabase, feed: String, date: LocalDate): Set<String> = db.activeServiceIds(feed, date)
 }
 
 /** Query with typed bind arguments ([String], [Int] or [Long]); `rawQuery` would bind everything as text. */

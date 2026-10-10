@@ -26,6 +26,7 @@ import eu.magicsk.transi.data.remote.responses.idsbk.RaptorRequest
 import eu.magicsk.transi.data.remote.responses.idsbk.RaptorResponse
 import eu.magicsk.transi.repository.DataRepository
 import eu.magicsk.transi.repository.IdsbkSession
+import eu.magicsk.transi.timetable.OfflineRoutingEngine
 import eu.magicsk.transi.util.FetchSource
 import eu.magicsk.transi.util.PagingDates
 import eu.magicsk.transi.util.Prefs
@@ -71,11 +72,15 @@ data class TripPlannerState(
     val criteria get() = if (from != null && to != null) RecentTripSearch(from, to, arrivalDeparture, date, customDate) else null
 }
 
-/** The trip planner: both online sources, paging and recent searches. Activity-scoped, shared with the stop pickers. */
+/**
+ * The trip planner: both online sources, or for the first page the offline timetables when that is on; paging and
+ * recent searches. Activity-scoped, shared with the stop pickers.
+ */
 @HiltViewModel
 class TripPlannerViewModel @Inject constructor(
     private val repository: DataRepository,
     private val idsbk: IdsbkSession,
+    private val offlineRouting: OfflineRoutingEngine,
     private val savedStateHandle: SavedStateHandle,
     @ApplicationContext context: Context,
 ) : ViewModel() {
@@ -93,6 +98,7 @@ class TripPlannerViewModel @Inject constructor(
     private var hasLocation = false
     private var recentsLoaded = false
     private var persistJob: Job? = null
+    private var offlineJob: Job? = null
 
     /** A search waiting for the stops list, the location or a stop; true when it goes into the recents. */
     private var pendingSearch: Boolean? = null
@@ -237,12 +243,19 @@ class TripPlannerViewModel @Inject constructor(
         if (trip == null) requestSearch(record = false)
     }
 
-    private fun fetch(source: FetchSource) {
+    private fun fetch(source: FetchSource, allowOffline: Boolean = true) {
         val search = current
         val nearest = stops.nearest()
         val fromStop = search.from?.let { if (it.isActualLocation) nearest else it } ?: return
         val toStop = search.to?.let { if (it.isActualLocation) nearest else it } ?: return
         if (source != FetchSource.INITIAL && !pagingSources.add(source)) return
+        // As iOS: with the offline planner on and its database ready, the first page is planned offline; paging stays online.
+        if (source == FetchSource.INITIAL && allowOffline && offlineRouting.isReady &&
+            prefs.getBoolean(Prefs.OFFLINE_TRIP_PLANNER, false)
+        ) {
+            fetchOffline(search, fromStop, toStop)
+            return
+        }
 
         val withRaptor = source != FetchSource.MORE_IMHD && BuildConfig.R_API_KEY.isNotEmpty()
         val withImhd = source != FetchSource.MORE_RAPTOR
@@ -279,6 +292,26 @@ class TripPlannerViewModel @Inject constructor(
             if (fetchGeneration != generation) return@launch
             pagingSources.remove(source)
             onResults(source, raptorResponse != null, raptorJourneys, imhdJourneys)
+        }
+    }
+
+    private fun fetchOffline(search: TripPlannerState, fromStop: Stop, toStop: Stop) {
+        val fetchGeneration = generation
+        offlineJob?.cancel()
+        offlineJob = viewModelScope.launch {
+            val journeys = offlineRouting.plan(
+                fromStop.name, toStop.name, search.date, search.arrivalDeparture,
+                prefs.intPref(Prefs.TRIP_MAX_TRANSFERS, Prefs.TRIP_MAX_TRANSFERS_DEFAULT),
+                prefs.intPref(Prefs.TRIP_MAX_WALK_DURATION, Prefs.TRIP_MAX_WALK_DURATION_DEFAULT),
+            )
+            if (fetchGeneration != generation) return@launch
+            // Null when the database closed meanwhile (deleted or being updated): online after all.
+            if (journeys == null) {
+                fetch(FetchSource.INITIAL, allowOffline = false)
+            } else {
+                // Their o- ids page neither online source.
+                onResults(FetchSource.INITIAL, raptorAnswered = false, raptor = journeys, imhd = null)
+            }
         }
     }
 

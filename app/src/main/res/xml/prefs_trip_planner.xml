@@ -38,5 +38,13 @@
             app:useSimpleSummaryProvider="true"
             app:iconSpaceReserved="false"
             android:defaultValue="-1" />
+
+        <!-- Turning it on also turns on offline timetables (SettingsFragment.bindTripPlanner). -->
+        <SwitchPreferenceCompat
+            app:key="offline_trip_planner"
+            app:title="@string/offline_trip_planner"
+            app:summary="@string/offline_trip_planner_summary"
+            app:iconSpaceReserved="false"
+            android:defaultValue="false" />
     </PreferenceCategory>
 </PreferenceScreen>

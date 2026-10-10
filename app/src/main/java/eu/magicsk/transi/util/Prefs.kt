@@ -35,6 +35,8 @@ object Prefs {
     /** Hours to keep cached trips: -1 forever, 0 until the app restarts. */
     const val TRIP_SAVE_DURATION = "trip_save_duration"
     const val TRIP_SAVE_DURATION_DEFAULT = -1
+    /** Boolean, default false: plan the first page of trips with the offline timetables once they are downloaded. */
+    const val OFFLINE_TRIP_PLANNER = "offline_trip_planner"
     /** JSON list of [eu.magicsk.transi.data.models.RecentTripSearch], newest first. */
     const val TRIP_RECENT_SEARCHES = "trip_recent_searches"
     /** cacheID of the search whose trips were cached last. */

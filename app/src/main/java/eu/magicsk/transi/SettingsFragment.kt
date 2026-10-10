@@ -232,6 +232,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun bindTripPlanner() {
         showValueInTitle(Prefs.TRIP_MAX_WALK_DURATION, R.string.trip_planner_max_walk)
         showValueInTitle(Prefs.TRIP_MAX_TRANSFERS, R.string.trip_planner_max_transfers)
+        // Planning offline needs the timetable database: turning this on turns offline timetables on (and downloads them).
+        requireNotNull(findPreference<SwitchPreferenceCompat>(Prefs.OFFLINE_TRIP_PLANNER)).setOnPreferenceChangeListener { _, enabled ->
+            if (enabled == true && !timetableDatabase.isOfflineEnabled) {
+                timetableDatabase.setOfflineEnabled(true)
+                findPreference<SwitchPreferenceCompat>(Prefs.OFFLINE_TIMETABLES)?.isChecked = true
+            }
+            true
+        }
     }
 
     private fun showValueInTitle(key: String, @StringRes format: Int) {
