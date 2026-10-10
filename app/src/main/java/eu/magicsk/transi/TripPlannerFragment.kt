@@ -18,6 +18,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.activityViewModels
 import androidx.viewpager2.widget.ViewPager2
+import androidx.core.graphics.ColorUtils
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointForward
@@ -37,6 +38,7 @@ import eu.magicsk.transi.util.isActualLocation
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TripPlannerState
 import eu.magicsk.transi.view_models.TripPlannerViewModel
+import eu.magicsk.transi.util.stopTypeIcon
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -267,17 +269,18 @@ class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
     }
 
     private fun showStopIcon(icon: ImageView, stop: Stop?) {
-        val (drawable, background) = when {
-            stop == null -> R.drawable.ic_filled_circle to null
-            stop.isActualLocation -> R.drawable.ic_location_on to R.color.blue_100
-            stop.type == "train" -> R.drawable.ic_train to R.color.blue_100
-            stop.type == "tram" -> R.drawable.ic_tram to R.color.yellow_100
-            stop.type == "regio_bus" -> R.drawable.ic_regiobus to R.color.yellow_100
-            else -> R.drawable.ic_bus to R.color.red_100
+        if (stop == null) {
+            icon.setImageResource(R.drawable.ic_filled_circle)
+            icon.imageTintList = null
+            icon.backgroundTintList =
+                ColorStateList.valueOf(MaterialColors.getColor(icon, com.google.android.material.R.attr.colorSurfaceVariant))
+            return
         }
+        val (drawable, color) = stopTypeIcon(if (stop.isActualLocation) "location" else stop.type)
+        val tint = ContextCompat.getColor(icon.context, color)
         icon.setImageResource(drawable)
-        icon.backgroundTintList = background?.let { ContextCompat.getColorStateList(icon.context, it) }
-            ?: ColorStateList.valueOf(MaterialColors.getColor(icon, com.google.android.material.R.attr.colorSurfaceVariant))
+        icon.imageTintList = ColorStateList.valueOf(tint)
+        icon.backgroundTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(tint, 0x33))
     }
 
     private fun EditText.showText(value: String) {

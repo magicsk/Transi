@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.databinding.StopsListItemBinding
+import eu.magicsk.transi.util.stopTypeIcon
 
 data class StopItem(val stop: Stop, val favorite: Boolean)
 
@@ -63,14 +64,7 @@ class TypeAheadAdapter(
             stopName.isSelected = true
             stopFavorite.isVisible = favorite
             directionBtn.isVisible = showDirections && stop.id > 0
-            val (icon, color) = when (stop.type) {
-                "bus" -> R.drawable.ic_bus to R.color.table_red
-                "regio_bus" -> R.drawable.ic_regiobus to R.color.table_yellow
-                "train" -> R.drawable.ic_train to R.color.table_blue
-                "location" -> R.drawable.ic_location_on to R.color.table_blue
-                "map" -> R.drawable.ic_map to R.color.table_green
-                else -> R.drawable.ic_bus to R.color.table_grey
-            }
+            val (icon, color) = stopTypeIcon(stop.type)
             val tint = ContextCompat.getColor(context, color)
             stopIconDrawable.setImageResource(icon)
             stopIconDrawable.imageTintList = ColorStateList.valueOf(tint)

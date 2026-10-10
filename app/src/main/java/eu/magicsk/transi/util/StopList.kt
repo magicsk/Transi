@@ -79,3 +79,13 @@ fun toggleFavoriteStop(context: Context, stopId: Int) {
         putString(Prefs.FAVORITE_STOP_IDS, ids.joinToString(","))
     }
 }
+
+/** Icon and tint for a stop type, as on iOS: bus red, regional bus yellow, train and location blue. */
+fun stopTypeIcon(type: String?): Pair<Int, Int> = when (type) {
+    "bus" -> R.drawable.ic_bus to R.color.table_red
+    "regio_bus" -> R.drawable.ic_regiobus to R.color.table_yellow
+    "train" -> R.drawable.ic_train to R.color.table_blue
+    "location" -> R.drawable.ic_location_on to R.color.table_blue
+    "map" -> R.drawable.ic_map to R.color.table_green
+    else -> R.drawable.ic_bus to R.color.table_grey
+}
