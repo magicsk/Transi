@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "My pass" zones, wired by PassZonesFragment, which adds a row per catalogue zone after "100 + 101". -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <SwitchPreferenceCompat
+        app:defaultValue="false"
+        app:iconSpaceReserved="false"
+        app:key="pass_network_wide"
+        app:title="@string/pass_network_wide" />
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:key="pass_zones_list">
+
+        <CheckBoxPreference
+            app:iconSpaceReserved="false"
+            app:key="pass_zone_100"
+            app:persistent="false"
+            app:summary="@string/pass_zone_city_description"
+            app:title="@string/pass_zone_city" />
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="pass_zones_loading"
+            app:selectable="false"
+            app:summary="@string/pass_zones_loading"
+            app:widgetLayout="@layout/preference_widget_progress" />
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="pass_zones_failed"
+            app:selectable="false"
+            app:summary="@string/pass_zones_failed" />
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="pass_zones_retry"
+            app:title="@string/retry" />
+
+        <!-- Last, after the zone rows added in code. -->
+        <Preference
+            android:order="10000"
+            app:iconSpaceReserved="false"
+            app:selectable="false"
+            app:summary="@string/pass_zones_footer" />
+    </PreferenceCategory>
+</PreferenceScreen>

@@ -9,6 +9,11 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
+    <!-- The IDS BK app, opened from a trip's ticket button when installed. -->
+    <queries>
+        <package android:name="com.casperise.urbi.online.bid" />
+    </queries>
+
     <application
         android:name=".TransiApplication"
         android:allowBackup="true"

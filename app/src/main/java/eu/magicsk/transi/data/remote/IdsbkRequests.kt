@@ -2,6 +2,7 @@ package eu.magicsk.transi.data.remote
 
 import android.os.Parcelable
 import eu.magicsk.transi.BuildConfig
+import eu.magicsk.transi.data.models.TicketCatalogue
 import eu.magicsk.transi.data.remote.responses.idsbk.*
 import kotlinx.parcelize.Parcelize
 import retrofit2.http.*
@@ -33,6 +34,14 @@ interface IdsbkRequests {
         @Header("Content-Type") contentType: String = "application/json",
         @Header("User-Agent") userAgent: String = "ProdProd/204 CFNetwork/3826.600.41 Darwin/24.6.0",
     ): RaptorResponse
+
+    /** The ticket catalogue; [cacheKey] is the cached catalogue's key, or "null" without one. */
+    @GET("ticket/types/{cacheKey}")
+    suspend fun getTicketTypes(
+        @Path("cacheKey") cacheKey: String,
+        @Header("X-Session") xSession: String,
+        @Header("X-API-Key") apiKey: String = BuildConfig.IDSBK_API_KEY,
+    ): TicketCatalogue
 
     @GET("station/{station}/timetable/{date}/{minutes}/1")
     suspend fun getStationDepartures(

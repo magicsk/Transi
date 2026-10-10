@@ -15,13 +15,19 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.EditTextPreference
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import com.google.android.material.color.MaterialColors
+import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.datepicker.MaterialPickerOnPositiveButtonClickListener
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
+import eu.magicsk.transi.data.models.BRATISLAVA
+import eu.magicsk.transi.data.models.SeasonPass
 import eu.magicsk.transi.data.remote.responses.Stop
+import eu.magicsk.transi.repository.TicketCatalogueProvider
 import eu.magicsk.transi.timetable.TimetableDatabase
 import eu.magicsk.transi.timetable.TimetableDownloadState
 import eu.magicsk.transi.timetable.showWhileViewExists
@@ -29,11 +35,17 @@ import eu.magicsk.transi.timetable.text
 import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.util.bindTripPlannerPreferences
 import eu.magicsk.transi.util.readCachedStops
+import eu.magicsk.transi.util.seasonPass
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import javax.inject.Inject
+
+private const val PASS_DATE_PICKER = "pass_valid_from_picker"
 
 @AndroidEntryPoint
 class SettingsFragment : PreferenceFragmentCompat() {
@@ -47,6 +59,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             R.xml.prefs_general,
             R.xml.prefs_timetables,
             R.xml.prefs_trip_planner,
+            R.xml.prefs_my_pass,
             R.xml.prefs_developer,
         )
         setPreferencesFromResource(sections.first(), rootKey)
@@ -54,6 +67,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         bindGeneral()
         bindTimetables()
         bindTripPlannerPreferences(this)
+        bindMyPass()
         bindDeveloper()
     }
 
@@ -135,6 +149,82 @@ class SettingsFragment : PreferenceFragmentCompat() {
             stops = withContext(Dispatchers.IO) { readCachedStops(context) }.orEmpty()
             updateSummary()
         }
+    }
+
+    /** "My pass": the pass length, its first day (a Bratislava day), its zones and whether it was bought with a bank card. */
+    private fun bindMyPass() {
+        val prefs = Prefs.get(requireContext())
+        val days = requireNotNull(findPreference<ListPreference>(Prefs.PASS_DAYS))
+        val validFrom = requireNotNull(findPreference<Preference>(Prefs.PASS_VALID_FROM))
+        val validUntil = requireNotNull(findPreference<Preference>("pass_valid_until"))
+        val zones = requireNotNull(findPreference<Preference>(Prefs.PASS_ZONES))
+        val passRows = listOf(
+            validFrom, validUntil, zones,
+            requireNotNull(findPreference<Preference>(Prefs.PASS_BANK_CARD)),
+            requireNotNull(findPreference<Preference>("pass_footer")),
+        )
+        fun update() {
+            val pass = prefs.seasonPass()
+            passRows.forEach { it.isVisible = pass != null }
+            if (pass == null) return
+            validFrom.summary = SeasonPass.formatDay(pass.start)
+            validUntil.summary = SeasonPass.formatDay(pass.lastDay)
+        }
+
+        days.entries = arrayOf<CharSequence>(getString(R.string.pass_none)) +
+            SeasonPass.DURATIONS.map { resources.getQuantityString(R.plurals.pass_days, it, it) }
+        days.entryValues = arrayOf<CharSequence>("0") + SeasonPass.DURATIONS.map(Int::toString)
+        days.value = prefs.getInt(Prefs.PASS_DAYS, 0).toString()
+        days.setOnPreferenceChangeListener { _, value ->
+            val selected = (value as? String)?.toIntOrNull() ?: return@setOnPreferenceChangeListener false
+            prefs.edit {
+                putInt(Prefs.PASS_DAYS, selected)
+                // A new pass starts today; clearing it forgets the date.
+                if (selected == 0) {
+                    putLong(Prefs.PASS_VALID_FROM, 0)
+                } else if (prefs.getLong(Prefs.PASS_VALID_FROM, 0) == 0L) {
+                    putLong(Prefs.PASS_VALID_FROM, LocalDate.now(BRATISLAVA).atStartOfDay(BRATISLAVA).toEpochSecond())
+                }
+            }
+            update()
+            true
+        }
+
+        // Read when the row is shown, so it is current after coming back from PassZonesFragment.
+        zones.summaryProvider = Preference.SummaryProvider<Preference> { row ->
+            val pass = prefs.seasonPass()
+            when {
+                pass == null -> null
+                pass.networkWide -> row.context.getString(R.string.pass_zones_all)
+                pass.zones.isEmpty() -> row.context.getString(R.string.pass_none)
+                else -> pass.zones.sorted().joinToString(", ")
+            }
+        }
+
+        fun listen(picker: MaterialDatePicker<*>) {
+            picker.addOnPositiveButtonClickListener(MaterialPickerOnPositiveButtonClickListener<Any?> { selection ->
+                val millis = selection as? Long ?: return@MaterialPickerOnPositiveButtonClickListener
+                // The picker's days are UTC midnights; the pass starts at that day's Bratislava midnight.
+                val day = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
+                prefs.edit { putLong(Prefs.PASS_VALID_FROM, day.atStartOfDay(BRATISLAVA).toEpochSecond()) }
+                update()
+            })
+        }
+        (childFragmentManager.findFragmentByTag(PASS_DATE_PICKER) as? MaterialDatePicker<*>)?.let(::listen)
+        validFrom.setOnPreferenceClickListener {
+            val pass = prefs.seasonPass() ?: return@setOnPreferenceClickListener false
+            val firstDay = pass.start.atZone(BRATISLAVA).toLocalDate()
+            val picker = MaterialDatePicker.Builder.datePicker()
+                .setTitleText(R.string.pass_valid_from)
+                .setSelection(firstDay.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
+                .build()
+            listen(picker)
+            picker.show(childFragmentManager, PASS_DATE_PICKER)
+            true
+        }
+
+        update()
+        TicketCatalogueProvider.from(requireContext()).load()
     }
 
     private fun bindDeveloper() {

@@ -91,5 +91,9 @@ fun getLineTextColor(lineNum: String): Int = when (lineNum) {
     else -> if (lineNum.startsWith("X") || (lineNum.toIntOrNull() ?: 0) > 200) R.color.black else R.color.white
 }
 
+/** DPB city lines: 1–199, night (N…) and replacement (X…) lines. */
+fun isCityLine(lineNum: String) =
+    lineNum.startsWith("N") || lineNum.startsWith("X") || (lineNum.toIntOrNull() ?: 0) in 1..199
+
 /** S and R trains (like "S20", "R 805") and AT lines into Austria. */
 fun isTrain(lineNum: String) = lineNum.startsWith("S") || lineNum.startsWith("R") || lineNum.startsWith("AT")

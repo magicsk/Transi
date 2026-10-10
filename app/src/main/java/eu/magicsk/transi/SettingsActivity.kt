@@ -16,6 +16,8 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // The toolbar shows the activity title, which sub-screens such as PassZonesFragment set.
+        setSupportActionBar(binding.toolbar)
         binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
         // The list in SettingsFragment takes the bottom inset.
         ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar) { toolbar, insets ->

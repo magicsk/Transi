@@ -2,6 +2,7 @@ package eu.magicsk.transi.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import eu.magicsk.transi.data.models.SeasonPass
 
 /** The app's settings file (covered by the backup rules) and every key stored in it. */
 object Prefs {
@@ -39,5 +40,29 @@ object Prefs {
     /** cacheID of the search whose trips were cached last. */
     const val TRIP_SEARCH_ID = "trip_search_id"
 
+    /** Int, default 0 (no pass): "My pass" length in days, one of [SeasonPass.DURATIONS]. */
+    const val PASS_DAYS = "pass_days"
+    /**
+     * Long, default 0 (unset): the pass's first day as epoch seconds (since 1970) of its Bratislava midnight.
+     * iOS keeps seconds since 2001 (Apple's reference date) under the same key, so the values don't carry over.
+     */
+    const val PASS_VALID_FROM = "pass_valid_from"
+    /** Comma-separated zone names, default [PASS_ZONES_DEFAULT]; "100" always comes with "101". */
+    const val PASS_ZONES = "pass_zones"
+    const val PASS_ZONES_DEFAULT = "100,101"
+    /** Boolean, default false. */
+    const val PASS_NETWORK_WIDE = "pass_network_wide"
+    /** Boolean, default false: bought with a DPB bank card, valid on city lines in zones 100 and 101 only. */
+    const val PASS_BANK_CARD = "pass_bank_card"
+
     fun get(context: Context): SharedPreferences = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 }
+
+/** "My pass" from the settings; null without one. */
+fun SharedPreferences.seasonPass(): SeasonPass? = SeasonPass.fromStored(
+    days = getInt(Prefs.PASS_DAYS, 0),
+    validFromEpochSecond = getLong(Prefs.PASS_VALID_FROM, 0L),
+    zones = getString(Prefs.PASS_ZONES, null) ?: Prefs.PASS_ZONES_DEFAULT,
+    networkWide = getBoolean(Prefs.PASS_NETWORK_WIDE, false),
+    bankCard = getBoolean(Prefs.PASS_BANK_CARD, false),
+)

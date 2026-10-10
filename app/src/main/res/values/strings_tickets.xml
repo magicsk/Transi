@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings: My pass -->
+    <string name="pass_section">My pass</string>
+    <string name="pass_title">Pass</string>
+    <string name="pass_none">None</string>
+    <plurals name="pass_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <string name="pass_valid_from">Valid from</string>
+    <string name="pass_valid_until">Valid until</string>
+    <string name="pass_zones">Zones</string>
+    <string name="pass_zones_all">All zones</string>
+    <string name="pass_bank_card">Bought with a bank card (city lines only)</string>
+    <string name="pass_bank_card_footer">Passes bought with a bank card from DPB are valid only on Bratislava city lines in zones 100 and 101.</string>
+
+    <!-- Settings: My pass zones -->
+    <string name="pass_network_wide">All zones (network-wide)</string>
+    <string name="pass_zone_city">100 + 101</string>
+    <string name="pass_zone_city_description">Bratislava</string>
+    <string name="pass_zones_loading">Loading regional zones…</string>
+    <string name="pass_zones_failed">Regional zones couldn\'t be loaded. Check your connection.</string>
+    <string name="pass_zones_footer">Zone 100 is sold only together with 101.</string>
+
+    <!-- Trip ticket coverage -->
+    <string name="ticket_covered">Covered by your pass</string>
+    <string name="ticket_covered_until">until %s</string>
+    <string name="ticket_open_ids_bk">Open IDS BK</string>
+    <string name="ticket_open_ids_bk_action">open the IDS BK app, or its Play Store page if the app isn\'t installed</string>
+    <string name="ticket_pass_expired">Your pass expired on %s</string>
+    <string name="ticket_pass_ends">Your pass ends on %s, before this trip</string>
+    <plurals name="ticket_pass_covers">
+        <item quantity="one">Your pass covers zone %s</item>
+        <item quantity="other">Your pass covers zones %s</item>
+    </plurals>
+    <string name="ticket_not_covered">Your pass doesn\'t cover this trip</string>
+    <string name="ticket_mismatch_bank_card">Bank-card passes are valid only on city lines in zones 100 and 101</string>
+    <plurals name="ticket_mismatch_zones">
+        <item quantity="one">Zone %s isn\'t on your pass</item>
+        <item quantity="other">Zones %s aren\'t on your pass</item>
+    </plurals>
+    <plurals name="ticket_mismatch_regional_bus">
+        <item quantity="one">Zone %s isn\'t on your pass. Regional buses need a ticket for the whole trip.</item>
+        <item quantity="other">Zones %s aren\'t on your pass. Regional buses need a ticket for the whole trip.</item>
+    </plurals>
+    <string name="ticket_buy">Buy ticket</string>
+    <plurals name="ticket_buy_for">
+        <item quantity="one">Buy ticket for zone %s</item>
+        <item quantity="other">Buy ticket for zones %s</item>
+    </plurals>
+    <plurals name="ticket_zones">
+        <item quantity="one">%d zone</item>
+        <item quantity="other">%d zones</item>
+    </plurals>
+    <string name="ticket_all_zones">all zones</string>
+    <!-- Action · duration · zones · price, like "Buy ticket · 30 min, 2 zones · €1.09". -->
+    <string name="ticket_buy_label">%1$s · %2$d min, %3$s · %4$s</string>
+    <plurals name="ticket_minutes">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+    <!-- TalkBack label of the buy button: action, duration, zones, price. -->
+    <string name="ticket_buy_description">%1$s, %2$s, %3$s, %4$s, basic fare</string>
+    <string name="ticket_basic_fare">Basic fare</string>
+    <string name="ticket_buy_in_ids_bk">Buy ticket in IDS BK</string>
+</resources>

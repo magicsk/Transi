@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keys and defaults match eu.magicsk.transi.util.Prefs; wired by SettingsFragment.bindMyPass. -->
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="@string/pass_section">
+
+        <!-- Not persisted as a string: bindMyPass stores the days as an Int and sets the entries. -->
+        <ListPreference
+            app:dialogTitle="@string/pass_title"
+            app:iconSpaceReserved="false"
+            app:key="pass_days"
+            app:persistent="false"
+            app:title="@string/pass_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="pass_valid_from"
+            app:persistent="false"
+            app:title="@string/pass_valid_from" />
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="pass_valid_until"
+            app:persistent="false"
+            app:selectable="false"
+            app:title="@string/pass_valid_until" />
+
+        <Preference
+            app:fragment="eu.magicsk.transi.PassZonesFragment"
+            app:iconSpaceReserved="false"
+            app:key="pass_zones"
+            app:persistent="false"
+            app:title="@string/pass_zones" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:iconSpaceReserved="false"
+            app:key="pass_bank_card"
+            app:singleLineTitle="false"
+            app:title="@string/pass_bank_card" />
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="pass_footer"
+            app:selectable="false"
+            app:summary="@string/pass_bank_card_footer" />
+    </PreferenceCategory>
+</PreferenceScreen>
