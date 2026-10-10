@@ -1,6 +1,7 @@
 package eu.magicsk.transi.view_models
 
 import eu.magicsk.transi.data.remote.responses.Stop
+import eu.magicsk.transi.util.nearestStopId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -84,6 +85,15 @@ class TableStopChooserTest {
         assertFalse(chooser.follow)
         chooser.onStops(sorted, located = true, downloaded = false)
         assertEquals(10, chooser.current?.id)
+    }
+
+    @Test
+    fun restoredFollowBeatsDefaultStop() {
+        val chooser = TableStopChooser(-1) { 20 }
+        chooser.onLocationAvailable(true)
+        chooser.onStops(sorted, located = true, downloaded = true)
+        assertEquals(nearestStopId(sorted), chooser.current?.id)
+        assertTrue(chooser.follow)
     }
 
     @Test

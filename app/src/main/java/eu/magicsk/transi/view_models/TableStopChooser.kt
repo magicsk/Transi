@@ -8,7 +8,7 @@ import eu.magicsk.transi.util.nearestStopId
  * kept free of Android types so the order in which stops and the location arrive can be tested.
  */
 class TableStopChooser(
-    /** A stop picked before process death, shown with the first stop list. */
+    /** The table stop before process death: a stop id, or -1 when it followed the nearest stop. */
     private var restoredStopId: Int? = null,
     private val defaultStopId: () -> Int,
 ) {
@@ -24,13 +24,18 @@ class TableStopChooser(
     var locationAvailable: Boolean? = null
         private set
     private var located = false
+    private var restoredFollow = false
 
     /** A new stop list, sorted by distance when [located]; [downloaded] when /stops just returned it. */
     fun onStops(sorted: List<Stop>, located: Boolean, downloaded: Boolean) {
         if (sorted.isEmpty()) return
         stops = sorted
         this.located = located
-        restoredStopId?.let(::change)
+        when (val restored = restoredStopId) {
+            null -> Unit
+            -1 -> restoredFollow = true
+            else -> change(restored)
+        }
         restoredStopId = null
         when {
             located -> showNearestStop()
@@ -72,7 +77,9 @@ class TableStopChooser(
 
     // A valid default turns off nearest-stop following, so later location fixes keep it.
     private fun showDefaultStop() {
-        val defaultStopId = defaultStopId()
+        // Following before process death beats the default stop once.
+        val defaultStopId = if (restoredFollow) -1 else defaultStopId()
+        restoredFollow = false
         if (defaultStopId > 0 && stops.any { it.id == defaultStopId }) {
             change(defaultStopId)
         } else {

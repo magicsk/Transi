@@ -72,7 +72,7 @@ class MainViewModel @Inject constructor(
     private fun choose(action: () -> Unit) {
         action()
         // Kept across process death: the stop picked by hand, or null while following the nearest stop.
-        chooser.current?.let { savedState[SAVED_TABLE_STOP_ID] = it.id.takeIf { !chooser.follow } }
+        chooser.current?.let { savedState[SAVED_TABLE_STOP_ID] = if (chooser.follow) -1 else it.id }
         if (followLocation.value != chooser.follow) followLocation.value = chooser.follow
         if (tableStop.value !== chooser.current) tableStop.value = chooser.current
     }
