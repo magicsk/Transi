@@ -1,0 +1,2 @@
+# Windows wrapper script must keep CRLF; Git stores it normalized.
+*.bat text eol=crlf

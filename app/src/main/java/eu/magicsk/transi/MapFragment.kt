@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.os.BundleCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -40,7 +41,7 @@ class MapFragment : SupportMapFragment() {
     private val tileProvider: TileProvider = object : UrlTileProvider(256, 256) {
         override fun getTileUrl(x: Int, y: Int, zoom: Int): URL? {
 
-            val url = "https://tile.thunderforest.com/transport/${zoom}/$x/$y@2x.png?apikey=6170aad10dfd42a38d4d8c709a536f38"
+            val url = "https://tile.thunderforest.com/transport/${zoom}/$x/$y@2x.png?apikey=${BuildConfig.THUNDERFOREST_API_KEY}"
             return if (!checkTileExists(zoom)) {
                 null
             } else try {
@@ -90,7 +91,7 @@ class MapFragment : SupportMapFragment() {
         override fun onBeforeClusterItemRendered(
             item: Place, markerOptions: MarkerOptions
         ) {
-            markerOptions.title(item.name).position(item.latLng).icon(markerIcon)
+            markerOptions.title(item.name).position(item.position).icon(markerIcon)
         }
 
         override fun onClusterItemRendered(clusterItem: Place, marker: Marker) {
@@ -103,18 +104,17 @@ class MapFragment : SupportMapFragment() {
         val id: Int,
         val name: String,
         val type: String,
-        val latLng: LatLng,
+        override val position: LatLng,
     ) : ClusterItem {
-        override fun getPosition(): LatLng = latLng
-        override fun getTitle(): String = name
-        override fun getSnippet(): String = name
-        override fun getZIndex(): Float = 0f
+        override val title: String get() = name
+        override val snippet: String get() = name
+        override val zIndex: Float get() = 0f
     }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        stopsList = requireArguments().getSerializable("stopsList") as Stops
+        stopsList = BundleCompat.getSerializable(requireArguments(), "stopsList", Stops::class.java) ?: Stops()
         origin = requireArguments().getString("origin").toString()
         stopsList.forEach { stop ->
             if (stop.id != 0) placesList.add(
@@ -134,12 +134,9 @@ class MapFragment : SupportMapFragment() {
 
     @SuppressLint("RestrictedApi")
     private fun addMarkers(googleMap: GoogleMap) {
-        val clusterManager = ClusterManager<Place>(activity, googleMap)
-        clusterManager.renderer = context?.let {
-            PlaceRenderer(
-                it, googleMap, clusterManager
-            )
-        }
+        val context = requireContext()
+        val clusterManager = ClusterManager<Place>(context, googleMap)
+        clusterManager.renderer = PlaceRenderer(context, googleMap, clusterManager)
 
         // Set custom info window adapter
         clusterManager.markerCollection.setOnInfoWindowClickListener { marker ->
@@ -190,12 +187,15 @@ class MapFragment : SupportMapFragment() {
         )
         findNavController().previousBackStackEntry?.savedStateHandle
         getMapAsync { googleMap ->
-            googleMap.mapType = MAP_TYPE_NONE
-            googleMap.addTileOverlay(
-                TileOverlayOptions()
-                    .fadeIn(false)
-                    .tileProvider(tileProvider)
-            )
+            // Without a Thunderforest key, keep the default Google basemap instead of requesting tiles.
+            if (BuildConfig.THUNDERFOREST_API_KEY.isNotEmpty()) {
+                googleMap.mapType = MAP_TYPE_NONE
+                googleMap.addTileOverlay(
+                    TileOverlayOptions()
+                        .fadeIn(false)
+                        .tileProvider(tileProvider)
+                )
+            }
             googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds.build(), 50))
 //            if (isDarkTheme(resources)) googleMap.setMapStyle(MapStyleOptions(resources.getString(R.string.style_json)))
             googleMap.uiSettings.isMapToolbarEnabled = false

@@ -17,13 +17,13 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.os.BundleCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.color.MaterialColors
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.MHDTableAdapter
 import eu.magicsk.transi.adapters.TableInfoAdapter
@@ -55,8 +55,7 @@ class MainFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         infoDismissed = savedInstanceState?.getBoolean("infoDismissed") ?: infoDismissed
-        @Suppress("DEPRECATION")
-        selected = savedInstanceState?.getSerializable("selectedStop") as? Stop ?: selected
+        selected = savedInstanceState?.let { BundleCompat.getSerializable(it, "selectedStop", Stop::class.java) } ?: selected
         nearestSwitching = savedInstanceState?.getBoolean("nearestSwitching") ?: nearestSwitching
         sharedPreferences = context?.getSharedPreferences("Transi", Context.MODE_PRIVATE)!!
     }
@@ -138,8 +137,8 @@ class MainFragment : Fragment() {
                 if (location != null && stopList.size > 1 && nearestSwitching && selected != stopList[0]) {
                     val id = selected.id
                     selected = stopList[0]
-                    MHDTableStopName?.text = selected.name
-                    positionBtn?.icon = ResourcesCompat.getDrawable(
+                    MHDTableStopName.text = selected.name
+                    positionBtn.icon = ResourcesCompat.getDrawable(
                         resources, R.drawable.ic_my_location, context?.theme
                     )
                     if (id != selected.id) {
@@ -149,7 +148,6 @@ class MainFragment : Fragment() {
             }
             mainViewModel.selectedStop.observe(viewLifecycleOwner) {
                 it?.let { selectedStop ->
-                    activity?.window?.statusBarColor = MaterialColors.getColor(view, R.attr.colorMyBackground)
                     selected = selectedStop
                     nearestSwitching = false
                     editText.clearFocus()
@@ -233,7 +231,7 @@ class MainFragment : Fragment() {
                     false
 
                 override fun onSwiped(h: RecyclerView.ViewHolder, dir: Int) {
-                    tableInfoAdapter.removeAt(h.adapterPosition)
+                    tableInfoAdapter.removeAt(h.bindingAdapterPosition)
                     infoDismissed = true
                 }
             }).attachToRecyclerView(MHDTableInfoText)
@@ -252,8 +250,7 @@ class MainFragment : Fragment() {
 
     override fun onViewStateRestored(savedInstanceState: Bundle?) {
         super.onViewStateRestored(savedInstanceState)
-        @Suppress("DEPRECATION")
-        tableState = savedInstanceState?.getParcelable("MHDTableAdapter")
+        tableState = savedInstanceState?.let { BundleCompat.getParcelable(it, "MHDTableAdapter", Parcelable::class.java) }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

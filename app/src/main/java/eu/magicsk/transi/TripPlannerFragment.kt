@@ -16,13 +16,13 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.core.os.BundleCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.color.MaterialColors
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.TripPlannerAdapter
 import eu.magicsk.transi.data.models.SelectedTrip
@@ -209,7 +209,6 @@ class TripPlannerFragment : Fragment() {
                 if (trip != null && (loadingMore || loadingNewTrip)) {
                     findViewById<LinearLayout>(R.id.progressBar_bg)?.isVisible = false
                     findViewById<ProgressBar>(R.id.progressBar_ic)?.isVisible = false
-                    println(trip)
                     val parsedTrip =
                         tripPlannerJsonParser(trip, supportFragmentManager, requireContext())
                     if (parsedTrip != null) {
@@ -269,8 +268,6 @@ class TripPlannerFragment : Fragment() {
             }
             tripPlannerViewModel.clear()
             tripPlannerViewModel.selectedFromStop.observe(viewLifecycleOwner) {
-                activity?.window?.statusBarColor =
-                    MaterialColors.getColor(view, R.attr.colorMyBackground)
                 if (selectedTrip.from != it?.id && it != null) {
                     editTextFrom.setText(it.name)
                     lastFrom = it.name
@@ -290,8 +287,6 @@ class TripPlannerFragment : Fragment() {
 
             }
             tripPlannerViewModel.selectedToStop.observe(viewLifecycleOwner) {
-                activity?.window?.statusBarColor =
-                    MaterialColors.getColor(view, R.attr.colorMyBackground)
                 if (selectedTrip.to != it?.id && it != null) {
                     editTextTo.setText(it.name)
                     lastTo = it.name
@@ -471,11 +466,11 @@ class TripPlannerFragment : Fragment() {
 
     override fun onViewStateRestored(savedInstanceState: Bundle?) {
         super.onViewStateRestored(savedInstanceState)
-        listState = savedInstanceState?.getParcelable("tripPlannerAdapter")
-        val thar = savedInstanceState?.getParcelableArray("tripHolder") as? Array<Trip>
-        tripHolder = thar?.toMutableList() ?: tripHolder
-        selectedTrip =
-            savedInstanceState?.getSerializable("selectedTrip") as? SelectedTrip ?: selectedTrip
+        listState = savedInstanceState?.let { BundleCompat.getParcelable(it, "tripPlannerAdapter", Parcelable::class.java) }
+        tripHolder = savedInstanceState?.let { BundleCompat.getParcelableArray(it, "tripHolder", Trip::class.java) }
+            ?.filterIsInstance<Trip>()?.toMutableList() ?: tripHolder
+        selectedTrip = savedInstanceState?.let { BundleCompat.getSerializable(it, "selectedTrip", SelectedTrip::class.java) }
+            ?: selectedTrip
     }
 
     override fun onResume() {
