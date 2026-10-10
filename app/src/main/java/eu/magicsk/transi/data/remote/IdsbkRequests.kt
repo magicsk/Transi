@@ -23,28 +23,16 @@ interface IdsbkRequests {
         @Header("Host") host: String = "api.idsbk.sk",
     ): Session
 
-    @FormUrlEncoded
-    @POST("search")
-    suspend fun getIdsbkTrip(
-        @Field("from_station_id") from: Int,
-        @Field("to_station_id") to: Int,
-        @Field("search_from") arrivalDeparture: Int,
-        @Field("search_to_hours") hoursOfSearch: Int,
-        @Field("org_id") org: Int,
-        @Field("max_transfers") maxTransfers: Int,
-        @Field("max_walk_duration") maxWalkingDuration: Int,
-        @Header("X-API-Key") apiKey: String = BuildConfig.IDSBK_API_KEY,
-        @Header("X-Session") xSession: String = "",
-        @Header("Origin") origin: String = "https://api.idsbk.sk",
-        @Header("DNT") DNT: Int = 1,
-        @Header("Referer") referer: String = "https://api.idsbk.sk",
-        @Header("Sec-Fetch-Dest") sfd: String = "empty",
-        @Header("Sec-Fetch-Mode") sfm: String = "cors",
-        @Header("Sec-Fetch-Site") sfs: String = "same-site",
-        @Header("Sec-GPC") secGPC: String = "1",
-        @Header("Pragma") pragma: String = "no-cache",
-        @Header("Cache-Control") cacheControl: String = "no-cache",
-    ): Journeys
+    // The R-API address stays out of the source, like its key.
+    @POST
+    suspend fun getRaptorTrip(
+        @Body body: RaptorRequest,
+        @Header("x-session") xSession: String,
+        @Url url: String = "${BuildConfig.R_API_URL.trimEnd('/')}/mobile/v1/raptor/",
+        @Header("x-api-key") apiKey: String = BuildConfig.R_API_KEY,
+        @Header("Content-Type") contentType: String = "application/json",
+        @Header("User-Agent") userAgent: String = "ProdProd/204 CFNetwork/3826.600.41 Darwin/24.6.0",
+    ): RaptorResponse
 
     @GET("station/{station}/timetable/{date}/{minutes}/1")
     suspend fun getStationDepartures(

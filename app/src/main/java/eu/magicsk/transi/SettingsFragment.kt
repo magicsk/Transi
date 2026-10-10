@@ -13,6 +13,7 @@ import androidx.preference.PreferenceFragmentCompat
 import eu.magicsk.transi.timetable.bindTimetablesPreferences
 import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.util.bindGeneralPreferences
+import eu.magicsk.transi.util.bindTripPlannerPreferences
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 class SettingsFragment : PreferenceFragmentCompat() {
@@ -23,12 +24,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val sections = listOf(
             R.xml.prefs_general,
             R.xml.prefs_timetables,
+            R.xml.prefs_trip_planner,
             R.xml.prefs_developer,
         )
         setPreferencesFromResource(sections.first(), rootKey)
         sections.drop(1).forEach(::addPreferencesFromResource)
         bindGeneralPreferences(this)
         bindTimetablesPreferences(this)
+        bindTripPlannerPreferences(this)
         bindDeveloper()
     }
 

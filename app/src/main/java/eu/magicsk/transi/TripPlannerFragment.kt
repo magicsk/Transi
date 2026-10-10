@@ -1,504 +1,300 @@
 package eu.magicsk.transi
 
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
-import android.content.Context
+import android.animation.ValueAnimator
 import android.content.Intent
-import android.location.Location
+import android.content.res.ColorStateList
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.os.Parcelable
-import android.text.format.DateFormat
-import android.view.LayoutInflater
+import android.view.HapticFeedbackConstants
 import android.view.View
-import android.view.ViewGroup
-import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.Toast
-import androidx.core.os.BundleCompat
+import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.activityViewModels
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.datepicker.CalendarConstraints
+import com.google.android.material.datepicker.DateValidatorPointForward
+import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.datepicker.MaterialPickerOnPositiveButtonClickListener
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import dagger.hilt.android.AndroidEntryPoint
-import eu.magicsk.transi.adapters.TripPlannerAdapter
-import eu.magicsk.transi.data.models.SelectedTrip
+import eu.magicsk.transi.adapters.TripPlannerPage
+import eu.magicsk.transi.adapters.TripPlannerPagerAdapter
+import eu.magicsk.transi.data.models.ArrivalDeparture
+import eu.magicsk.transi.data.models.BRATISLAVA
+import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.FragmentTripPlannerBinding
-import eu.magicsk.transi.util.ErrorAlert
-import eu.magicsk.transi.util.Trip
-import eu.magicsk.transi.util.addOneMinute
-import eu.magicsk.transi.util.tripPlannerJsonParser
+import eu.magicsk.transi.util.isActualLocation
 import eu.magicsk.transi.view_models.MainViewModel
+import eu.magicsk.transi.view_models.TripPlannerState
 import eu.magicsk.transi.view_models.TripPlannerViewModel
-import java.util.*
-
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import kotlin.math.roundToInt
 
 @AndroidEntryPoint
-class TripPlannerFragment : Fragment() {
-    private var _binding: FragmentTripPlannerBinding? = null
-    private val binding get() = _binding!!
-    private val tripPlannerAdapter = TripPlannerAdapter(mutableListOf())
-    private val typeAheadFragment = TypeAheadFragment()
-    private val tripViewModel: TripPlannerViewModel by viewModels()
-    private var tripHolder: MutableList<Trip> = mutableListOf()
-    private var selectedTripCalendar = Calendar.getInstance()
-    private var selectedTrip = SelectedTrip()
-    private var waitingForLocation: Boolean = true
+class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
+    private val viewModel: TripPlannerViewModel by activityViewModels()
+    private val mainViewModel: MainViewModel by activityViewModels()
     private var stopList = Stops()
-    private var actualLocation: Location? = null
-    private var loadingMore: Boolean = false
-    private var loadingNewTrip: Boolean = false
-    private var listState: Parcelable? = null
-    private var lastFrom: String = ""
-    private var lastTo: String = ""
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = FragmentTripPlannerBinding.inflate(inflater, container, false)
-        return binding.root
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-
-
-    private fun setSelectedTrip(
-        v: Int = selectedTrip.v,
-        from: Int? = selectedTrip.from,
-        to: Int? = selectedTrip.to,
-        date: String = selectedTrip.date,
-        time: String = selectedTrip.time,
-        arrivalDeparture: Int = selectedTrip.arrivalDeparture,
-        features: String = selectedTrip.features,
-        preference: Int = selectedTrip.preference,
-        moreTimeForTransfer: Int = selectedTrip.moreTimeForTransfer,
-        transportType: String = selectedTrip.transportType,
-        rate: String = selectedTrip.rate,
-        carriers: String = selectedTrip.carriers,
-        service: String = selectedTrip.service,
-        format: Int = selectedTrip.format
-    ) {
-        selectedTrip = SelectedTrip(
-            v,
-            from,
-            to,
-            date,
-            time,
-            arrivalDeparture,
-            features,
-            preference,
-            moreTimeForTransfer,
-            transportType,
-            rate,
-            carriers,
-            service,
-            format
-        )
-    }
-
-    private fun getTrip(
-        v: Int = selectedTrip.v,
-        from: Int? = selectedTrip.from,
-        to: Int? = selectedTrip.to,
-        date: String = selectedTrip.date,
-        time: String = selectedTrip.time,
-        arrivalDeparture: Int = selectedTrip.arrivalDeparture,
-        features: String = selectedTrip.features,
-        preference: Int = selectedTrip.preference,
-        moreTimeForTransfer: Int = selectedTrip.moreTimeForTransfer,
-        transportType: String = selectedTrip.transportType,
-        rate: String = selectedTrip.rate,
-        carriers: String = selectedTrip.carriers,
-        service: String = selectedTrip.service,
-        format: Int = selectedTrip.format,
-        save: Boolean = true,
-    ) {
-        loadingNewTrip = true
-        if (save) {
-            setSelectedTrip(
-                v,
-                from,
-                to,
-                date,
-                time,
-                arrivalDeparture,
-                features,
-                preference,
-                moreTimeForTransfer,
-                transportType,
-                rate,
-                carriers,
-                service,
-                format
-            )
-        }
-        if (selectedTrip.to != null) {
-            activity?.findViewById<ProgressBar>(R.id.progressBar_ic)?.isVisible = true
-            if (to == null || from == null || from == to) {
-                activity?.runOnUiThread {
-                    ErrorAlert(getString(R.string.ops), getString(R.string.error400)).show(
-                        parentFragmentManager,
-                        "error"
-                    )
-                }
-            } else {
-                if ((to == 0 || from == 0) && actualLocation == null) {
-                    waitingForLocation = true
-                } else if (actualLocation != null) {
-                    val lat = actualLocation!!.latitude
-                    val lng = actualLocation!!.longitude
-                    tripViewModel.getTrip(
-                        v,
-                        if (from == 0) "c$lat,$lng" else "g$from",
-                        if (to == 0) "c$lat,$lng" else "g$to",
-                        date,
-                        time,
-                        arrivalDeparture,
-                        features,
-                        preference,
-                        moreTimeForTransfer,
-                        transportType,
-                        rate,
-                        carriers,
-                        service,
-                        format
-                    )
-                } else {
-                    activity?.runOnUiThread {
-                        ErrorAlert(getString(R.string.ops), getString(R.string.error400)).show(
-                            parentFragmentManager,
-                            "error"
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    private fun openTypeAhead(typeAheadFragment: TypeAheadFragment, origin: String) {
-        val supportFragmentManager = activity?.supportFragmentManager
-        if ((supportFragmentManager?.backStackEntryCount ?: 0) > 0) {
-            supportFragmentManager?.popBackStackImmediate("tripTypeAhead", 1)
-            if (origin == "editTextFrom") binding.editTextFrom.requestFocus() else binding.editTextTo.requestFocus()
-        } else {
-            binding.TripPlannerList.visibility = View.GONE
-            binding.tripSearchFragmentLayout.visibility = View.VISIBLE
-            typeAheadFragment.arguments?.putString("origin", origin)
-            supportFragmentManager?.beginTransaction()?.apply {
-                replace(
-                    R.id.tripSearchFragmentLayout,
-                    typeAheadFragment
-                ).addToBackStack("tripTypeAhead").commit()
-            }
-        }
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        activity?.apply {
-            tripViewModel.trip.observe(this) { trip ->
-                if (trip != null && (loadingMore || loadingNewTrip)) {
-                    findViewById<LinearLayout>(R.id.progressBar_bg)?.isVisible = false
-                    findViewById<ProgressBar>(R.id.progressBar_ic)?.isVisible = false
-                    val parsedTrip =
-                        tripPlannerJsonParser(trip, supportFragmentManager, requireContext())
-                    if (parsedTrip != null) {
-                        if (loadingMore) {
-                            loadingMore = false
-                            tripPlannerAdapter.addMoreItems(parsedTrip)
-                            tripHolder.addAll(parsedTrip)
-                        } else {
-                            tripHolder = parsedTrip
-                            tripPlannerAdapter.addItems(parsedTrip)
-                            if (!_binding?.editTextTo?.text.isNullOrEmpty()) {
-                                _binding?.TripPlannerTitle?.text =
-                                    resources.getString(R.string.tripPlannerTitle)
-                                        .format(
-                                            _binding?.editTextFrom?.text,
-                                            _binding?.editTextTo?.text
-                                        )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    private var backStackListener: FragmentManager.OnBackStackChangedListener? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
-        val tripPlannerViewModel =
-            ViewModelProvider(requireActivity())[TripPlannerViewModel::class.java]
-        binding.apply {
-            editTextFrom.clearFocus()
-            editTextTo.clearFocus()
-            TripPlannerList.adapter = tripPlannerAdapter
-            TripPlannerList.layoutManager = LinearLayoutManager(context)
-            TripPlannerTitle.isSelected = true
-            TripPlannerSettingsBtn.setOnClickListener {
-                startActivity(Intent(requireContext(), SettingsActivity::class.java))
+        val binding = FragmentTripPlannerBinding.bind(view)
+        // Both callbacks come during a layout or scroll, when the pages must not change yet.
+        val pager = binding.TripPlannerPager
+        val pagerAdapter = TripPlannerPagerAdapter { journey -> pager.post { viewModel.loadMoreIfNeeded(journey) } }
+        pager.adapter = pagerAdapter
+        binding.TripPlannerSettingsBtn.setOnClickListener {
+            startActivity(Intent(requireContext(), SettingsActivity::class.java))
+        }
+        pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                val page = pagerAdapter.pages.getOrNull(position) ?: return
+                pager.post {
+                    if (page.searchId != viewModel.state.value?.searchId) viewModel.showRecentSearch(page.searchId)
+                }
             }
+        })
 
-            mainViewModel.stopList.observe(viewLifecycleOwner) { stopsJSON ->
-                stopList = stopsJSON
-                val typeAheadBundle = Bundle()
-                typeAheadBundle.clear()
-                typeAheadBundle.putSerializable("stopsList", stopList)
-                typeAheadBundle.putBoolean("directions", false)
-                typeAheadFragment.arguments = typeAheadBundle
-                if (tripPlannerAdapter.itemCount > 0) TripPlannerTitle.text =
-                    resources.getString(R.string.tripPlannerTitle)
-                        .format(editTextFrom.text, editTextTo.text)
-            }
-            mainViewModel.actualLocation.observe(viewLifecycleOwner) { location ->
-                actualLocation = location
-                waitingForLocation = false
-                if (editTextFrom.text.isNullOrEmpty()) {
-                    editTextFrom.setText(context?.getString(R.string.actual_position))
-                    selectedTrip.from = 0
-                    tripPlannerAdapter.setFromTo(newFrom = requireContext().getString(R.string.actual_position))
-                }
-            }
-            tripPlannerViewModel.clear()
-            tripPlannerViewModel.selectedFromStop.observe(viewLifecycleOwner) {
-                if (selectedTrip.from != it?.id && it != null) {
-                    editTextFrom.setText(it.name)
-                    lastFrom = it.name
-                    tripPlannerAdapter.setFromTo(newFrom = it.name)
-                    if (editTextTo.text.isNullOrEmpty()) {
-                        setSelectedTrip(from = it.id)
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            editTextTo.requestFocus()
-                        }, 200)
-                    } else {
-                        val im: InputMethodManager? =
-                            activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
-                        im?.hideSoftInputFromWindow(view.windowToken, 0)
-                        getTrip(from = it.id)
-                    }
-                }
+        // The stops, session and location reach the planner before its state is drawn.
+        mainViewModel.stopList.observe(viewLifecycleOwner) { stops ->
+            stopList = stops
+            viewModel.setStops(stops)
+        }
+        mainViewModel.idsbkSession.observe(viewLifecycleOwner) { viewModel.setSession(it?.session) }
+        mainViewModel.actualLocation.observe(viewLifecycleOwner) { viewModel.onLocationAvailable() }
+        viewModel.state.observe(viewLifecycleOwner) { render(binding, pagerAdapter, it) }
 
-            }
-            tripPlannerViewModel.selectedToStop.observe(viewLifecycleOwner) {
-                if (selectedTrip.to != it?.id && it != null) {
-                    editTextTo.setText(it.name)
-                    lastTo = it.name
-                    getTrip(to = it.id)
-                    tripPlannerAdapter.setFromTo(newTo = it.name)
-                }
-            }
+        binding.editTextFrom.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) openTypeAhead(binding, binding.editTextFrom, ORIGIN_FROM)
+        }
+        binding.editTextTo.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) openTypeAhead(binding, binding.editTextTo, ORIGIN_TO)
+        }
+        binding.switchBtn.setOnClickListener { viewModel.swap() }
+        binding.timeDateBtn.setOnClickListener { openDatePicker() }
+        binding.adToggle.addOnButtonCheckedListener { group, checkedId, isChecked ->
+            val value = if (checkedId == R.id.arrivalBtn) ArrivalDeparture.ARRIVAL else ArrivalDeparture.DEPARTURE
+            if (!isChecked || value == viewModel.state.value?.arrivalDeparture) return@addOnButtonCheckedListener
+            group.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+            viewModel.setArrivalDeparture(value)
+        }
 
-            activity?.supportFragmentManager?.addOnBackStackChangedListener {
-                val fragment =
-                    activity?.supportFragmentManager?.findFragmentById(R.id.tripSearchFragmentLayout)
-                if (fragment == null) {
-                    _binding?.editTextFrom?.clearFocus()
-                    _binding?.editTextTo?.clearFocus()
-                    _binding?.TripPlannerList?.visibility = View.VISIBLE
-                    _binding?.tripSearchFragmentLayout?.visibility = View.GONE
-                }
-            }
+        // Pickers shown before a configuration change come back without their listeners.
+        (childFragmentManager.findFragmentByTag(DATE_PICKER) as? MaterialDatePicker<*>)?.let(::listenToDatePicker)
+        childFragmentManager.fragments.filterIsInstance<MaterialTimePicker>().forEach { picker ->
+            picker.tag?.removePrefix(TIME_PICKER_PREFIX)?.let { listenToTimePicker(picker, LocalDate.parse(it)) }
+        }
 
-            TripPlannerList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-                    if (layoutManager.findLastCompletelyVisibleItemPosition() >= tripPlannerAdapter.itemCount - 1) {
-                        if (!loadingMore) {
-                            loadingMore = true
-                            val lastTrip = tripPlannerAdapter.TripPlannerItemList.last()
-                            getTrip(date = lastTrip.date, time = addOneMinute(lastTrip.departure), save = false)
-                        }
-                    }
-                }
+        val activityFragments = requireActivity().supportFragmentManager
+        backStackListener = FragmentManager.OnBackStackChangedListener {
+            if (activityFragments.findFragmentById(R.id.tripSearchFragmentLayout) == null && binding.tripSearchFragmentLayout.isVisible) {
+                binding.editTextFrom.clearFocus()
+                binding.editTextTo.clearFocus()
+                WindowCompat.getInsetsController(requireActivity().window, view).hide(WindowInsetsCompat.Type.ime())
+                showSearchOverlay(binding, false)
+                viewModel.state.value?.let { render(binding, pagerAdapter, it) }
+            }
+        }.also(activityFragments::addOnBackStackChangedListener)
+    }
+
+    override fun onDestroyView() {
+        backStackListener?.let(requireActivity().supportFragmentManager::removeOnBackStackChangedListener)
+        backStackListener = null
+        super.onDestroyView()
+    }
+
+    private fun render(binding: FragmentTripPlannerBinding, pagerAdapter: TripPlannerPagerAdapter, state: TripPlannerState) {
+        val searching = binding.tripSearchFragmentLayout.isVisible
+        // While the type-ahead is open, the fields hold the filter being typed.
+        if (!searching) {
+            binding.editTextFrom.showText(stopName(state.from))
+            binding.editTextTo.showText(stopName(state.to))
+        }
+        showStopIcon(binding.fromIcon, state.from)
+        showStopIcon(binding.toIcon, state.to)
+        binding.adToggle.check(if (state.arrivalDeparture == ArrivalDeparture.ARRIVAL) R.id.arrivalBtn else R.id.departureBtn)
+        val date = if (state.customDate) state.date.atZone(BRATISLAVA).format(dateButtonFormat) else getString(R.string.trip_planner_now)
+        binding.timeDateBtn.text = date
+        binding.timeDateBtn.contentDescription = getString(R.string.trip_planner_date_description, date)
+
+        // With recent searches, the results page through them, oldest to newest.
+        val recentPages = state.recents.asReversed().map {
+            if (it.id == state.searchId) currentPage(it.id, state) else TripPlannerPage(it.id, it.trip, isCurrent = false)
+        }
+        // A search that is not a recent one yet still shows its state, like a missing location, last.
+        val showsCurrent = state.loading || state.journeys != null || state.error != null
+        val pages = when {
+            recentPages.isEmpty() -> listOf(currentPage(CURRENT_PAGE, state))
+            recentPages.none { it.isCurrent } && showsCurrent -> recentPages + currentPage(state.searchId, state)
+            else -> recentPages
+        }
+        pagerAdapter.submit(pages)
+        val currentIndex = pages.indexOfFirst { it.isCurrent }
+        if (currentIndex >= 0 && currentIndex != binding.TripPlannerPager.currentItem) {
+            binding.TripPlannerPager.setCurrentItem(currentIndex, ValueAnimator.areAnimatorsEnabled())
+        }
+        showPageDots(binding.TripPlannerPageDots, pages.size, currentIndex.coerceAtLeast(0), searching)
+    }
+
+    private fun currentPage(id: String, state: TripPlannerState) = TripPlannerPage(
+        id, state.journeys, isCurrent = true, state.loading, state.loadingMore, state.error, state.generation
+    )
+
+    private fun showPageDots(dots: LinearLayout, count: Int, selected: Int, searching: Boolean) {
+        dots.removeAllViews()
+        dots.isVisible = count > 1 && !searching
+        if (count <= 1) return
+        val density = resources.displayMetrics.density
+        val selectedColor = MaterialColors.getColor(dots, androidx.appcompat.R.attr.colorPrimary)
+        val otherColor = MaterialColors.getColor(dots, com.google.android.material.R.attr.colorOnSurfaceVariant)
+        repeat(count) { index ->
+            val isSelected = index == selected
+            dots.addView(View(dots.context).apply {
+                setBackgroundResource(R.drawable.trip_planner_page_dot)
+                backgroundTintList = ColorStateList.valueOf(if (isSelected) selectedColor else otherColor)
+                alpha = if (isSelected) 1f else 0.3f
+                layoutParams = LinearLayout.LayoutParams(
+                    ((if (isSelected) 16 else 6) * density).roundToInt(),
+                    (6 * density).roundToInt(),
+                ).apply { marginStart = (3.5f * density).roundToInt(); marginEnd = marginStart }
             })
+        }
+        dots.contentDescription = getString(R.string.trip_planner_recent_page, selected + 1, count)
+    }
 
-            val timePickerListener = TimePickerDialog.OnTimeSetListener { _, hours, minutes ->
-                selectedTripCalendar.set(
-                    selectedTripCalendar.get(Calendar.YEAR),
-                    selectedTripCalendar.get(Calendar.MONTH),
-                    selectedTripCalendar.get(Calendar.DAY_OF_MONTH),
-                    hours,
-                    minutes
-                )
-                getTrip(
-                    date = "${selectedTripCalendar.get(Calendar.YEAR)}-${
-                        (selectedTripCalendar.get(Calendar.MONTH) + 1).toString()
-                            .padStart(2, Char(48))
-                    }-${
-                        selectedTripCalendar.get(Calendar.DAY_OF_MONTH).toString()
-                            .padStart(2, Char(48))
-                    }",
-                    time = "${
-                        selectedTripCalendar.get(Calendar.HOUR_OF_DAY).toString()
-                            .padStart(2, Char(48))
-                    }:${selectedTripCalendar.get(Calendar.MINUTE).toString().padStart(2, Char(48))}"
-                )
-            }
+    private fun showSearchOverlay(binding: FragmentTripPlannerBinding, shown: Boolean) {
+        binding.tripSearchFragmentLayout.isVisible = shown
+        binding.TripPlannerHeader.isVisible = !shown
+        binding.TripPlannerPager.isVisible = !shown
+        binding.TripPlannerModeRow.isVisible = !shown
+        binding.TripPlannerPageDots.isVisible = !shown && binding.TripPlannerPageDots.childCount > 1
+    }
 
-            switchBtn.setOnClickListener {
-                if (stopList.isNotEmpty()) {
-                    val tempText = editTextFrom.text
-                    editTextFrom.text = editTextTo.text
-                    editTextTo.text = tempText
-                    setSelectedTrip(from = selectedTrip.to, to = selectedTrip.from)
-                    if (selectedTrip.from != null && selectedTrip.to != null) {
-                        getTrip()
-                    }
-                } else {
-                    Toast.makeText(
-                        context,
-                        context?.getString(R.string.no_connection),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-
-            }
-
-            timeDateBtn.setOnClickListener {
-                if (stopList.isNotEmpty()) {
-                    val datePickerDialog = DatePickerDialog(
-                        requireContext(),
-                        null,
-                        selectedTripCalendar.get(Calendar.YEAR),
-                        selectedTripCalendar.get(Calendar.MONTH),
-                        selectedTripCalendar.get(Calendar.DAY_OF_MONTH)
-                    )
-                    datePickerDialog.datePicker.minDate = System.currentTimeMillis() - 86400000
-                    datePickerDialog.show()
-                    datePickerDialog.setOnDateSetListener { _, year, month, day ->
-                        selectedTripCalendar.set(year, month, day)
-                        val timePickerDialog = TimePickerDialog(
-                            requireContext(),
-                            timePickerListener,
-                            selectedTripCalendar.get(Calendar.HOUR_OF_DAY),
-                            selectedTripCalendar.get(Calendar.MINUTE),
-                            DateFormat.is24HourFormat(context)
-                        )
-                        timePickerDialog.show()
-                    }
-                } else {
-                    Toast.makeText(
-                        context,
-                        context?.getString(R.string.no_connection),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-
-            adPlanBtn.setOnClickListener {
-                if (stopList.isNotEmpty()) {
-                    val toastText: String
-                    if (selectedTrip.arrivalDeparture == 0) {
-                        selectedTrip.arrivalDeparture = 1
-                        toastText = "arrival"
-                    } else {
-                        selectedTrip.arrivalDeparture = 0
-                        toastText = "departure"
-                    }
-                    getTrip()
-                    Toast.makeText(context, "Set to time of $toastText.", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(
-                        context,
-                        context?.getString(R.string.no_connection),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-
-            }
-
-            editTextFrom.setOnFocusChangeListener { _, b ->
-                if (b) {
-                    if (stopList.isNotEmpty()) {
-                        openTypeAhead(typeAheadFragment, "editTextFrom")
-                    } else {
-                        editTextFrom.clearFocus()
-                        Toast.makeText(
-                            context,
-                            context?.getString(R.string.no_connection),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
-
-
-            editTextTo.setOnFocusChangeListener { _, b ->
-                if (b) {
-                    if (stopList.isNotEmpty()) {
-                        editTextFrom.clearFocus()
-                        openTypeAhead(typeAheadFragment, "editTextTo")
-                    } else {
-                        editTextTo.clearFocus()
-                        Toast.makeText(
-                            context,
-                            context?.getString(R.string.no_connection),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
-
-            timeDateBtn.setOnLongClickListener {
-                if (stopList.isNotEmpty()) {
-                    selectedTripCalendar = Calendar.getInstance()
-                    getTrip(date = "", time = "")
-                    Toast.makeText(context, "Changed to current date and time.", Toast.LENGTH_SHORT)
-                        .show()
-                } else {
-                    Toast.makeText(
-                        context,
-                        context?.getString(R.string.no_connection),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-                true
+    private fun openTypeAhead(binding: FragmentTripPlannerBinding, field: EditText, origin: String) {
+        if (stopList.isEmpty()) {
+            field.clearFocus()
+            Toast.makeText(requireContext(), R.string.no_connection, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val fragments = requireActivity().supportFragmentManager
+        if (fragments.backStackEntryCount > 0) {
+            // Moving between the fields: the type-ahead reopens for the other one.
+            fragments.popBackStackImmediate(TYPE_AHEAD, FragmentManager.POP_BACK_STACK_INCLUSIVE)
+            field.requestFocus()
+            return
+        }
+        showSearchOverlay(binding, true)
+        val typeAhead = TypeAheadFragment().apply {
+            arguments = Bundle().apply {
+                putSerializable("stopsList", stopList)
+                putBoolean("directions", false)
+                putString("origin", origin)
             }
         }
+        fragments.beginTransaction().replace(R.id.tripSearchFragmentLayout, typeAhead).addToBackStack(TYPE_AHEAD).commit()
     }
 
-    override fun onViewStateRestored(savedInstanceState: Bundle?) {
-        super.onViewStateRestored(savedInstanceState)
-        listState = savedInstanceState?.let { BundleCompat.getParcelable(it, "tripPlannerAdapter", Parcelable::class.java) }
-        tripHolder = savedInstanceState?.let { BundleCompat.getParcelableArray(it, "tripHolder", Trip::class.java) }
-            ?.filterIsInstance<Trip>()?.toMutableList() ?: tripHolder
-        selectedTrip = savedInstanceState?.let { BundleCompat.getSerializable(it, "selectedTrip", SelectedTrip::class.java) }
-            ?: selectedTrip
+    private fun openDatePicker() {
+        val state = viewModel.state.value ?: return
+        val picker = MaterialDatePicker.Builder.datePicker()
+            .setTitleText(modeTitle(state))
+            .setSelection(state.date.atZone(BRATISLAVA).toLocalDate().utcMillis())
+            .setCalendarConstraints(
+                CalendarConstraints.Builder()
+                    .setValidator(DateValidatorPointForward.from(LocalDate.now(BRATISLAVA).minusDays(1).utcMillis()))
+                    .build()
+            )
+            .setNegativeButtonText(R.string.trip_planner_now_action)
+            .build()
+        picker.show(childFragmentManager, DATE_PICKER)
+        listenToDatePicker(picker)
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (tripHolder.isNotEmpty()) {
-            tripPlannerAdapter.addItems(tripHolder)
-            if (!_binding?.editTextTo?.text.isNullOrEmpty()) {
-                _binding?.TripPlannerTitle?.text =
-                    resources.getString(R.string.tripPlannerTitle)
-                        .format(_binding?.editTextFrom?.text, _binding?.editTextTo?.text)
-            }
+    private fun listenToDatePicker(picker: MaterialDatePicker<*>) {
+        picker.clearOnPositiveButtonClickListeners()
+        picker.clearOnNegativeButtonClickListeners()
+        picker.addOnPositiveButtonClickListener(MaterialPickerOnPositiveButtonClickListener<Any?> { selection ->
+            (selection as? Long)?.let { openTimePicker(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()) }
+        })
+        picker.addOnNegativeButtonClickListener { viewModel.resetDateToNow() }
+    }
+
+    private fun openTimePicker(day: LocalDate) {
+        val state = viewModel.state.value ?: return
+        val time = state.date.atZone(BRATISLAVA)
+        val picker = MaterialTimePicker.Builder()
+            .setTimeFormat(TimeFormat.CLOCK_24H)
+            .setHour(time.hour)
+            .setMinute(time.minute)
+            .setTitleText(modeTitle(state))
+            .setNegativeButtonText(R.string.trip_planner_now_action)
+            .build()
+        picker.show(childFragmentManager, TIME_PICKER_PREFIX + day)
+        listenToTimePicker(picker, day)
+    }
+
+    private fun listenToTimePicker(picker: MaterialTimePicker, day: LocalDate) {
+        picker.clearOnPositiveButtonClickListeners()
+        picker.clearOnNegativeButtonClickListeners()
+        picker.addOnPositiveButtonClickListener {
+            viewModel.setDate(day.atTime(picker.hour, picker.minute).atZone(BRATISLAVA).toInstant())
         }
-        if (listState != null) activity?.findViewById<RecyclerView>(R.id.TripPlannerList)?.layoutManager?.onRestoreInstanceState(
-            listState
-        )
+        picker.addOnNegativeButtonClickListener { viewModel.resetDateToNow() }
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putSerializable("selectedTrip", selectedTrip)
-        outState.putParcelableArray("tripHolder", tripHolder.toTypedArray())
-        listState =
-            activity?.findViewById<RecyclerView>(R.id.TripPlannerList)?.layoutManager?.onSaveInstanceState()
-        outState.putParcelable("tripPlannerAdapter", listState)
+    private fun modeTitle(state: TripPlannerState) = getString(
+        if (state.arrivalDeparture == ArrivalDeparture.ARRIVAL) R.string.trip_planner_arrival else R.string.trip_planner_departure
+    )
+
+    private fun stopName(stop: Stop?) = when {
+        stop == null -> ""
+        stop.isActualLocation -> getString(R.string.actual_position)
+        else -> stop.name
     }
 
+    private fun showStopIcon(icon: ImageView, stop: Stop?) {
+        val (drawable, background) = when {
+            stop == null -> R.drawable.ic_filled_circle to null
+            stop.isActualLocation -> R.drawable.ic_location_on to R.color.blue_100
+            stop.type == "train" -> R.drawable.ic_train to R.color.blue_100
+            stop.type == "tram" -> R.drawable.ic_tram to R.color.yellow_100
+            stop.type == "regio_bus" -> R.drawable.ic_regiobus to R.color.yellow_100
+            else -> R.drawable.ic_bus to R.color.red_100
+        }
+        icon.setImageResource(drawable)
+        icon.backgroundTintList = background?.let { ContextCompat.getColorStateList(icon.context, it) }
+            ?: ColorStateList.valueOf(MaterialColors.getColor(icon, com.google.android.material.R.attr.colorSurfaceVariant))
+    }
+
+    private fun EditText.showText(value: String) {
+        if (text.toString() != value) setText(value)
+    }
+
+    private fun LocalDate.utcMillis() = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+
+    private companion object {
+        const val CURRENT_PAGE = "current"
+        const val TYPE_AHEAD = "tripTypeAhead"
+        // The type-ahead finds its field by these.
+        const val ORIGIN_FROM = "editTextFrom"
+        const val ORIGIN_TO = "editTextTo"
+        const val DATE_PICKER = "tripDatePicker"
+        /** Followed by the picked day, which the time picker needs after a configuration change. */
+        const val TIME_PICKER_PREFIX = "tripTimePicker:"
+        val dateButtonFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM H:mm")
+    }
 }

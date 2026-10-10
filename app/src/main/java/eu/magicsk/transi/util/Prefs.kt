@@ -25,5 +25,17 @@ object Prefs {
     const val TIMETABLE_BASE_DB_SHA = "timetable_base_db_sha"
     const val TIMETABLE_SCHEDULE_DB_SHA = "timetable_schedule_db_sha"
 
+    const val TRIP_MAX_WALK_DURATION = "trip_max_walk_duration"
+    const val TRIP_MAX_WALK_DURATION_DEFAULT = 15
+    const val TRIP_MAX_TRANSFERS = "trip_max_transfers"
+    const val TRIP_MAX_TRANSFERS_DEFAULT = 3
+    /** Hours to keep cached trips: -1 forever, 0 until the app restarts. */
+    const val TRIP_SAVE_DURATION = "trip_save_duration"
+    const val TRIP_SAVE_DURATION_DEFAULT = -1
+    /** JSON list of [eu.magicsk.transi.data.models.RecentTripSearch], newest first. */
+    const val TRIP_RECENT_SEARCHES = "trip_recent_searches"
+    /** cacheID of the search whose trips were cached last. */
+    const val TRIP_SEARCH_ID = "trip_search_id"
+
     fun get(context: Context): SharedPreferences = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 }

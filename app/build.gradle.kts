@@ -27,7 +27,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        listOf("IDSBK_API_KEY", "THUNDERFOREST_API_KEY", "R_API_KEY").forEach { key ->
+        listOf("IDSBK_API_KEY", "THUNDERFOREST_API_KEY", "R_API_KEY", "R_API_URL").forEach { key ->
             buildConfigField("String", key, "\"${localProps.getProperty(key, "")}\"")
         }
         manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = localProps.getProperty("GOOGLE_MAPS_API_KEY", "")

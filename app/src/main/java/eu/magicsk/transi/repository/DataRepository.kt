@@ -21,39 +21,9 @@ class DataRepository @Inject constructor(
     private val githubApi: GithubRequests
 ) {
 
-    suspend fun getTrip(
-        v: Int,
-        from: String,
-        to: String,
-        date: String,
-        time: String,
-        arrivalDeparture: Int,
-        features: String,
-        preference: Int,
-        moreTimeForTransfer: Int,
-        transportType: String,
-        rate: String,
-        carriers: String,
-        service: String,
-        format: Int
-    ): Resource<String> {
+    suspend fun getTrip(from: String, to: String, date: String, time: String, arrival: Boolean): Resource<String> {
         val response = try {
-            imhdApi.getTrip(
-                v,
-                from,
-                to,
-                date,
-                time,
-                arrivalDeparture,
-                features,
-                preference,
-                moreTimeForTransfer,
-                transportType,
-                rate,
-                carriers,
-                service,
-                format
-            )
+            imhdApi.getTrip(from = from, to = to, date = date, time = time, arrivalDeparture = if (arrival) 1 else 0)
         } catch (e: Exception) {
             return Resource.Error("An unknown error occurred. $e")
         }
@@ -69,27 +39,9 @@ class DataRepository @Inject constructor(
         return Resource.Success(response)
     }
 
-    suspend fun getIdsbkTrip(
-        xSession: String,
-        from: Int,
-        to: Int,
-        arrivalDeparture: Int = 0,
-        hoursOfSearch: Int = 1,
-        org: Int = 120,
-        maxTransfers: Int = 5,
-        maxWalkingDuration: Int = 10,
-    ): Resource<Journeys> {
+    suspend fun getRaptorTrip(xSession: String, body: RaptorRequest): Resource<RaptorResponse> {
         val response = try {
-            idsbkApi.getIdsbkTrip(
-                from,
-                to,
-                arrivalDeparture,
-                hoursOfSearch,
-                org,
-                maxTransfers,
-                maxWalkingDuration,
-                xSession
-            )
+            idsbkApi.getRaptorTrip(body, xSession)
         } catch (e: Exception) {
             return Resource.Error("An unknown error occurred. $e")
         }

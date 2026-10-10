@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keys and defaults match eu.magicsk.transi.util.Prefs; wired by bindTripPlannerPreferences. -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:title="@string/trip_planner_settings"
+        app:iconSpaceReserved="false">
+
+        <SeekBarPreference
+            app:key="trip_max_walk_duration"
+            app:title="@string/trip_planner_max_walk_title"
+            app:min="0"
+            android:max="60"
+            app:seekBarIncrement="1"
+            app:showSeekBarValue="false"
+            app:updatesContinuously="true"
+            app:iconSpaceReserved="false"
+            android:defaultValue="15" />
+
+        <SeekBarPreference
+            app:key="trip_max_transfers"
+            app:title="@string/trip_planner_max_transfers_title"
+            app:min="0"
+            android:max="10"
+            app:seekBarIncrement="1"
+            app:showSeekBarValue="false"
+            app:updatesContinuously="true"
+            app:iconSpaceReserved="false"
+            android:defaultValue="3" />
+
+        <!-- Not persisted as a string: bindTripPlannerPreferences stores the hours as an Int. -->
+        <ListPreference
+            app:key="trip_save_duration"
+            app:title="@string/trip_planner_save_duration"
+            app:entries="@array/trip_planner_save_duration_entries"
+            app:entryValues="@array/trip_planner_save_duration_values"
+            app:dialogTitle="@string/trip_planner_save_duration"
+            app:persistent="false"
+            app:useSimpleSummaryProvider="true"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+</PreferenceScreen>
