@@ -22,5 +22,5 @@ data class ReleaseInfo(
     val assets: List<Asset>,
     val tarball_url: String,
     val zipball_url: String,
-    val body: String
+    val body: String?
 ) : Parcelable

@@ -35,7 +35,6 @@
 
         <receiver
             android:name=".receivers.MHDTableCancelNotificationReceiver"
-            android:enabled="true"
             android:exported="false"/>
 
         <meta-data

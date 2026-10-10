@@ -21,6 +21,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.fragment.app.FragmentManager
@@ -152,12 +153,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val versionName = BuildConfig.VERSION_NAME
         releaseInfoViewModel.releaseInfo.observe(this) { releaseInfo ->
-            val version = releaseInfo?.tag_name
+            val version = releaseInfo?.tag_name?.removePrefix("v")
             val downloadUrl = releaseInfo?.assets?.firstOrNull()?.browser_download_url
-            if (versionName != version.toString().replace("v", "") && !version.isNullOrEmpty() &&
+            if (!version.isNullOrEmpty() && version != versionName &&
                 downloadUrl != null && supportFragmentManager.findFragmentByTag("updateAlert") == null
             ) {
-                UpdateAlert.newInstance(version.replace("v", ""), releaseInfo.body, downloadUrl)
+                UpdateAlert.newInstance(version, releaseInfo.body.orEmpty(), downloadUrl)
                     .show(supportFragmentManager, "updateAlert")
             }
         }
@@ -166,12 +167,18 @@ class MainActivity : AppCompatActivity() {
         setContentView(view)
         ViewCompat.setOnApplyWindowInsetsListener(view) { root, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            root.updatePadding(left = bars.left, right = bars.right, bottom = ime.bottom)
+            val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+            // While the keyboard is open the bottom navigation hides and the root padding clears the keyboard,
+            // whose inset already includes the navigation bar (a floating keyboard reports none, hence max).
+            root.updatePadding(
+                left = bars.left,
+                right = bars.right,
+                bottom = if (imeVisible) max(insets.getInsets(WindowInsetsCompat.Type.ime()).bottom, bars.bottom) else 0
+            )
             // The top margin is the status bar strip; statusBarBackground fills it.
             binding.navHostFragment.updateLayoutParams<ViewGroup.MarginLayoutParams> { topMargin = bars.top }
-            // While the keyboard is open the root padding already clears the navigation bar.
-            binding.navView.updatePadding(bottom = (bars.bottom - ime.bottom).coerceAtLeast(0))
+            binding.navView.isVisible = !imeVisible
+            binding.navView.updatePadding(bottom = bars.bottom)
             WindowInsetsCompat.CONSUMED
         }
         val closeSearchOnBack = onBackPressedDispatcher.addCallback(this, supportFragmentManager.backStackEntryCount > 0) {
