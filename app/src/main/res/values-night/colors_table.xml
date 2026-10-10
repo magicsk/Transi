@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="table_red">#FFFF453A</color>
+    <color name="table_orange">#FFFF9F0A</color>
+    <color name="table_yellow">#FFFFD60A</color>
+    <color name="table_green">#FF30D158</color>
+    <color name="table_blue">#FF0A84FF</color>
+    <color name="table_purple">#FFBF5AF2</color>
+</resources>

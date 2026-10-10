@@ -58,10 +58,6 @@
     <color name="error" tools:keep="@color/error">#BA1B1B</color>
 
     //custom defaults
-    <color name="red_100">#FFFCE8E6</color>
-    <color name="blue_100">#FFe6eefc</color>
-    <color name="yellow_100">#FFfcf7e6</color>
-    <color name="green_100">#FFc7fcd5</color>
     <color name="red_200">#FFFC3737</color>
     <color name="red_500" tools:keep="@color/red_500">#FFD93232</color>
     <color name="red_700">#FFBF2C2C</color>
@@ -69,17 +65,9 @@
     <color name="secondary_700" tools:keep="@color/secondary_700">#FFd3364c</color>
     <color name="amber_500">#FFC107</color>
     <color name="black">#FF000000</color>
-    <color name="gray">#FF222222</color>
     <color name="white">#FFFFFFFF</color>
     <color name="milky" tools:keep="@color/milky">#FFEEEEEE</color>
     <color name="grayTint">#99222222</color>
-
-    //delay colors
-    <color name="onTime">#FF1CFC4C</color>
-    <color name="delay1">#FF96F030</color>
-    <color name="delay2">#FFFFCD38</color>
-    <color name="delay3">#FFE33636</color>
-    <color name="inAdvance">#FFE134F7</color>
 
     //line colors
     <color name="l1">#FFec691f</color>
@@ -153,14 +141,11 @@
     <color name="night">#FF2b2a29</color>
     <color name="night_regional">#FF000000</color>
     <color name="replacement">#FFef7f1a</color>
-    <color name="replacement_text">#FF2b2a29</color>
     <color name="regio">#FFbfbfb9</color>
-    <color name="regio_text">#FF2b2a29</color>
 <!--    original default color-->
     <color name="ldefault_original" tools:keep="@color/ldefault_original">#FFc5c6c6</color>
     <color name="ldefault">#FF52595c</color>
 
-    <color name="on_surface_high">#DE000000</color>
     <color name="ic_launcher_foreground">#F13953</color>
     <color name="ic_launcher_background">#FFFFFF</color>
 </resources>

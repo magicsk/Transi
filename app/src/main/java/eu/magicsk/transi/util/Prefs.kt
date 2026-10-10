@@ -7,9 +7,16 @@ import android.content.SharedPreferences
 object Prefs {
     const val FILE = "Transi"
 
-    const val STOP_LIST = "stopList"
     const val STOPS_VERSION = "stopsVersion"
+    /** Stops JSON kept in prefs before the cache moved to files/stops.json; migrated once, then removed. */
+    const val LEGACY_STOP_LIST = "stopList"
     const val MAGIC_API_URL_OVERRIDE = "magic_api_url_override"
+
+    const val DISPLAY_TABLE_CLOCK = "display_table_clock"
+    const val DISPLAY_SOCKET_STATUS = "display_socket_status"
+    const val DEFAULT_STOP_ID = "default_stop_id"
+    const val FAVORITE_STOP_IDS = "favorite_stop_ids"
+    const val READ_INFO_TEXTS = "readInfoTexts"
 
     /** Boolean, default false: use the downloaded timetable database and keep it updated. */
     const val OFFLINE_TIMETABLES = "offline_timetables"

@@ -37,6 +37,12 @@
             android:exported="false"
             android:label="@string/settings" />
 
+        <activity
+            android:name=".StopPickerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Transi.NoActionBar"
+            android:windowSoftInputMode="adjustResize" />
+
         <receiver
             android:name=".receivers.MHDTableCancelNotificationReceiver"
             android:exported="false"/>

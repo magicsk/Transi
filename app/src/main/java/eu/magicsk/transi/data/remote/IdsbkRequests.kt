@@ -46,6 +46,15 @@ interface IdsbkRequests {
         @Header("Cache-Control") cacheControl: String = "no-cache",
     ): Journeys
 
+    @GET("station/{station}/timetable/{date}/{minutes}/1")
+    suspend fun getStationDepartures(
+        @Path("station") stationId: Int,
+        @Path("date") date: String,
+        @Path("minutes") minutes: Int,
+        @Header("X-Session") xSession: String,
+        @Header("X-API-Key") apiKey: String = BuildConfig.IDSBK_API_KEY,
+    ): RegionalDepartures
+
     @GET("route/{city}/")
     suspend fun getTimetables(
         @Path("city") city: Int,

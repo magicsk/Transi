@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="16dp">
+
+    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/departureActionsTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="8dp"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+    <TextView
+        android:id="@+id/departureActionsNotify"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:drawablePadding="16dp"
+        android:gravity="center_vertical"
+        android:minHeight="56dp"
+        android:paddingHorizontal="20dp"
+        android:text="@string/table_notify_me"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        app:drawableStartCompat="@drawable/ic_notifications_active"
+        app:drawableTint="?attr/colorOnSurface" />
+
+    <TextView
+        android:id="@+id/departureActionsShare"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:drawablePadding="16dp"
+        android:gravity="center_vertical"
+        android:minHeight="56dp"
+        android:paddingHorizontal="20dp"
+        android:text="@string/share"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        app:drawableStartCompat="@drawable/ic_share"
+        app:drawableTint="?attr/colorOnSurface" />
+</LinearLayout>

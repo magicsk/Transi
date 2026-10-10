@@ -1,49 +1,35 @@
 package eu.magicsk.transi.adapters
 
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.net.toUri
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import eu.magicsk.transi.databinding.TableInfoListBinding
 
-class TableInfoAdapter(
-    private val TableInfoList: MutableList<String>
-) : RecyclerView.Adapter<TableInfoAdapter.TableInfoViewHolder>() {
-    class TableInfoViewHolder(val binding: TableInfoListBinding) :
-        RecyclerView.ViewHolder(binding.root)
-
-    private var _binding: TableInfoListBinding? = null
-    private val binding get() = _binding!!
-
-    fun removeAt(pos: Int) {
-        TableInfoList.removeAt(pos)
-        notifyItemRemoved(pos)
-    }
-
-    fun add(info: String) {
-        TableInfoList.clear()
-        TableInfoList.add(info)
-        notifyDataSetChanged()
-    }
+/** Service information texts; tapping one opens the operator's list of changes. */
+class TableInfoAdapter : ListAdapter<String, TableInfoAdapter.TableInfoViewHolder>(DIFF) {
+    class TableInfoViewHolder(val binding: TableInfoListBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TableInfoViewHolder {
-        _binding = TableInfoListBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return TableInfoViewHolder(binding)
+        val holder = TableInfoViewHolder(TableInfoListBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+        holder.binding.root.setOnClickListener {
+            CustomTabsIntent.Builder().build()
+                .launchUrl(it.context, "https://dpb.sk/sk/filter/zmeny-a-obmedzenia".toUri())
+        }
+        return holder
     }
 
     override fun onBindViewHolder(holder: TableInfoViewHolder, position: Int) {
-        val current = TableInfoList[position]
-        holder.binding.root.apply {
-            holder.binding.MHDTableInfoTextView.text = current
-            setOnClickListener {
-                val customTabsIntent = CustomTabsIntent.Builder()
-                customTabsIntent.build().launchUrl(context,Uri.parse("https://dpb.sk/sk/filter/zmeny-a-obmedzenia"))
-            }
-        }
+        holder.binding.MHDTableInfoTextView.text = getItem(position)
     }
 
-    override fun getItemCount(): Int {
-        return TableInfoList.size
+    companion object {
+        private val DIFF = object : DiffUtil.ItemCallback<String>() {
+            override fun areItemsTheSame(oldItem: String, newItem: String) = oldItem == newItem
+            override fun areContentsTheSame(oldItem: String, newItem: String) = oldItem == newItem
+        }
     }
 }

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="@string/pref_general"
+        app:iconSpaceReserved="false">
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="display_table_clock"
+            android:title="@string/pref_table_clock"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="display_socket_status"
+            android:title="@string/pref_socket_status"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="default_stop_id"
+            android:persistent="false"
+            android:title="@string/pref_default_stop"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:selectable="false"
+            android:summary="@string/pref_default_stop_footer"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+</PreferenceScreen>

@@ -60,6 +60,7 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.2.2")
     implementation("androidx.preference:preference-ktx:1.2.1")
     implementation("androidx.browser:browser:1.10.0")
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")

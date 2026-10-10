@@ -19,7 +19,6 @@
     <string name="search">Search for stops</string>
     <string name="stop_icon">stop_icon</string>
     <string name="locating_nearest_stop">Locating nearest stop…</string>
-    <string name="actualTime">%1$s:%2$s:%3$s</string>
     <string name="enable_disable_switching_table_for_nearest_stop">enable/disable switching table for nearest stop</string>
     <string name="display_menu">display menu</string>
     <string name="pick_a_date_and_time">pick a date and time</string>
@@ -55,7 +54,6 @@
     <string name="picture_of_vehicle">Picture of vehicle</string>
     <string name="stuck">Stuck</string>
     <string name="ac">AC</string>
-    <string name="offline">Offline</string>
     <string name="onTime">on time</string>
     <string name="inAdvance">%1$s min in advance</string>
     <string name="delay">%1$s min delay</string>
@@ -66,10 +64,8 @@
 
     <string name="loading">Loading…</string>
     <string name="connecting">Connecting…</string>
-    <string name="reconnecting">Reconnecting…</string>
     <string name="connected">Connected</string>
     <string name="disconnected">Disconnected</string>
-    <string name="noDepartures">No departures today</string>
     <string name="home" tools:keep="@string/home">home</string>
 
     <string name="table_notification_channel_id">virtual_table_notifier</string>
@@ -91,6 +87,4 @@
     <string name="trip_notification_body">%1$s (%2$s-%3$s)</string>
     <string name="trip_share_body">%1$s&lt;br>&lt;br>%2$s</string>
     <string name="placeholderLine">N999</string>
-    <string name="example">Example</string>
-    <string name="examplePlatform">XX</string>
 </resources>

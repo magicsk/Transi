@@ -1,64 +1,54 @@
 package eu.magicsk.transi
 
-import android.content.SharedPreferences
-import android.graphics.drawable.AnimatedVectorDrawable
-import android.location.Location
+import android.animation.ValueAnimator
+import android.content.Context
+import android.content.res.ColorStateList
+import android.graphics.drawable.Animatable
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.TextView
 import android.widget.Toast
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.annotation.DrawableRes
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.os.BundleCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.MHDTableAdapter
-import eu.magicsk.transi.adapters.TableInfoAdapter
-import eu.magicsk.transi.data.remote.responses.Stop
-import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.FragmentMainBinding
 import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.view_models.MainViewModel
-import java.util.*
+import eu.magicsk.transi.view_models.TableViewModel
+import eu.magicsk.transi.view_models.TableViewModel.Status
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @AndroidEntryPoint
 class MainFragment : Fragment() {
     private var _binding: FragmentMainBinding? = null
     private val binding get() = _binding!!
-    private lateinit var sharedPreferences: SharedPreferences
-    private val tableAdapter = MHDTableAdapter()
-    private val tableInfoAdapter = TableInfoAdapter(mutableListOf())
-    private var stopList = Stops()
-    private val typeAheadFragment = TypeAheadFragment()
-    private var actualLocation: Location? = null
-    private var nearestSwitching = true
-    private var infoDismissed = false
-    private var firstRun = true
-    private val connectionHandler = Handler(Looper.getMainLooper())
-    private var tableState: Parcelable? = null
-    private var selected = Stop(
-        394, 0, "Locating nearest stop…", "none", "bus", 0, 48.13585663, 17.20938683, null
-    )
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        infoDismissed = savedInstanceState?.getBoolean("infoDismissed") ?: infoDismissed
-        selected = savedInstanceState?.let { BundleCompat.getSerializable(it, "selectedStop", Stop::class.java) } ?: selected
-        nearestSwitching = savedInstanceState?.getBoolean("nearestSwitching") ?: nearestSwitching
-        sharedPreferences = Prefs.get(requireContext())
-    }
+    private val mainViewModel: MainViewModel by activityViewModels()
+    private val tableViewModel: TableViewModel by viewModels()
+    private var backStackListener: FragmentManager.OnBackStackChangedListener? = null
+    private var statusJob: Job? = null
+    private var showStatusBar = true
+    private var statusHidden = false
+    @DrawableRes
+    private var positionIcon = 0
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentMainBinding.inflate(inflater, container, false)
@@ -67,198 +57,209 @@ class MainFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        backStackListener?.let { activity?.supportFragmentManager?.removeOnBackStackChangedListener(it) }
+        backStackListener = null
+        positionIcon = 0
         _binding = null
-    }
-
-
-    override fun onPause() {
-        super.onPause()
-        connectionHandler.postDelayed({
-            tableAdapter.ioDisconnect()
-        }, 30000)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        connectionHandler.removeCallbacksAndMessages(null)
-        if (tableState != null) activity?.findViewById<RecyclerView>(R.id.MHDTableList)?.layoutManager?.onRestoreInstanceState(
-            tableState
-        )
-        if (!tableAdapter.connected && !firstRun) {
-            tableAdapter.ioConnect(selected.id)
-        }
-        firstRun = false
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val mainViewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
-        mainViewModel.clear()
-        activity?.apply {
-            tableAdapter.ioAddObservers(this)
-            val actualTime: Thread = object : Thread() {
-                override fun run() {
-                    try {
-                        while (!this.isInterrupted) {
-                            sleep(1000)
-                            runOnUiThread {
-                                val calendar = Calendar.getInstance()
-                                activity?.findViewById<TextView>(R.id.MHDTableActualTime)?.text = getString(
-                                    R.string.actualTime,
-                                    calendar.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0'),
-                                    calendar.get(Calendar.MINUTE).toString().padStart(2, '0'),
-                                    calendar.get(Calendar.SECOND).toString().padStart(2, '0')
-                                )
-                            }
-                        }
-                    } catch (_: InterruptedException) {
-                    }
-                }
+        val tableAdapter = MHDTableAdapter { departure ->
+            mainViewModel.tableStop.value?.let { stop ->
+                DepartureActionsSheet.newInstance(departure, stop).show(childFragmentManager, "departureActions")
             }
-            actualTime.start()
-            tableAdapter.startUpdater(this)
         }
 
         binding.apply {
-
-            mainViewModel.stopList.observe(viewLifecycleOwner) { stopsJSON ->
-                stopList = stopsJSON
-                tableAdapter.putStopList(stopList)
-                val typeAheadBundle = Bundle()
-                typeAheadBundle.clear()
-                typeAheadBundle.putSerializable("stopsList", stopList)
-                typeAheadBundle.putBoolean("directions", true)
-                typeAheadBundle.putString("origin", "editText")
-                typeAheadFragment.arguments = typeAheadBundle
-                MHDTableListConnectInfo.visibility = View.GONE
-            }
-            mainViewModel.actualLocation.observe(viewLifecycleOwner) { location ->
-                actualLocation = location
-                if (location != null && stopList.size > 1 && nearestSwitching && selected != stopList[0]) {
-                    val id = selected.id
-                    selected = stopList[0]
-                    MHDTableStopName.text = selected.name
-                    positionBtn.icon = ResourcesCompat.getDrawable(
-                        resources, R.drawable.ic_my_location, context?.theme
-                    )
-                    if (id != selected.id) {
-                        tableAdapter.ioConnect(selected.id)
-                    }
-                }
-            }
-            mainViewModel.selectedStop.observe(viewLifecycleOwner) {
-                it?.let { selectedStop ->
-                    selected = selectedStop
-                    nearestSwitching = false
-                    editText.clearFocus()
-                    editText.setText(selected.name)
-                    MHDTableStopName.text = selected.name
-                    MHDTableStopName.isSelected = true
-                    positionBtn.icon = ResourcesCompat.getDrawable(
-                        resources, R.drawable.ic_location_disabled, context?.theme
-                    )
-                    tableAdapter.ioConnect(selected.id)
-                }
-            }
-
-            if (nearestSwitching) {
-                if (actualLocation == null) {
-                    positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_location_search, context?.theme)
-                    (positionBtn.icon as AnimatedVectorDrawable).start()
-                } else positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
-            } else {
-                positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
-            }
-
-            positionBtn.setOnClickListener {
-                if (actualLocation != null && stopList.isNotEmpty()) {
-                    nearestSwitching = !nearestSwitching
-                    if (nearestSwitching) {
-                        positionBtn.icon = ResourcesCompat.getDrawable(resources, R.drawable.ic_my_location, context?.theme)
-                        selected = stopList[0]
-                        MHDTableStopName.text = selected.name
-                        tableAdapter.ioConnect(selected.id)
-                    } else {
-                        positionBtn.icon =
-                            ResourcesCompat.getDrawable(resources, R.drawable.ic_location_disabled, context?.theme)
-                    }
-                } else if (actualLocation != null) {
-                    Toast.makeText(context, context?.getString(R.string.no_location), Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            editText.setOnFocusChangeListener { _, b ->
-                if (b) {
-                    if (stopList.isNotEmpty()) {
-                        MHDTable.visibility = View.GONE
-                        searchFragmentLayout.visibility = View.VISIBLE
-                        activity?.supportFragmentManager?.beginTransaction()?.apply {
-                            replace(R.id.searchFragmentLayout, typeAheadFragment).addToBackStack("typeAhead").commit()
-                        }
-                    } else {
-                        editText.clearFocus()
-                        Toast.makeText(context, context?.getString(R.string.no_connection), Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-
-            activity?.supportFragmentManager?.addOnBackStackChangedListener {
-                val fragment = activity?.supportFragmentManager?.findFragmentById(R.id.searchFragmentLayout)
-                if (fragment == null) {
-                    activity?.findViewById<ConstraintLayout>(R.id.MHDTable)?.isVisible = true
-                    activity?.findViewById<FrameLayout>(R.id.searchFragmentLayout)?.isVisible = true
-                    activity?.findViewById<EditText>(R.id.editText)?.clearFocus()
-                }
-            }
-
-            if (selected.id != 0) MHDTableStopName.text = selected.name
-            val calendar = Calendar.getInstance()
-            MHDTableActualTime.text = context?.getString(
-                R.string.actualTime,
-                calendar.get(Calendar.HOUR_OF_DAY).toString().padStart(2, '0'),
-                calendar.get(Calendar.MINUTE).toString().padStart(2, '0'),
-                calendar.get(Calendar.SECOND).toString().padStart(2, '0')
-            )
+            ViewCompat.setAccessibilityHeading(MHDTableStopName, true)
             MHDTableList.adapter = tableAdapter
             MHDTableList.layoutManager = LinearLayoutManager(context)
             MHDTableList.itemAnimator?.changeDuration = 0
-            MHDTableInfoText.adapter = tableInfoAdapter
-            MHDTableInfoText.layoutManager = LinearLayoutManager(context)
-            ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
-                override fun onMove(v: RecyclerView, h: RecyclerView.ViewHolder, t: RecyclerView.ViewHolder) =
-                    false
 
-                override fun onSwiped(h: RecyclerView.ViewHolder, dir: Int) {
-                    tableInfoAdapter.removeAt(h.bindingAdapterPosition)
-                    infoDismissed = true
-                }
-            }).attachToRecyclerView(MHDTableInfoText)
-            mainViewModel.tableInfo.observe(viewLifecycleOwner) { tableInfo ->
-                if (!infoDismissed && tableInfo != "") {
-                    tableInfoAdapter.add(tableInfo)
-                    MHDTableInfoText.isVisible = true
+            mainViewModel.tableStop.observe(viewLifecycleOwner) { stop ->
+                tableViewModel.setStop(stop)
+                tableAdapter.platformLabels = stop?.platform_labels
+                updateTitle()
+            }
+            mainViewModel.locationAvailable.observe(viewLifecycleOwner) {
+                updateTitle()
+                updatePositionButton()
+            }
+            mainViewModel.followLocation.observe(viewLifecycleOwner) { updatePositionButton() }
+            mainViewModel.actualLocation.observe(viewLifecycleOwner) { updatePositionButton() }
+            mainViewModel.idsbkSession.observe(viewLifecycleOwner) { tableViewModel.session.value = it?.session }
+
+            tableViewModel.departures.observe(viewLifecycleOwner) { departures ->
+                tableAdapter.submitList(departures)
+                updateState()
+            }
+            tableViewModel.vehicles.observe(viewLifecycleOwner) { tableAdapter.vehicles = it }
+            tableViewModel.status.observe(viewLifecycleOwner) { status ->
+                showStatus(status)
+                updateState()
+            }
+            tableViewModel.empty.observe(viewLifecycleOwner) { updateState() }
+            tableViewModel.unreadInfoCount.observe(viewLifecycleOwner) { unread ->
+                val color = if (unread > 0) R.color.table_orange else R.color.table_grey
+                MHDTableInfoButton.iconTint = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), color))
+                MHDTableInfoButton.contentDescription =
+                    getString(if (unread > 0) R.string.table_service_info_unread else R.string.table_service_info)
+            }
+
+            MHDTableActualTime.setOnClickListener { tableViewModel.reconnect() }
+            ViewCompat.replaceAccessibilityAction(
+                MHDTableActualTime, AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_CLICK,
+                getString(R.string.table_reconnect), null
+            )
+            MHDTableInfoButton.setOnClickListener {
+                tableViewModel.markInfoTextsRead()
+                ServiceInfoSheet().show(childFragmentManager, "serviceInfo")
+            }
+            MHDTableRefresh.setOnRefreshListener {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    delay(500)
+                    tableViewModel.reconnect()
+                    _binding?.MHDTableRefresh?.isRefreshing = false
                 }
             }
-            MHDTableInfoText.isVisible = tableInfoAdapter.itemCount > 0
-            MHDTableInfoButton.setOnClickListener {
-                MHDTableInfoTextContainer.toggle()
+
+            positionBtn.setOnClickListener {
+                when {
+                    mainViewModel.followLocation.value == true -> mainViewModel.setFollowLocation(false)
+                    mainViewModel.stopList.value.isNullOrEmpty() -> toast(R.string.no_connection)
+                    mainViewModel.actualLocation.value == null -> toast(R.string.no_location)
+                    else -> mainViewModel.setFollowLocation(true)
+                }
+            }
+
+            editText.setOnFocusChangeListener { _, focused ->
+                if (!focused) return@setOnFocusChangeListener
+                val stops = mainViewModel.stopList.value
+                if (stops.isNullOrEmpty()) {
+                    editText.clearFocus()
+                    toast(R.string.no_connection)
+                    return@setOnFocusChangeListener
+                }
+                MHDTable.isVisible = false
+                searchFragmentLayout.isVisible = true
+                val typeAheadFragment = TypeAheadFragment().apply {
+                    arguments = Bundle().apply {
+                        putSerializable("stopsList", stops)
+                        putBoolean("directions", true)
+                        putString("origin", "editText")
+                    }
+                }
+                activity?.supportFragmentManager?.beginTransaction()
+                    ?.replace(R.id.searchFragmentLayout, typeAheadFragment)
+                    ?.addToBackStack("typeAhead")
+                    ?.commit()
+            }
+        }
+
+        backStackListener = FragmentManager.OnBackStackChangedListener {
+            val searchOpen = activity?.supportFragmentManager?.findFragmentById(R.id.searchFragmentLayout) != null
+            _binding?.takeIf { !searchOpen }?.apply {
+                MHDTable.isVisible = true
+                searchFragmentLayout.isVisible = false
+                editText.text = null
+                editText.clearFocus()
+            }
+        }.also { activity?.supportFragmentManager?.addOnBackStackChangedListener(it) }
+
+        // The board stays connected, and its clock and remaining times tick, only while the table is on screen.
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                val prefs = Prefs.get(requireContext())
+                val showClock = prefs.getBoolean(Prefs.DISPLAY_TABLE_CLOCK, true)
+                showStatusBar = prefs.getBoolean(Prefs.DISPLAY_SOCKET_STATUS, true)
+                binding.MHDTableActualTime.isVisible = showClock
+                updateState()
+                tableViewModel.connect()
+                try {
+                    if (showClock) launch {
+                        while (true) {
+                            binding.MHDTableActualTime.text = LocalTime.now().format(CLOCK)
+                            delay(1000 - System.currentTimeMillis() % 1000)
+                        }
+                    }
+                    launch {
+                        while (true) {
+                            delay(10_000)
+                            tableAdapter.refresh()
+                        }
+                    }
+                    awaitCancellation()
+                } finally {
+                    tableViewModel.disconnect()
+                }
             }
         }
     }
 
-    override fun onViewStateRestored(savedInstanceState: Bundle?) {
-        super.onViewStateRestored(savedInstanceState)
-        tableState = savedInstanceState?.let { BundleCompat.getParcelable(it, "MHDTableAdapter", Parcelable::class.java) }
+    private fun toast(message: Int) = Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+
+    private fun updateTitle() {
+        val binding = _binding ?: return
+        val stop = mainViewModel.tableStop.value
+        binding.MHDTableStopName.text = stop?.name
+            ?: getString(if (mainViewModel.locationAvailable.value == false) R.string.loading else R.string.locating_nearest_stop)
+        binding.MHDTableStopName.isSelected = true
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        outState.putBoolean("infoDismissed", infoDismissed)
-        outState.putSerializable("selectedStop", selected)
-        outState.putBoolean("nearestSwitching", nearestSwitching)
-        tableState = activity?.findViewById<RecyclerView>(R.id.MHDTableList)?.layoutManager?.onSaveInstanceState()
-        outState.putParcelable("MHDTableAdapter", tableState)
-        super.onSaveInstanceState(outState)
+    private fun updatePositionButton() {
+        val binding = _binding ?: return
+        val follow = mainViewModel.followLocation.value == true
+        val icon = when {
+            !follow || mainViewModel.locationAvailable.value == false -> R.drawable.ic_location_disabled
+            mainViewModel.actualLocation.value != null -> R.drawable.ic_my_location
+            else -> R.drawable.ic_location_search
+        }
+        if (icon != positionIcon) {
+            positionIcon = icon
+            val drawable = ResourcesCompat.getDrawable(resources, icon, context?.theme)
+            binding.positionBtn.icon = drawable
+            if (ValueAnimator.areAnimatorsEnabled()) (drawable as? Animatable)?.start()
+        }
+        ViewCompat.setStateDescription(
+            binding.positionBtn, getString(if (follow) R.string.table_following_nearest else R.string.table_fixed_stop)
+        )
+    }
+
+    // iOS ConnectionStatusBar: grey while connecting, red when disconnected, gone half a second after connecting.
+    private fun showStatus(status: Status) {
+        val binding = _binding ?: return
+        statusJob?.cancel()
+        binding.MHDTableStatusText.setText(
+            when (status) {
+                Status.CONNECTING -> R.string.connecting
+                Status.CONNECTED -> R.string.connected
+                Status.DISCONNECTED -> R.string.disconnected
+            }
+        )
+        binding.MHDTableStatusConnecting.isVisible = status == Status.CONNECTING
+        binding.MHDTableStatusDisconnected.isVisible = status == Status.DISCONNECTED
+        statusHidden = false
+        if (status == Status.CONNECTED) {
+            statusJob = viewLifecycleOwner.lifecycleScope.launch {
+                delay(500)
+                statusHidden = true
+                updateState()
+            }
+        }
+    }
+
+    // iOS VirtualTableList: rows; a spinner until the socket connects; the empty state once both feeds answered.
+    private fun updateState() {
+        val binding = _binding ?: return
+        val rows = tableViewModel.departures.value.orEmpty()
+        val connected = tableViewModel.status.value == Status.CONNECTED
+        binding.MHDTableLoading.isVisible = rows.isEmpty() && !connected
+        binding.MHDTableEmpty.isVisible = rows.isEmpty() && connected && tableViewModel.empty.value == true
+        binding.MHDTableStatus.isVisible = showStatusBar && !statusHidden && rows.isNotEmpty()
+    }
+
+    private companion object {
+        val CLOCK: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
     }
 }

@@ -4,20 +4,18 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.SharedPreferences
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.location.LocationManagerCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
@@ -27,101 +25,59 @@ import androidx.fragment.app.FragmentManager
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
-import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
-import eu.magicsk.transi.data.remote.responses.Stop
-import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.ActivityMainBinding
 import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.util.UpdateAlert
+import eu.magicsk.transi.util.hasLocationPermission
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.ReleaseInfoViewModel
-import eu.magicsk.transi.view_models.StopsListVersionViewModel
-import eu.magicsk.transi.view_models.StopsListViewModel
-import kotlin.math.*
+import kotlin.math.max
 
 @AndroidEntryPoint
 @SuppressLint("MissingPermission")
 class MainActivity : AppCompatActivity() {
-    private var actualLocation: Location? = null
-    private var stopList: Stops = Stops()
-    private val stopListBundle = Bundle()
-    private val stopsViewModel: StopsListViewModel by viewModels()
-    private val stopsVersionViewModel: StopsListVersionViewModel by viewModels()
     private val releaseInfoViewModel: ReleaseInfoViewModel by viewModels()
     private val mainViewModel: MainViewModel by viewModels()
-    private lateinit var sharedPreferences: SharedPreferences
     private var _binding: ActivityMainBinding? = null
     private val binding get() = _binding!!
+    private lateinit var locationManager: LocationManager
+    // Until the first permission prompt is answered the table neither follows the location nor falls back to the default stop.
+    private var locationPermissionPending = false
 
+    // Implements every callback: before API 30 the framework calls them and they have no default bodies.
+    private val locationListener = object : LocationListener {
+        override fun onLocationChanged(location: Location) {
+            mainViewModel.setActualLocation(location)
+        }
 
-    private fun calcDistance(x: Stop): Double {
-        val xLat = x.lat
-        val xLong = x.lng
-        val radius = 6378137.toDouble()
-        val deltaLat = xLat - actualLocation!!.latitude
-        val deltaLong = xLong - actualLocation!!.longitude
-        val angle = 2 * asin(
-            sqrt(
-                sin(deltaLat / 2).pow(2.0) +
-                        cos(actualLocation!!.latitude) * cos(xLat) *
-                        sin(deltaLong / 2).pow(2.0)
-            )
-        )
-        return radius * angle
+        override fun onProviderDisabled(provider: String) = updateLocation()
+        override fun onProviderEnabled(provider: String) = updateLocation()
+        @Deprecated("Deprecated in Java")
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
     }
 
-    private val sortByNearest = Comparator<Stop> { a, b ->
-        val aDist = calcDistance(a)
-        val bDist = calcDistance(b)
-        return@Comparator (aDist - bDist).roundToInt()
+    private val locationProvider
+        get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) LocationManager.FUSED_PROVIDER else LocationManager.GPS_PROVIDER
+
+    // iOS locationManagerDidChangeAuthorization: follow the location when allowed, otherwise show the default stop.
+    private fun updateLocation() {
+        if (locationPermissionPending) return
+        val granted = hasLocationPermission()
+        mainViewModel.setLocationAvailable(granted && LocationManagerCompat.isLocationEnabled(locationManager))
+        if (!granted || locationProvider !in locationManager.allProviders) return
+        locationManager.getLastKnownLocation(locationProvider)?.let { mainViewModel.setActualLocation(it) }
+        locationManager.requestLocationUpdates(locationProvider, 0L, 50f, locationListener)
     }
 
-    private fun locationChange(location: Location) {
-        actualLocation = location
-        mainViewModel.setActualLocation(location)
-        if (stopList.size > 0) {
-            stopList.sortWith(sortByNearest)
-            mainViewModel.setStopList(stopList)
-        }
+    override fun onStart() {
+        super.onStart()
+        updateLocation()
     }
 
-    private fun loadStopList() {
-        val savedStopListJson = sharedPreferences.getString(Prefs.STOP_LIST, "")
-        val savedStopListVersion = sharedPreferences.getString(Prefs.STOPS_VERSION, "")
-        if (savedStopListJson != "") {
-            val savedStopList = Gson().fromJson(savedStopListJson, Stops::class.java)
-            stopList.clear()
-            stopList.addAll(savedStopList)
-            stopListBundle.clear()
-            stopListBundle.putSerializable("stopsList", stopList)
-            actualLocation?.let { l -> locationChange(l) }
-        }
-        stopsVersionViewModel.stopsVersion.observe(this) { stopsVersion ->
-            if (stopsVersion != null) {
-                if (savedStopListVersion != stopsVersion.version || savedStopListJson == "") {
-                    stopsViewModel.stops.observe(this) { stops ->
-                        if (!stops.isNullOrEmpty()) {
-                            println("stops fetched")
-                            stopList.clear()
-                            stopList.addAll(stops)
-                            val stopListJson = Gson().toJson(stopList)
-                            sharedPreferences.edit().putString(Prefs.STOP_LIST, stopListJson).apply()
-                            sharedPreferences.edit().putString(Prefs.STOPS_VERSION, stopsVersion.version)
-                                .apply()
-                        }
-                    }
-                }
-                stopListBundle.clear()
-                stopListBundle.putSerializable("stopsList", stopList)
-                actualLocation?.let { l -> locationChange(l) }
-            } else {
-                println("no connection")
-                Handler(Looper.getMainLooper()).postDelayed({
-                    loadStopList()
-                }, 1000)
-            }
-        }
+    override fun onStop() {
+        super.onStop()
+        locationManager.removeUpdates(locationListener)
     }
 
     private fun createChannel(channelId: String, channelName: String, description: String) {
@@ -187,8 +143,7 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.addOnBackStackChangedListener {
             closeSearchOnBack.isEnabled = supportFragmentManager.backStackEntryCount > 0
         }
-        sharedPreferences = Prefs.get(this)
-        loadStopList()
+        locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
 
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.navHostFragment) as NavHostFragment
@@ -212,52 +167,11 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.trip_planner_notification_channel_description)
         )
 
-        val locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
-        val locationListener = object : LocationListener {
-            override fun onLocationChanged(location: Location) {
-                locationChange(location)
-            }
-
-            override fun onProviderDisabled(provider: String) {}
-            override fun onProviderEnabled(provider: String) {}
-            @Deprecated("Deprecated in Java")
-            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
-        }
-
-        fun requestLocation() {
-            println("location requested")
-            val lastLocation = locationManager.getLastKnownLocation(
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                    LocationManager.FUSED_PROVIDER else LocationManager.GPS_PROVIDER
-            )
-            try {
-                lastLocation?.let { locationChange(it) }
-                locationManager.requestLocationUpdates(
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                        LocationManager.FUSED_PROVIDER else LocationManager.GPS_PROVIDER,
-                    0L,
-                    10f,
-                    locationListener
-                )
-            } catch (_: ClassCastException) {
-
-            }
-        }
-
         val locationPermissionRequest = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
-        ) { permissions ->
-            when {
-                permissions.getOrDefault(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    false
-                ) -> requestLocation()
-
-                permissions.getOrDefault(
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                    false
-                ) -> requestLocation()
-            }
+        ) {
+            locationPermissionPending = false
+            updateLocation()
         }
 
 
@@ -267,11 +181,14 @@ class MainActivity : AppCompatActivity() {
         } else {
             emptyArray()
         }
-        locationPermissionRequest.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) + notificationPermission
-        )
+        if (savedInstanceState == null) {
+            locationPermissionPending = !hasLocationPermission()
+            locationPermissionRequest.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) + notificationPermission
+            )
+        }
     }
 }

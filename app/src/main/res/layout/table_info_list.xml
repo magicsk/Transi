@@ -1,20 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/MHDTableInfoTextView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="15dp">
-
-    <TextView
-        android:id="@+id/MHDTableInfoTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="15dp"
-        android:background="@drawable/round_shape_25"
-        android:backgroundTint="?colorMyContainer"
-        android:textColor="?colorOnMyContainer"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+    android:drawablePadding="16dp"
+    android:foreground="?attr/selectableItemBackground"
+    android:minHeight="48dp"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="12dp"
+    android:textSize="15sp"
+    app:drawableStartCompat="@drawable/ic_warning"
+    app:drawableTint="@color/table_orange" />

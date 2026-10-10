@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="table_actual_location">Actual location</string>
+    <string name="table_from_map">From map</string>
+    <string name="table_now">now</string>
+    <string name="table_under_minute">&lt;1 min</string>
+    <string name="table_minutes">%1$d min</string>
+    <string name="table_approximate">~%1$s</string>
+    <string name="table_delay_offline">offline</string>
+    <string name="table_no_delay">no delay</string>
+    <string name="table_no_departures">There are no departures at this time.</string>
+    <string name="table_service_info">Service Info</string>
+    <string name="table_service_info_unread">Service info, unread messages</string>
+    <string name="table_no_service_info">There are no service information available now.</string>
+    <string name="table_reconnect">Reconnect</string>
+    <string name="table_show_details">Show details</string>
+    <string name="table_hide_details">Hide details</string>
+    <string name="table_departure_actions">Departure actions</string>
+    <string name="table_notify_me">Notify me</string>
+    <string name="table_departure_title">%1$s ▶ %2$s</string>
+    <string name="table_share_text">%1$s ▶ %2$s at %3$s from %4$s\n%5$s</string>
+    <string name="table_favorite">Favorite</string>
+    <string name="table_remove_favorite">Remove favorite</string>
+    <string name="table_plan_trip">Plan a trip here</string>
+    <string name="table_following_nearest">Following the nearest stop</string>
+    <string name="table_fixed_stop">Showing the chosen stop</string>
+
+    <string name="pref_general">General</string>
+    <string name="pref_table_clock">Table clock</string>
+    <string name="pref_socket_status">Connection status bar</string>
+    <string name="pref_default_stop">Default stop</string>
+    <string name="pref_unknown_stop">Unknown stop</string>
+    <string name="pref_default_stop_footer">The stop shown when the app opens. Actual location follows the nearest stop.</string>
+</resources>

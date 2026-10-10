@@ -13,5 +13,4 @@ data class MHDTableVehicle(
     val imgt: Int,
     val type: String,
     val issi: String,
-    val train: String?,
-): Parcelable, Serializable
+) : Parcelable, Serializable

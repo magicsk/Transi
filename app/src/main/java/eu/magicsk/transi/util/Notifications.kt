@@ -34,7 +34,7 @@ private val socket: Socket = IO.socket(uri, options)
 private val tabArgs = JSONArray()
 private var connected = false
 private var lastInfo = MHDTableData(
-    0L, "", "", "", "", 0L, 0, "", 0, 0, "", stuck = false, expanded = false
+    "", 0L, "", 0, 0, "", "", 0L, 0L, 0, "", 0, 0, "", stuck = false
 )
 private var lastTime = ""
 private var actualStopName = "Error"
@@ -106,7 +106,7 @@ fun tableNotification(stop: Stop, connectionId: Long, context: Context) {
             mhdTable.addTabs(JSONArray(it[0].toString()))
             var exists = false
             for (platform in mhdTable.tabs) {
-                if (platform.Id == connectionId) {
+                if (platform.tripId == connectionId) {
                     tableNotificationActive = true
                     exists = sendTableNotification(platform, context)
                 }

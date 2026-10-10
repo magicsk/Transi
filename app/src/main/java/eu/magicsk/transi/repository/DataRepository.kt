@@ -132,6 +132,15 @@ class DataRepository @Inject constructor(
         return Resource.Success(response)
     }
 
+    suspend fun getStationDepartures(xSession: String, stationId: Int, date: String, minutes: Int): Resource<RegionalDepartures> {
+        val response = try {
+            idsbkApi.getStationDepartures(stationId, date, minutes, xSession)
+        } catch (e: Exception) {
+            return Resource.Error("An unknown error occurred. $e")
+        }
+        return Resource.Success(response)
+    }
+
     suspend fun getStops(): Resource<Stops> {
         val response = try {
             api.getStops()

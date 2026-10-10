@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/pickerRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/pickerToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:navigationContentDescription="@string/back"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:title="@string/pref_default_stop" />
+
+    <EditText
+        android:id="@+id/pickerSearch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginBottom="6dp"
+        android:autofillHints="none"
+        android:background="@drawable/round_shape_50"
+        android:backgroundTint="?attr/colorSurfaceContainerHigh"
+        android:hint="@string/search"
+        android:inputType="textNoSuggestions"
+        android:minHeight="48dp"
+        android:paddingHorizontal="15dp"
+        android:paddingVertical="10dp"
+        android:singleLine="true" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/pickerContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>

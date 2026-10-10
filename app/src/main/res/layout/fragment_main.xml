@@ -38,74 +38,133 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/MHDTableInfoButton"/>
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 style="?attr/materialIconButtonStyle"
                 android:id="@+id/MHDTableInfoButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:visibility="gone"
-                app:icon="@drawable/ic_notifications_none"
-                app:layout_constraintStart_toEndOf="@id/MHDTableStopName"
+                android:contentDescription="@string/table_service_info"
+                app:icon="@drawable/ic_warning"
                 app:layout_constraintEnd_toStartOf="@id/MHDTableActualTime"
-                app:layout_constraintTop_toTopOf="parent"
-            />
+                app:layout_constraintTop_toTopOf="@id/MHDTableStopName"
+                app:layout_constraintBottom_toBottomOf="@id/MHDTableStopName"/>
 
             <TextView
                 android:id="@+id/MHDTableActualTime"
-                android:layout_width="80dp"
-                android:layout_height="25dp"
-                android:layout_marginEnd="15dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="7dp"
+                android:minHeight="48dp"
+                android:paddingHorizontal="8dp"
+                android:gravity="center_vertical|end"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
                 android:fontFamily="@font/roboto_medium"
-                android:text="@string/actualTime"
+                android:fontFeatureSettings="tnum"
                 android:textSize="18sp"
-                android:gravity="end"
                 android:lines="1"
-                app:layout_constraintStart_toEndOf="@id/MHDTableInfoButton"
+                app:layout_constraintTop_toTopOf="@id/MHDTableStopName"
                 app:layout_constraintBottom_toBottomOf="@id/MHDTableStopName"
                 app:layout_constraintEnd_toEndOf="parent"/>
 
-            <net.cachapa.expandablelayout.ExpandableLayout
-                android:id="@+id/MHDTableInfoTextContainer"
+            <LinearLayout
+                android:id="@+id/MHDTableStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:el_parallax="0.5"
-                app:el_duration="300"
-                app:el_expanded="true"
-                app:layout_constraintTop_toBottomOf="@id/MHDTableStopName"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
-            >
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/MHDTableInfoText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
-            </net.cachapa.expandablelayout.ExpandableLayout>
+                android:layout_marginTop="6dp"
+                android:paddingHorizontal="25dp"
+                android:orientation="vertical"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@id/MHDTableStopName">
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/MHDTableList"
+                <TextView
+                    android:id="@+id/MHDTableStatusText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    android:accessibilityLiveRegion="polite"
+                    android:gravity="center"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="11sp"/>
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:background="@color/table_status_track">
+
+                    <com.google.android.material.progressindicator.LinearProgressIndicator
+                        android:id="@+id/MHDTableStatusConnecting"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:indeterminate="true"
+                        app:indicatorColor="@color/table_status_indicator"
+                        app:trackColor="@color/table_status_track"
+                        app:trackCornerRadius="1dp"
+                        app:trackThickness="2dp"/>
+
+                    <View
+                        android:id="@+id/MHDTableStatusDisconnected"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@color/table_status_error"
+                        android:visibility="gone"/>
+                </FrameLayout>
+            </LinearLayout>
+
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/MHDTableRefresh"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_marginTop="15dp"
+                android:layout_marginTop="10dp"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/MHDTableInfoTextContainer"/>
+                app:layout_constraintTop_toBottomOf="@id/MHDTableStatus">
 
-            <TextView
-                android:id="@+id/MHDTableListConnectInfo"
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/MHDTableList"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+            <LinearLayout
+                android:id="@+id/MHDTableLoading"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/loading"
-                android:fontFamily="@font/roboto_medium"
-                android:textSize="26sp"
-                android:elevation="5dp"
-                android:paddingVertical="7dp"
-                android:paddingHorizontal="20dp"
-                android:background="@drawable/round_shape"
-                android:backgroundTint="?colorSurface"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"/>
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:indeterminate="true"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/loading"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="16sp"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/MHDTableEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawablePadding="8dp"
+                android:gravity="center"
+                android:paddingHorizontal="25dp"
+                android:text="@string/table_no_departures"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="16sp"
+                android:visibility="gone"
+                app:drawableTopCompat="@drawable/ic_no_departures"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -139,6 +198,7 @@
             android:layout_marginStart="10dp"
             android:layout_marginVertical="10dp"
             android:lines="1"
+            android:minHeight="48dp"
             android:paddingVertical="10dp"
             android:paddingHorizontal="15dp"
             android:singleLine="true"
@@ -151,8 +211,8 @@
             app:layout_constraintTop_toTopOf="parent"/>
 
         <com.google.android.material.button.MaterialButton
-            android:layout_height="55dp"
-            android:layout_width="45dp"
+            android:layout_height="56dp"
+            android:layout_width="48dp"
             android:contentDescription="@string/enable_disable_switching_table_for_nearest_stop"
             android:id="@+id/positionBtn"
             android:layout_marginHorizontal="5dp"

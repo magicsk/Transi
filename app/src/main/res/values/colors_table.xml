@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- iOS system colours used by the board and the stop list. -->
+    <color name="table_red">#FFFF3B30</color>
+    <color name="table_orange">#FFFF9500</color>
+    <color name="table_yellow">#FFFFCC00</color>
+    <color name="table_green">#FF34C759</color>
+    <color name="table_blue">#FF007AFF</color>
+    <color name="table_purple">#FFAF52DE</color>
+    <color name="table_grey">#FF8E8E93</color>
+    <!-- Connection status bar: grey track, moving grey capsule, translucent red when disconnected. -->
+    <color name="table_status_track">#338E8E93</color>
+    <color name="table_status_indicator">#998E8E93</color>
+    <color name="table_status_error">#80FF3B30</color>
+    <!-- iOS secondaryLabel, the "►" badge. -->
+    <color name="line_direction">#993C3C43</color>
+    <color name="line_direction_dark">#99EBEBF5</color>
+</resources>
