@@ -175,7 +175,8 @@ class UpdateAlert : DialogFragment() {
 
     private fun fail() {
         Toast.makeText(requireContext(), R.string.update_failed, LENGTH_LONG).show()
-        dismiss()
+        // The download may fail after the user left the app, when a normal dismiss would throw.
+        dismissAllowingStateLoss()
     }
 
     // The system installer asks for the "Install unknown apps" permission itself and then continues the install.
