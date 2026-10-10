@@ -42,10 +42,10 @@ jobs:
         -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }}
         -Pandroid.injected.signing.key.password=${{ secrets.KEYSTORE_PASSWORD }}
     - name: Create new tag
-      if: steps.apk.outputs.tag != steps.previoustag.outputs.tag
+      if: github.event_name == 'push' && steps.apk.outputs.tag != steps.previoustag.outputs.tag
       run: git tag ${{ steps.apk.outputs.tag }} && git push --tags && git fetch --tags
     - name: Generate changelog
-      if: steps.apk.outputs.tag != steps.previoustag.outputs.tag
+      if: github.event_name == 'push' && steps.apk.outputs.tag != steps.previoustag.outputs.tag
       id: changelog
       uses: magicsk/tag-changelog-multiline@v2
       with:
@@ -57,10 +57,10 @@ jobs:
         name: app-release
         path: app/build/outputs/apk/release/app-release.apk
     - name: Rename release apk
-      if: steps.apk.outputs.tag != steps.previoustag.outputs.tag
+      if: github.event_name == 'push' && steps.apk.outputs.tag != steps.previoustag.outputs.tag
       run: cp app/build/outputs/apk/release/app-release.apk eu.magicsk.transi.${{ steps.apk.outputs.version }}.apk
     - name: Create release
-      if: steps.apk.outputs.tag != steps.previoustag.outputs.tag
+      if: github.event_name == 'push' && steps.apk.outputs.tag != steps.previoustag.outputs.tag
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.apk.outputs.tag }}
