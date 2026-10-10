@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Context
 import android.content.SharedPreferences
 import android.location.Location
 import android.location.LocationListener
@@ -33,6 +32,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.ActivityMainBinding
+import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.util.UpdateAlert
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.ReleaseInfoViewModel
@@ -87,8 +87,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadStopList() {
-        val savedStopListJson = sharedPreferences.getString("stopList", "")
-        val savedStopListVersion = sharedPreferences.getString("stopsVersion", "")
+        val savedStopListJson = sharedPreferences.getString(Prefs.STOP_LIST, "")
+        val savedStopListVersion = sharedPreferences.getString(Prefs.STOPS_VERSION, "")
         if (savedStopListJson != "") {
             val savedStopList = Gson().fromJson(savedStopListJson, Stops::class.java)
             stopList.clear()
@@ -106,8 +106,8 @@ class MainActivity : AppCompatActivity() {
                             stopList.clear()
                             stopList.addAll(stops)
                             val stopListJson = Gson().toJson(stopList)
-                            sharedPreferences.edit().putString("stopList", stopListJson).apply()
-                            sharedPreferences.edit().putString("stopsVersion", stopsVersion.version)
+                            sharedPreferences.edit().putString(Prefs.STOP_LIST, stopListJson).apply()
+                            sharedPreferences.edit().putString(Prefs.STOPS_VERSION, stopsVersion.version)
                                 .apply()
                         }
                     }
@@ -187,7 +187,7 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.addOnBackStackChangedListener {
             closeSearchOnBack.isEnabled = supportFragmentManager.backStackEntryCount > 0
         }
-        sharedPreferences = getSharedPreferences("Transi", Context.MODE_PRIVATE)!!
+        sharedPreferences = Prefs.get(this)
         loadStopList()
 
         val navHostFragment =

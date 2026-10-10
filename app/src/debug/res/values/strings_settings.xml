@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Debug builds also allow cleartext to localhost and the emulator host (see debug network_security_config). -->
+    <string name="settings_api_url_footer">Override the Magic API base URL (e.g. http://10.0.2.2:3000). Leave empty to use the default.</string>
+    <string name="settings_api_url_invalid">Enter an http:// or https:// URL, or leave it empty.</string>
+</resources>

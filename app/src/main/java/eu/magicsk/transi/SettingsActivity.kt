@@ -1,0 +1,25 @@
+package eu.magicsk.transi
+
+import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
+import eu.magicsk.transi.databinding.ActivitySettingsBinding
+
+class SettingsActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+        val binding = ActivitySettingsBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
+        // The list in SettingsFragment takes the bottom inset.
+        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar) { toolbar, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            toolbar.updatePadding(left = bars.left, top = bars.top, right = bars.right)
+            insets
+        }
+    }
+}

@@ -1,6 +1,5 @@
 package eu.magicsk.transi
 
-import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.location.Location
@@ -30,6 +29,7 @@ import eu.magicsk.transi.adapters.TableInfoAdapter
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.FragmentMainBinding
+import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.view_models.MainViewModel
 import java.util.*
 
@@ -57,7 +57,7 @@ class MainFragment : Fragment() {
         infoDismissed = savedInstanceState?.getBoolean("infoDismissed") ?: infoDismissed
         selected = savedInstanceState?.let { BundleCompat.getSerializable(it, "selectedStop", Stop::class.java) } ?: selected
         nearestSwitching = savedInstanceState?.getBoolean("nearestSwitching") ?: nearestSwitching
-        sharedPreferences = context?.getSharedPreferences("Transi", Context.MODE_PRIVATE)!!
+        sharedPreferences = Prefs.get(requireContext())
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {

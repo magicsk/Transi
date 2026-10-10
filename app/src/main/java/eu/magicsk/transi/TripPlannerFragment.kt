@@ -3,6 +3,7 @@ package eu.magicsk.transi
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
+import android.content.Intent
 import android.location.Location
 import android.os.Bundle
 import android.os.Handler
@@ -245,6 +246,9 @@ class TripPlannerFragment : Fragment() {
             TripPlannerList.adapter = tripPlannerAdapter
             TripPlannerList.layoutManager = LinearLayoutManager(context)
             TripPlannerTitle.isSelected = true
+            TripPlannerSettingsBtn.setOnClickListener {
+                startActivity(Intent(requireContext(), SettingsActivity::class.java))
+            }
 
             mainViewModel.stopList.observe(viewLifecycleOwner) { stopsJSON ->
                 stopList = stopsJSON
