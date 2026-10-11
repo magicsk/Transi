@@ -6,6 +6,9 @@
     <string name="trip_planner_now_action">Now</string>
     <string name="trip_planner_date_description">Date and time: %1$s</string>
     <string name="trip_planner_swap">Swap</string>
+    <string name="trip_planner_mode">Departure or arrival</string>
+    <string name="trip_planner_set_departure">Set to time of departure.</string>
+    <string name="trip_planner_set_arrival">Set to time of arrival.</string>
     <string name="trip_planner_empty">Plan your first trip.</string>
     <string name="trip_planner_no_routes">No routes found</string>
     <string name="trip_planner_no_routes_message">In the next 2 hours there are no routes available. Try a different time or another type of transport.</string>

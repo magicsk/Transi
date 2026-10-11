@@ -5,13 +5,10 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.text.TextUtils
-import android.view.HapticFeedbackConstants
 import android.view.View
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import androidx.core.view.WindowCompat
@@ -24,7 +21,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager2.widget.ViewPager2
-import androidx.core.graphics.ColorUtils
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointForward
@@ -46,7 +42,6 @@ import eu.magicsk.transi.util.isActualLocation
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TripPlannerState
 import eu.magicsk.transi.view_models.TripPlannerViewModel
-import eu.magicsk.transi.util.stopTypeIcon
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -119,11 +114,11 @@ class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
         }
         binding.switchBtn.setOnClickListener { viewModel.swap() }
         binding.timeDateBtn.setOnClickListener { openDatePicker() }
-        binding.adToggle.addOnButtonCheckedListener { group, checkedId, isChecked ->
-            val value = if (checkedId == R.id.arrivalBtn) ArrivalDeparture.ARRIVAL else ArrivalDeparture.DEPARTURE
-            if (!isChecked || value == viewModel.state.value?.arrivalDeparture) return@addOnButtonCheckedListener
-            group.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
-            viewModel.setArrivalDeparture(value)
+        binding.adPlanBtn.setOnClickListener {
+            val arrival = viewModel.state.value?.arrivalDeparture != ArrivalDeparture.ARRIVAL
+            viewModel.setArrivalDeparture(if (arrival) ArrivalDeparture.ARRIVAL else ArrivalDeparture.DEPARTURE)
+            val message = if (arrival) R.string.trip_planner_set_arrival else R.string.trip_planner_set_departure
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
         }
 
         // Pickers shown before a configuration change come back without their listeners.
@@ -157,12 +152,12 @@ class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
             binding.editTextFrom.showText(stopName(state.from))
             binding.editTextTo.showText(stopName(state.to))
         }
-        showStopIcon(binding.fromIcon, state.from)
-        showStopIcon(binding.toIcon, state.to)
-        binding.adToggle.check(if (state.arrivalDeparture == ArrivalDeparture.ARRIVAL) R.id.arrivalBtn else R.id.departureBtn)
+        val mode = modeTitle(state)
+        ViewCompat.setStateDescription(binding.adPlanBtn, mode)
+        binding.adPlanBtn.tooltipText = mode
         val date = if (state.customDate) state.date.atZone(BRATISLAVA).format(dateButtonFormat) else getString(R.string.trip_planner_now)
-        binding.timeDateBtn.text = date
         binding.timeDateBtn.contentDescription = getString(R.string.trip_planner_date_description, date)
+        binding.timeDateBtn.tooltipText = binding.timeDateBtn.contentDescription
 
         val pages = tripPlannerPages(state)
         pagerAdapter.submit(pages)
@@ -213,7 +208,6 @@ class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
         showCurrentTrip(binding)
         binding.TripPlannerHeader.isVisible = !shown
         binding.TripPlannerPager.isVisible = !shown
-        binding.TripPlannerModeRow.isVisible = !shown
         binding.TripPlannerPageDots.isVisible = !shown && binding.TripPlannerPageDots.childCount > 1
     }
 
@@ -297,21 +291,6 @@ class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
         stop == null -> ""
         stop.isActualLocation -> getString(R.string.actual_position)
         else -> stop.name
-    }
-
-    private fun showStopIcon(icon: ImageView, stop: Stop?) {
-        if (stop == null) {
-            icon.setImageResource(R.drawable.ic_filled_circle)
-            icon.imageTintList = null
-            icon.backgroundTintList =
-                ColorStateList.valueOf(MaterialColors.getColor(icon, com.google.android.material.R.attr.colorSurfaceVariant))
-            return
-        }
-        val (drawable, color) = stopTypeIcon(if (stop.isActualLocation) "location" else stop.type)
-        val tint = ContextCompat.getColor(icon.context, color)
-        icon.setImageResource(drawable)
-        icon.imageTintList = ColorStateList.valueOf(tint)
-        icon.backgroundTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(tint, 0x33))
     }
 
     private fun EditText.showText(value: String) {

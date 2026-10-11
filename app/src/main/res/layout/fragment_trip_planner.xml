@@ -147,150 +147,91 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/TripPlannerSearch"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="10dp"
+        android:paddingTop="6dp"
         android:paddingBottom="6dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <!-- Wraps the date button under the toggle when large text leaves no room beside it. -->
-        <com.google.android.flexbox.FlexboxLayout
-            android:id="@+id/TripPlannerModeRow"
-            android:layout_width="match_parent"
+        <EditText
+            android:id="@+id/editTextFrom"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:alignItems="center"
-            app:flexWrap="wrap">
+            android:layout_marginStart="10dp"
+            android:autofillHints="none"
+            android:background="@drawable/round_shape_50"
+            android:hint="@string/from"
+            android:inputType="textNoSuggestions"
+            android:minHeight="48dp"
+            android:paddingHorizontal="15dp"
+            android:paddingVertical="10dp"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            app:layout_constraintEnd_toStartOf="@id/switchBtn"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-            <com.google.android.material.button.MaterialButtonToggleGroup
-                android:id="@+id/adToggle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:checkedButton="@id/departureBtn"
-                app:selectionRequired="true"
-                app:singleSelection="true">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/switchBtn"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginHorizontal="4dp"
+            android:contentDescription="@string/trip_planner_swap"
+            app:icon="@drawable/ic_swap_vert"
+            app:iconGravity="textStart"
+            app:layout_constraintBottom_toBottomOf="@id/editTextFrom"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/editTextFrom" />
 
-                <Button
-                    android:id="@+id/departureBtn"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/trip_planner_departure" />
-
-                <Button
-                    android:id="@+id/arrivalBtn"
-                    style="?attr/materialButtonOutlinedStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/trip_planner_arrival" />
-            </com.google.android.material.button.MaterialButtonToggleGroup>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/timeDateBtn"
-                style="@style/Widget.Material3.Button.TonalButton.Icon"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:maxLines="1"
-                android:text="@string/trip_planner_now"
-                app:icon="@drawable/ic_edit_calendar"
-                app:layout_flexGrow="1" />
-        </com.google.android.flexbox.FlexboxLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
+        <EditText
+            android:id="@+id/editTextTo"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="6dp"
+            android:autofillHints="none"
+            android:background="@drawable/round_shape_50"
+            android:hint="@string/to"
+            android:inputType="textNoSuggestions"
+            android:minHeight="48dp"
+            android:paddingHorizontal="15dp"
+            android:paddingVertical="10dp"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            app:layout_constraintEnd_toStartOf="@id/timeDateBtn"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/editTextFrom" />
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/timeDateBtn"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="4dp"
+            app:icon="@drawable/ic_edit_calendar"
+            app:iconGravity="textStart"
+            app:layout_constraintBottom_toBottomOf="@id/editTextTo"
+            app:layout_constraintEnd_toStartOf="@id/adPlanBtn"
+            app:layout_constraintTop_toTopOf="@id/editTextTo" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/round_shape_50"
-                    android:gravity="center_vertical"
-                    android:minHeight="48dp"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/fromIcon"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:layout_marginStart="4dp"
-                        android:background="@drawable/ic_stop_background"
-                        android:importantForAccessibility="no"
-                        android:padding="7dp"
-                        android:src="@drawable/ic_filled_circle" />
-
-                    <EditText
-                        android:id="@+id/editTextFrom"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:autofillHints="none"
-                        android:background="@null"
-                        android:hint="@string/from"
-                        android:inputType="textNoSuggestions"
-                        android:minHeight="48dp"
-                        android:paddingHorizontal="10dp"
-                        android:selectAllOnFocus="true"
-                        android:singleLine="true" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:background="@drawable/round_shape_50"
-                    android:gravity="center_vertical"
-                    android:minHeight="48dp"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/toIcon"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:layout_marginStart="4dp"
-                        android:background="@drawable/ic_stop_background"
-                        android:importantForAccessibility="no"
-                        android:padding="7dp"
-                        android:src="@drawable/ic_filled_circle" />
-
-                    <EditText
-                        android:id="@+id/editTextTo"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:autofillHints="none"
-                        android:background="@null"
-                        android:hint="@string/to"
-                        android:inputType="textNoSuggestions"
-                        android:minHeight="48dp"
-                        android:paddingHorizontal="10dp"
-                        android:selectAllOnFocus="true"
-                        android:singleLine="true" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/switchBtn"
-                style="@style/Widget.Material3.Button.IconButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="4dp"
-                android:contentDescription="@string/trip_planner_swap"
-                app:icon="@drawable/ic_swap_vert" />
-        </LinearLayout>
-    </LinearLayout>
+        <!-- Switches between planning for a departure and for an arrival time. -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/adPlanBtn"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="4dp"
+            android:contentDescription="@string/trip_planner_mode"
+            app:icon="@drawable/ic_bus_clock"
+            app:iconGravity="textStart"
+            app:layout_constraintBottom_toBottomOf="@id/editTextTo"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/editTextTo" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
