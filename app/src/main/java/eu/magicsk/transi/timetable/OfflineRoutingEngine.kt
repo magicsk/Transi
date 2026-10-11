@@ -6,6 +6,7 @@ import eu.magicsk.transi.data.models.Journey
 import eu.magicsk.transi.data.models.Part
 import eu.magicsk.transi.data.models.PartStop
 import eu.magicsk.transi.data.models.ROUTE_TYPE_WALK
+import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.idsbk.StopGps
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
@@ -23,6 +24,7 @@ import kotlin.math.hypot
 const val OFFLINE_JOURNEY_PREFIX = "o-"
 
 private const val PLATFORM_WALK_SECONDS = 60
+private const val MINUTE = 60
 private const val DAY = 86_400
 private const val HOUR = 3_600
 
@@ -68,13 +70,13 @@ class OfflineRoutingEngine @Inject constructor(private val database: TimetableDa
     val isReady: Boolean get() = database.isReady
 
     /**
-     * About 5 journeys between the stops named [fromName] and [toName], soonest first: leaving at or after [date],
-     * or with [ArrivalDeparture.ARRIVAL] the latest ones arriving by it. Empty when none is found; null when the
-     * database is not open.
+     * About 5 journeys between the stops [from] and [to], soonest first: leaving at or after [date], or with
+     * [ArrivalDeparture.ARRIVAL] the latest ones arriving by it. Empty when none is found; null when the database
+     * is not open or has no stop for [from] or [to] (see [stopsNamed]), for the online planner to answer.
      */
     suspend fun plan(
-        fromName: String,
-        toName: String,
+        from: Stop,
+        to: Stop,
         date: Instant,
         arrivalDeparture: ArrivalDeparture,
         maxTransfers: Int,
@@ -86,17 +88,17 @@ class OfflineRoutingEngine @Inject constructor(private val database: TimetableDa
         val context = currentCoroutineContext()
         var journeys = emptyList<Journey>()
         for (window in WINDOWS) {
-            val from = if (arrival) time - window else time
+            val start = if (arrival) time - window else time
             // Stops and trips come from one read: a database replaced in between would mismatch their indexes.
             val loaded = database.read { db ->
                 val (stops, stopIndex) = loadStops(db)
-                val origins = stopsNamed(stops, fromName)
-                val destinations = stopsNamed(stops, toName)
+                val origins = stopsNamed(stops, from.name, StopGps(lon = from.lng, lat = from.lat))
+                val destinations = stopsNamed(stops, to.name, StopGps(lon = to.lng, lat = to.lat))
                 val named = origins.isNotEmpty() && destinations.isNotEmpty()
-                val trips = if (named) loadTrips(db, stopIndex, day, from, from + window, context) else emptyList()
+                val trips = if (named) loadTrips(db, stopIndex, day, start, start + window, context) else emptyList()
                 Loaded(stops, origins, destinations, trips)
             } ?: return null
-            if (loaded.origins.isEmpty() || loaded.destinations.isEmpty()) return emptyList()
+            if (loaded.origins.isEmpty() || loaded.destinations.isEmpty()) return null
             journeys = withContext(Dispatchers.Default) {
                 val (stops, origins, destinations, trips) = loaded
                 searchJourneys(stops, trips, origins, destinations, time, arrival, maxLegs, walkTransfers = maxWalkMinutes >= 1)
@@ -276,24 +278,29 @@ internal fun stationName(stopName: String): String {
 
 /**
  * Every platform of the station named [name]: its stops near those of exactly that name (another town's stop of the
- * same station name is not one), else the stops whose name contains it.
+ * same station name is not one). A name of no station (the timetables have no Suché mýto, and write Gajary, NAFTA)
+ * takes the stops within [STATION_RADIUS_METERS] of [place], where the stop was picked: those whose name contains it,
+ * else all of them. Empty when there are none.
  */
-internal fun stopsNamed(stops: List<OfflineStop>, name: String): Set<Int> {
+internal fun stopsNamed(stops: List<OfflineStop>, name: String, place: StopGps): Set<Int> {
     if (name.isBlank()) return emptySet()
     val station = stationName(name)
     val platforms = stops.indices.filter { stops[it].station == station }
     // ponytail: a name matching no stop exactly takes every platform of its station, which could span two towns;
     // no stop name of the live feed does that.
     val named = platforms.filter { stops[it].name.equals(name, ignoreCase = true) }.ifEmpty { platforms }
-    return platforms.filter { platform -> named.any { isNear(stops[it], stops[platform]) } }
-        .ifEmpty { stops.indices.filter { stops[it].name.contains(name, ignoreCase = true) } }
+    return platforms.filter { platform -> named.any { isNear(stops[it].gps, stops[platform].gps) } }
+        .ifEmpty {
+            val around = stops.indices.filter { isNear(stops[it].gps, place) }
+            around.filter { stops[it].name.contains(name, ignoreCase = true) }.ifEmpty { around }
+        }
         .toSet()
 }
 
 /** Whether [a] and [b] are within [STATION_RADIUS_METERS] (equirectangular distance, exact enough at this range). */
-internal fun isNear(a: OfflineStop, b: OfflineStop): Boolean {
-    val x = Math.toRadians(b.gps.lon - a.gps.lon) * cos(Math.toRadians((a.gps.lat + b.gps.lat) / 2))
-    val y = Math.toRadians(b.gps.lat - a.gps.lat)
+internal fun isNear(a: StopGps, b: StopGps): Boolean {
+    val x = Math.toRadians(b.lon - a.lon) * cos(Math.toRadians((a.lat + b.lat) / 2))
+    val y = Math.toRadians(b.lat - a.lat)
     return hypot(x, y) * EARTH_RADIUS_METERS <= STATION_RADIUS_METERS
 }
 
@@ -333,9 +340,11 @@ internal suspend fun searchJourneys(
     maxLegs: Int,
     walkTransfers: Boolean,
 ): List<List<Leg>> {
-    if (!arrival) return OfflineRouter(stops, trips, maxLegs, walkTransfers).search(origins, destinations, time)
+    if (!arrival) {
+        return OfflineRouter(stops, trips, maxLegs, walkTransfers, reversed = false).search(origins, destinations, time)
+    }
     val reversed = reversedInTime(trips)
-    return OfflineRouter(stops, reversed, maxLegs, walkTransfers).search(destinations, origins, -time)
+    return OfflineRouter(stops, reversed, maxLegs, walkTransfers, reversed = true).search(destinations, origins, -time)
         .map { legs -> legs.forwardInTime(reversed) }
 }
 
@@ -357,13 +366,14 @@ private fun List<Leg>.forwardInTime(trips: List<OfflineTrip>): List<Leg> = asRev
 
 /**
  * The iOS search over trips in memory, up to [maxLegs] rides changing (with [walkTransfers]) to another platform of
- * the station; stops and trips are referred to by their list index.
+ * the station; stops and trips are referred to by their list index. [reversed] when the trips are [reversedInTime].
  */
 internal class OfflineRouter(
     private val stops: List<OfflineStop>,
     private val trips: List<OfflineTrip>,
     private val maxLegs: Int,
     private val walkTransfers: Boolean,
+    private val reversed: Boolean,
 ) {
     private class Call(val trip: Int, val position: Int, val time: Int)
 
@@ -384,7 +394,7 @@ internal class OfflineRouter(
     /** The other platforms of each stop's station: its stops near this one. */
     private val platforms: List<List<Int>> = List(stops.size) { ArrayList<Int>() }.also { platforms ->
         stops.indices.groupBy { stops[it].station }.values.forEach { station ->
-            for (a in station) for (b in station) if (a != b && isNear(stops[a], stops[b])) platforms[a] += b
+            for (a in station) for (b in station) if (a != b && isNear(stops[a].gps, stops[b].gps)) platforms[a] += b
         }
     }
 
@@ -394,11 +404,12 @@ internal class OfflineRouter(
      * candidate order.
      */
     suspend fun search(origins: Set<Int>, destinations: Set<Int>, start: Int): List<List<Leg>> {
-        val candidates = origins
+        val isDestination = BooleanArray(stops.size).also { destinations.forEach { stop -> it[stop] = true } }
+        // Nothing leaves a destination: the stops around Suché mýto include Hodžovo nám.
+        val candidates = origins.filterNot { isDestination[it] }
             .flatMap { stop -> calls[stop].drop(firstAtOrAfter(stop, start)).map { stop to it.time } }
             .distinct()
             .sortedBy { it.second }
-        val isDestination = BooleanArray(stops.size).also { destinations.forEach { stop -> it[stop] = true } }
         val best = IntArray(stops.size)
         val journeys = ArrayList<List<Leg>>()
         // Unlike iOS, departures from a stop until the first journey found from it leaves are skipped: they find
@@ -412,9 +423,9 @@ internal class OfflineRouter(
             if (found.isEmpty()) continue
             leaves[stop] = found.minOf { it.filterIsInstance<Leg.Ride>().departure }
             for (journey in found) {
-                // Unlike iOS, a journey leaving no later, arriving no sooner and riding no less than another is
-                // dropped (repeats too), so a bus ride to catch the same tram does not crowd out boarding it at the
-                // next platform.
+                // Unlike iOS, a journey leaving no later, arriving no sooner (to the shown minute) and riding no less
+                // than another is dropped (repeats too), so a bus ride to catch the same tram does not crowd out
+                // boarding it at the next platform.
                 if (journeys.any { beats(it, journey) }) continue
                 journeys.removeAll { beats(journey, it) }
                 journeys += journey
@@ -427,22 +438,28 @@ internal class OfflineRouter(
     private fun beats(a: List<Leg>, b: List<Leg>): Boolean {
         val rides = a.filterIsInstance<Leg.Ride>()
         val other = b.filterIsInstance<Leg.Ride>()
-        return rides.departure >= other.departure && rides.arrival <= other.arrival && rides.size <= other.size
+        return minute(rides.departure) >= minute(other.departure) && minute(rides.arrival) <= minute(other.arrival) &&
+            rides.size <= other.size
     }
+
+    /** The minute [time] shows as, still ordered as the search's times: [reversed] ones are negated, so round up. */
+    private fun minute(time: Int): Int = if (reversed) -Math.floorDiv(-time, MINUTE) else Math.floorDiv(time, MINUTE)
 
     private val List<Leg.Ride>.departure get() = first().let { trips[it.trip].times[it.board] }
     private val List<Leg.Ride>.arrival get() = last().let { trips[it.trip].times[it.alight] }
 
     /**
      * Breadth first by rides: every trip leaving the reached stops within [MAX_WAIT] (after a ride also from the
-     * station's other platforms, a minute later) improves the best arrival at its later stops. Each number of rides
-     * that reaches a destination sooner than fewer rides did adds that journey, fewest rides first; nothing reached
-     * at or after the soonest arrival yet is followed further.
+     * station's other platforms, a minute later) improves the best arrival at its later stops; a ride ending at the
+     * station it started from is none. Each number of rides that reaches a destination at least a minute sooner than
+     * the last journey added adds that journey, fewest rides first; nothing reached at or after the soonest arrival
+     * yet is followed further.
      */
     private suspend fun fastestJourneys(start: Int, time: Int, isDestination: BooleanArray, best: IntArray): List<List<Leg>> {
         best.fill(Int.MAX_VALUE)
         var labels = listOf(Label(null, null, null, start, time))
         var soonest = Int.MAX_VALUE
+        var added = Int.MAX_VALUE
         val journeys = ArrayList<List<Leg>>()
         for (leg in 1..maxLegs) {
             // One label per stop: a later improvement always arrives earlier, so it replaces the earlier one.
@@ -471,6 +488,8 @@ internal class OfflineRouter(
                             if (arrival >= soonest) break
                             val stop = trip.stops[position]
                             if (arrival >= best[stop]) continue
+                            // No ride within a station, like 69 from one Avion Shop. Park platform to another.
+                            if (stop == boardStop || stop in platforms[boardStop]) continue
                             best[stop] = arrival
                             val reached = Label(label, walk, Leg.Ride(call.trip, call.position, position), stop, arrival)
                             if (isDestination[stop]) {
@@ -483,7 +502,11 @@ internal class OfflineRouter(
                     }
                 }
             }
-            arrived?.let { journeys += it.legs() }
+            // A minute sooner at least: seconds sooner would look like the same journey with more rides.
+            arrived?.takeIf { it.time <= added - MINUTE }?.let {
+                journeys += it.legs()
+                added = it.time
+            }
             if (next.isEmpty()) break
             labels = next.values.toList()
         }
