@@ -41,6 +41,7 @@ import com.google.android.material.shape.CornerFamily
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.shape.ShapeAppearanceModel
 import eu.magicsk.transi.R
+import eu.magicsk.transi.data.models.FollowedTrip
 import eu.magicsk.transi.data.models.Journey
 import eu.magicsk.transi.data.models.JourneyStep
 import eu.magicsk.transi.data.models.MapFocus
@@ -50,21 +51,30 @@ import eu.magicsk.transi.data.models.StopsState
 import eu.magicsk.transi.data.models.TicketCoverage
 import eu.magicsk.transi.data.models.TransferBuffer
 import eu.magicsk.transi.data.models.TripDetailState
+import eu.magicsk.transi.data.models.TripMissed
+import eu.magicsk.transi.data.models.TripState
+import eu.magicsk.transi.data.models.TripStep
+import eu.magicsk.transi.data.models.TripWarning
 import eu.magicsk.transi.data.models.ZoneChange
 import eu.magicsk.transi.data.models.delayColor
 import eu.magicsk.transi.data.models.delayMinutes
 import eu.magicsk.transi.data.models.expected
 import eu.magicsk.transi.data.models.hasArrived
+import eu.magicsk.transi.data.models.isLive
 import eu.magicsk.transi.data.models.legStops
+import eu.magicsk.transi.data.models.lines
 import eu.magicsk.transi.data.models.minutes
 import eu.magicsk.transi.data.models.minutesBetween
+import eu.magicsk.transi.data.models.resolve
 import eu.magicsk.transi.data.models.rideCount
+import eu.magicsk.transi.data.models.step
 import eu.magicsk.transi.data.models.steps
 import eu.magicsk.transi.data.models.transferBuffers
 import eu.magicsk.transi.data.models.walkMinutes
 import eu.magicsk.transi.data.models.zoneChanges
 import eu.magicsk.transi.data.models.zoneNames
 import eu.magicsk.transi.data.remote.responses.idsbk.StopGps
+import eu.magicsk.transi.databinding.TripDetailAlternativeBinding
 import eu.magicsk.transi.databinding.TripDetailStepBinding
 import eu.magicsk.transi.databinding.TripDetailSummaryBinding
 import eu.magicsk.transi.databinding.TripDetailTimelineBinding
@@ -79,11 +89,26 @@ import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.roundToInt
 
+/**
+ * The Start/End trip button and, while this journey is followed, its step and missed ride (iOS StartTripButton,
+ * LiveStepView and MissedRideView). [canStart] while a leg is live, from an hour before the journey leaves.
+ */
+data class TripControls(val followed: FollowedTrip?, val canStart: Boolean, val notificationsOn: Boolean)
+
 /** A row of the trip detail sheet: the summary, then the steps, then each ride's stops (iOS TripDetailSheet). */
 sealed interface TripDetailRow {
-    data class Summary(val journey: Journey, val delays: Map<Int, Int>, val coverage: TicketCoverage, val arrived: Boolean) : TripDetailRow
+    data class Summary(
+        val journey: Journey,
+        val delays: Map<Int, Int>,
+        val coverage: TicketCoverage,
+        val arrived: Boolean,
+        val trip: TripControls,
+    ) : TripDetailRow
+
     data class Header(@StringRes val title: Int) : TripDetailRow
-    data class Ride(val index: Int, val part: Part, val delay: Int?) : TripDetailRow
+
+    /** [current]: the followed trip's step. */
+    data class Ride(val index: Int, val part: Part, val delay: Int?, val current: Boolean = false) : TripDetailRow
 
     /** A walk in the steps or, with [timeline], in the stops; [ride] is the part it leads to. */
     data class Walk(
@@ -94,9 +119,10 @@ sealed interface TripDetailRow {
         val ride: Part?,
         val buffer: TransferBuffer?,
         val focus: MapFocus,
+        val current: Boolean = false,
     ) : TripDetailRow
 
-    data class Change(val timeline: Boolean, val to: Int, val ride: Part, val buffer: TransferBuffer?) : TripDetailRow
+    data class Change(val timeline: Boolean, val to: Int, val ride: Part, val buffer: TransferBuffer?, val current: Boolean = false) : TripDetailRow
     data class Board(val index: Int, val part: Part, val stop: PartStop, val delay: Int?) : TripDetailRow
     data class StopsLoading(val index: Int, val line: String) : TripDetailRow
     data class StopsFailed(val index: Int, val line: String) : TripDetailRow
@@ -107,13 +133,23 @@ sealed interface TripDetailRow {
     data class Arrive(val part: Part, val delay: Int?) : TripDetailRow
 }
 
-/** The sheet's rows for [state]; [coverage] is the journey's ticket. */
-fun tripDetailRows(state: TripDetailState, coverage: TicketCoverage): List<TripDetailRow> {
+/** The followed trip's step. */
+private val TripDetailRow.isCurrent
+    get() = when (this) {
+        is TripDetailRow.Ride -> current
+        is TripDetailRow.Walk -> current
+        is TripDetailRow.Change -> current
+        else -> false
+    }
+
+/** The sheet's rows for [state]; [coverage] is the journey's ticket; [notificationsOn] lets the trip start. */
+fun tripDetailRows(state: TripDetailState, coverage: TicketCoverage, notificationsOn: Boolean): List<TripDetailRow> {
     val journey = state.journey
     val parts = journey.parts
     val delays = state.delays
     val buffers = journey.transferBuffers(delays)
     val steps = journey.steps
+    val current = state.followed?.progress?.step(journey)
     fun walk(step: JourneyStep.Walk, timeline: Boolean) = TripDetailRow.Walk(
         timeline,
         step.parts.sumOf { parts[it].minutes },
@@ -122,15 +158,17 @@ fun tripDetailRows(state: TripDetailState, coverage: TicketCoverage): List<TripD
         step.to?.let(parts::get),
         step.to?.let(buffers::get),
         step.to?.let { MapFocus.Change(it) } ?: MapFocus.Leg(step.parts.first()),
+        current = !timeline && step == current,
     )
 
-    val rows = mutableListOf<TripDetailRow>(TripDetailRow.Summary(journey, delays, coverage, journey.hasArrived(state.now, delays)))
+    val trip = TripControls(state.followed, parts.any { it.isLive(state.now, null) }, notificationsOn)
+    val rows = mutableListOf<TripDetailRow>(TripDetailRow.Summary(journey, delays, coverage, journey.hasArrived(state.now, delays), trip))
     rows += TripDetailRow.Header(R.string.trip_detail_steps)
     steps.mapTo(rows) { step ->
         when (step) {
-            is JourneyStep.Ride -> TripDetailRow.Ride(step.index, parts[step.index], delays[step.index])
+            is JourneyStep.Ride -> TripDetailRow.Ride(step.index, parts[step.index], delays[step.index], step == current)
             is JourneyStep.Walk -> walk(step, timeline = false)
-            is JourneyStep.Change -> TripDetailRow.Change(false, step.to, parts[step.to], buffers[step.to])
+            is JourneyStep.Change -> TripDetailRow.Change(false, step.to, parts[step.to], buffers[step.to], step == current)
         }
     }
     rows += TripDetailRow.Header(R.string.trip_detail_stops)
@@ -173,11 +211,18 @@ fun tripDetailRows(state: TripDetailState, coverage: TicketCoverage): List<TripD
     return rows
 }
 
-/** The trip detail sheet's list. Taps focus the map ([onFocus]), retry a leg's stops or show the stops in between. */
+/**
+ * The trip detail sheet's list. Taps focus the map ([onFocus]), retry a leg's stops, show the stops in between, start or
+ * end following the trip, keep following it after a missed ride, or follow another connection instead.
+ */
 class TripDetailAdapter(
     private val onFocus: (MapFocus) -> Unit,
     private val onRetry: (Int) -> Unit,
     private val onToggle: (Int) -> Unit,
+    private val onStartTrip: () -> Unit,
+    private val onEndTrip: () -> Unit,
+    private val onKeepFollowing: () -> Unit,
+    private val onAlternative: (Journey) -> Unit,
 ) : ListAdapter<TripDetailRow, RecyclerView.ViewHolder>(TripDetailRowDiff) {
     class SummaryHolder(val binding: TripDetailSummaryBinding) : RecyclerView.ViewHolder(binding.root)
     class HeaderHolder(val text: TextView) : RecyclerView.ViewHolder(text)
@@ -261,6 +306,9 @@ class TripDetailAdapter(
         val first = position == 0 || getItem(position - 1) is TripDetailRow.Header
         val last = position == itemCount - 1 || getItem(position + 1) is TripDetailRow.Header
         val radius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20f, view.resources.displayMetrics)
+        val card = MaterialColors.getColor(view, com.google.android.material.R.attr.colorSurfaceContainerHighest)
+        // The followed trip's step is tinted with the accent, as on iOS.
+        val current = getItem(position).isCurrent
         view.background = MaterialShapeDrawable(
             ShapeAppearanceModel.builder()
                 .setTopLeftCorner(CornerFamily.ROUNDED, if (first) radius else 0f)
@@ -269,7 +317,9 @@ class TripDetailAdapter(
                 .setBottomRightCorner(CornerFamily.ROUNDED, if (last) radius else 0f)
                 .build()
         ).apply {
-            fillColor = ColorStateList.valueOf(MaterialColors.getColor(view, com.google.android.material.R.attr.colorSurfaceContainerHighest))
+            fillColor = ColorStateList.valueOf(
+                if (current) MaterialColors.layer(card, MaterialColors.getColor(view, androidx.appcompat.R.attr.colorPrimary), 0.15f) else card
+            )
         }
         view.clipToOutline = true
         if (holder is StepHolder) holder.binding.stepDivider.isVisible = !first
@@ -314,7 +364,9 @@ class TripDetailAdapter(
             zonesText.takeIf { names.isNotEmpty() || zoneCount > 0 },
         ).forEach { addChip(b.tripSummaryChips, it) }
 
-        b.tripSummary.contentDescription = context.getString(
+        val step = row.trip.followed?.state
+        bindLiveStep(b, step)
+        b.tripSummary.contentDescription = liveStepSpoken(context, step) + context.getString(
             R.string.trip_detail_summary_spoken,
             minutes,
             (day?.let { "$it " } ?: "") + texts.spokenTime(first.startDeparture, startDelay),
@@ -328,10 +380,155 @@ class TripDetailAdapter(
             b.tripSummary, AccessibilityActionCompat.ACTION_CLICK, context.getString(R.string.trip_detail_summary_action), null,
         )
 
+        bindMissed(b, journey, row.trip.followed?.missed, texts)
         b.tripSummaryActions.isVisible = journey.rideCount > 0
+        bindTripButton(b, row.trip, row.arrived)
         b.tripSummaryTicket.bind(row.coverage)
         if (row.arrived) b.tripSummaryTicket.isVisible = false
         b.tripSummaryArrived.isVisible = row.arrived
+    }
+
+    /** The followed trip's step above the summary, as in its notification: the line or an icon, title, detail, warning. */
+    private fun bindLiveStep(b: TripDetailSummaryBinding, step: TripState?) {
+        b.tripSummaryStep.isVisible = step != null
+        step ?: return
+        val context = b.root.context
+        val line = step.line
+        b.tripSummaryStepBadge.isVisible = line != null
+        b.tripSummaryStepIcon.isVisible = line == null
+        if (line != null) {
+            customizeLineText(b.tripSummaryStepBadge, line, context, context.resources)
+        } else {
+            val (icon, color) = when (step.step) {
+                TripStep.ARRIVED -> R.drawable.ic_check_circle to ContextCompat.getColor(context, R.color.table_green)
+                TripStep.MISSED -> R.drawable.ic_warning to ContextCompat.getColor(context, R.color.table_orange)
+                else -> R.drawable.ic_directions_walk to MaterialColors.getColor(b.root, androidx.appcompat.R.attr.colorPrimary)
+            }
+            b.tripSummaryStepIcon.setImageResource(icon)
+            b.tripSummaryStepIcon.imageTintList = ColorStateList.valueOf(color)
+        }
+        b.tripSummaryStepTitle.text = step.title.resolve(context)
+        b.tripSummaryStepDetail.text = step.detail.resolve(context)
+        val warning = step.warning
+        b.tripSummaryStepWarning.isVisible = warning != null
+        warning ?: return
+        b.tripSummaryStepWarning.setText(warning.text)
+        val icon = AppCompatResources.getDrawable(context, R.drawable.ic_warning)?.mutate()?.apply {
+            setTint(ContextCompat.getColor(context, if (warning == TripWarning.LIKELY_MISSED_CHANGE) R.color.table_red else R.color.table_orange))
+            val size = b.tripSummaryStepWarning.textSize.roundToInt()
+            setBounds(0, 0, size, size)
+        }
+        b.tripSummaryStepWarning.setCompoundDrawablesRelative(icon, null, null, null)
+    }
+
+    private fun liveStepSpoken(context: Context, step: TripState?): String {
+        step ?: return ""
+        return step.line?.let { context.getString(R.string.trip_step_line_spoken, it) }.orEmpty() +
+            context.getString(R.string.trip_step_spoken, step.title.resolve(context), step.detail.resolve(context)) +
+            step.warning?.let { context.getString(R.string.trip_warning_spoken, context.getString(it.text)) }.orEmpty()
+    }
+
+    /** After a missed ride: the other connections from where the traveller is, or keep following the trip. */
+    private fun bindMissed(b: TripDetailSummaryBinding, journey: Journey, missed: TripMissed?, texts: Texts) {
+        b.tripSummaryMissed.isVisible = missed != null
+        missed ?: return
+        val context = b.root.context
+        val line = journey.parts.getOrNull(missed.part)?.routeShortName.orEmpty()
+        b.tripSummaryMissedText.text =
+            context.getString(if (missed.boarded) R.string.trip_missed_off_route else R.string.trip_missed_left_without_you, line)
+        val alternatives = missed.alternatives
+        b.tripSummaryMissedSearching.isVisible = alternatives == null
+        b.tripSummaryMissedNone.isVisible = alternatives?.isEmpty == true
+        val list = b.tripSummaryAlternatives
+        list.removeAllViews()
+        if (alternatives != null) {
+            addAlternatives(list, R.string.trip_same_route, alternatives.sameRoute, texts)
+            addAlternatives(list, R.string.trip_other_routes, alternatives.others, texts)
+        }
+        b.tripSummaryKeepFollowing.setOnClickListener { onKeepFollowing() }
+        ViewCompat.replaceAccessibilityAction(
+            b.tripSummaryKeepFollowing, AccessibilityActionCompat.ACTION_CLICK, context.getString(R.string.trip_keep_following_action), null,
+        )
+    }
+
+    private fun addAlternatives(list: LinearLayout, @StringRes title: Int, journeys: List<Journey>, texts: Texts) {
+        if (journeys.isEmpty()) return
+        val context = list.context
+        val density = context.resources.displayMetrics.density
+        list.addView(TextView(context).apply {
+            setText(title)
+            setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_LabelLarge)
+            setTextColor(MaterialColors.getColor(list, com.google.android.material.R.attr.colorOnSurfaceVariant))
+            setPadding(0, (12 * density).roundToInt(), 0, (2 * density).roundToInt())
+            ViewCompat.setAccessibilityHeading(this, true)
+        })
+        val inflater = LayoutInflater.from(context)
+        journeys.forEach { alternative ->
+            val parts = alternative.parts
+            val ride = parts.firstOrNull { !it.isWalk } ?: return@forEach
+            val last = parts.last()
+            val lastDelay = parts.lastOrNull { !it.isWalk }?.delaySeconds
+            val lines = alternative.lines().map { it ?: "?" }
+            val row = TripDetailAlternativeBinding.inflate(inflater, list, false)
+            lines.forEach { line ->
+                row.alternativeLines.addView(TextView(context).apply {
+                    typeface = ResourcesCompat.getFont(context, R.font.roboto_bold)
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+                    isSingleLine = true
+                    customizeLineText(this, line, context, context.resources)
+                }, FlexboxLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                    marginEnd = (4 * density).roundToInt()
+                    topMargin = (2 * density).roundToInt()
+                    bottomMargin = (2 * density).roundToInt()
+                })
+            }
+            row.alternativeTimes.text = TextUtils.expandTemplate(
+                context.getText(R.string.trip_detail_route), texts.time(ride.startDeparture, ride.delaySeconds), texts.time(last.endArrival, lastDelay),
+            )
+            row.alternativeStop.text = texts.stop(ride.startStopName, ride.startStopCode, row.alternativeStop.textSize)
+            row.root.contentDescription = context.getString(
+                R.string.trip_alternative_spoken,
+                lines.joinToString(context.getString(R.string.trip_alternative_lines_separator)),
+                ride.startStopName.orEmpty(),
+                texts.platformSpoken(ride.startStopCode),
+                texts.spokenTime(ride.startDeparture, ride.delaySeconds),
+                texts.spokenTime(last.endArrival, lastDelay),
+            )
+            row.root.setOnClickListener { onAlternative(alternative) }
+            ViewCompat.replaceAccessibilityAction(
+                row.root, AccessibilityActionCompat.ACTION_CLICK, context.getString(R.string.trip_alternative_action), null,
+            )
+            list.addView(row.root)
+        }
+    }
+
+    /**
+     * Start trip, disabled with the reason while notifications are off or no leg is live yet; End trip while this
+     * journey is followed, also once it arrived.
+     */
+    private fun bindTripButton(b: TripDetailSummaryBinding, trip: TripControls, arrived: Boolean) {
+        val context = b.root.context
+        val followed = trip.followed != null
+        b.tripSummaryTrip.isVisible = followed || !arrived
+        b.tripSummaryStartTrip.isVisible = !followed
+        b.tripSummaryEndTrip.isVisible = followed
+        b.tripSummaryStartTrip.isEnabled = trip.notificationsOn && trip.canStart
+        val note = when {
+            followed -> R.string.trip_running
+            !trip.notificationsOn -> R.string.trip_notifications_off
+            !trip.canStart -> R.string.trip_not_live_yet
+            else -> null
+        }
+        b.tripSummaryTripNote.isVisible = note != null
+        note?.let(b.tripSummaryTripNote::setText)
+        b.tripSummaryStartTrip.setOnClickListener { onStartTrip() }
+        b.tripSummaryEndTrip.setOnClickListener { onEndTrip() }
+        ViewCompat.replaceAccessibilityAction(
+            b.tripSummaryStartTrip, AccessibilityActionCompat.ACTION_CLICK, context.getString(R.string.trip_start_action), null,
+        )
+        ViewCompat.replaceAccessibilityAction(
+            b.tripSummaryEndTrip, AccessibilityActionCompat.ACTION_CLICK, context.getString(R.string.trip_end_action), null,
+        )
     }
 
     /** Each leg's share of the journey in its line colour, at least a minute; walks grey; line labels where they fit. */
@@ -435,6 +632,7 @@ class TripDetailAdapter(
         }
         b.root.setOnClickListener { onFocus(focus) }
         ViewCompat.replaceAccessibilityAction(b.root, AccessibilityActionCompat.ACTION_CLICK, context.getString(action), null)
+        ViewCompat.setStateDescription(b.root, if (row.isCurrent) context.getString(R.string.trip_current_step) else null)
     }
 
     private fun bindTimeline(b: TripDetailTimelineBinding, row: TripDetailRow, texts: Texts) {

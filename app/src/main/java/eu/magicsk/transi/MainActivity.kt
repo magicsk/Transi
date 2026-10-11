@@ -30,6 +30,7 @@ import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.databinding.ActivityMainBinding
+import eu.magicsk.transi.repository.FollowedTrips
 import eu.magicsk.transi.timetable.TimetableDatabase
 import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.util.UpdateAlert
@@ -45,6 +46,9 @@ import kotlin.math.max
 class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var timetableDatabase: TimetableDatabase
+
+    @Inject
+    lateinit var followedTrips: FollowedTrips
 
     private val releaseInfoViewModel: ReleaseInfoViewModel by viewModels()
     private val mainViewModel: MainViewModel by viewModels()
@@ -84,6 +88,8 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         updateLocation()
         timetableDatabase.retryIfFailed()
+        // A trip followed when the process ended goes on (iOS restore()).
+        if (followedTrips.trip.value == null && followedTrips.saved() != null) LiveUpdatesService.restoreTrip(this)
     }
 
     override fun onStop() {
@@ -191,7 +197,7 @@ class MainActivity : AppCompatActivity() {
 
 
         // Followed departures post to LiveUpdatesService's own channels now.
-        getSystemService(NotificationManager::class.java).deleteNotificationChannel(LiveUpdatesService.LEGACY_CHANNEL)
+        getSystemService(NotificationManager::class.java).deleteNotificationChannel("virtual_table_notifier")
         createChannel(
             getString(R.string.trip_planner_notification_channel_id),
             getString(R.string.trip_planner_notification_channel_name),
@@ -240,7 +246,12 @@ class MainActivity : AppCompatActivity() {
     /** The one way to switch tabs from links and from screens (iOS pendingNavigation): the tab plus what it should show. */
     fun navigate(link: DeepLink) {
         val tab = when (link) {
-            DeepLink.Trip, DeepLink.ActiveTrip -> R.id.navigationTripPlanner
+            DeepLink.Trip -> R.id.navigationTripPlanner
+            DeepLink.ActiveTrip -> {
+                // Just the planner once the trip is no longer followed.
+                followedTrips.journey?.let { startActivity(TripDetailActivity.intent(this, it)) }
+                R.id.navigationTripPlanner
+            }
             is DeepLink.Table -> {
                 link.stopId?.let(mainViewModel::changeTableStop)
                 R.id.navigationTable

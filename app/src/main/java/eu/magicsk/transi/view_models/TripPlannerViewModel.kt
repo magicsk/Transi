@@ -22,8 +22,6 @@ import eu.magicsk.transi.data.models.remember
 import eu.magicsk.transi.data.models.restorable
 import eu.magicsk.transi.data.models.searchId
 import eu.magicsk.transi.data.remote.responses.Stop
-import eu.magicsk.transi.data.remote.responses.idsbk.RaptorRequest
-import eu.magicsk.transi.data.remote.responses.idsbk.RaptorResponse
 import eu.magicsk.transi.repository.DataRepository
 import eu.magicsk.transi.repository.IdsbkSession
 import eu.magicsk.transi.timetable.OfflineRoutingEngine
@@ -41,7 +39,7 @@ import eu.magicsk.transi.util.nearest
 import eu.magicsk.transi.util.nextPagingDates
 import eu.magicsk.transi.util.pagingDatesFor
 import eu.magicsk.transi.util.raptorRequest
-import eu.magicsk.transi.util.widened
+import eu.magicsk.transi.util.raptorTrip
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -282,7 +280,7 @@ class TripPlannerViewModel @Inject constructor(
                         prefs.intPref(Prefs.TRIP_MAX_WALK_DURATION, Prefs.TRIP_MAX_WALK_DURATION_DEFAULT),
                         prefs.intPref(Prefs.TRIP_MAX_TRANSFERS, Prefs.TRIP_MAX_TRANSFERS_DEFAULT),
                     )
-                    fetchRaptor(it, body)
+                    repository.raptorTrip(it, body)
                 }
             }
             val imhd = async {
@@ -325,14 +323,6 @@ class TripPlannerViewModel @Inject constructor(
                 else -> onResults(FetchSource.INITIAL, raptorAnswered = false, raptor = journeys, imhd = null)
             }
         }
-    }
-
-    /** The R-API answer, retried once over 8 hours when empty; null when it failed. */
-    private suspend fun fetchRaptor(session: String, body: RaptorRequest): RaptorResponse? {
-        val response = repository.getRaptorTrip(session, body).data ?: return null
-        if (!response.journey.isNullOrEmpty()) return response
-        val retry = body.widened() ?: return response
-        return repository.getRaptorTrip(session, retry).data ?: response
     }
 
     private fun onResults(source: FetchSource, raptorAnswered: Boolean, raptor: List<Journey>, imhd: List<Journey>?) {

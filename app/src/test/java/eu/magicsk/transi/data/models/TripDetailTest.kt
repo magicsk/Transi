@@ -268,7 +268,7 @@ class TripDetailTest {
 
     @Test
     fun sheetRowsFollowTheStepsAndStops() {
-        val rows = tripDetailRows(TripDetailState(iJourney, expanded = setOf(0)), TicketCoverage.Unknown)
+        val rows = tripDetailRows(TripDetailState(iJourney, expanded = setOf(0)), TicketCoverage.Unknown, notificationsOn = true)
         assertTrue(rows.first() is TripDetailRow.Summary)
         val timeline = rows.dropWhile { it != TripDetailRow.Header(R.string.trip_detail_stops) }.drop(1)
         val firstRide = timeline.takeWhile { it !is TripDetailRow.Alight }
@@ -278,11 +278,11 @@ class TripDetailTest {
         assertEquals("Get off, get off, arrive", listOf(false, false, true), timeline.filterIsInstance<TripDetailRow.Alight>().map { it.isLast })
         assertEquals(2, timeline.count { it is TripDetailRow.Change })
 
-        val loading = tripDetailRows(TripDetailState(walkChange, stopsState = mapOf(0 to StopsState.LOADING)), TicketCoverage.Unknown)
+        val loading = tripDetailRows(TripDetailState(walkChange, stopsState = mapOf(0 to StopsState.LOADING)), TicketCoverage.Unknown, notificationsOn = true)
         assertTrue(loading.contains(TripDetailRow.StopsLoading(0, "72")))
         val noon = local("2026-10-05 12:00")
         val endsOnFoot = Journey("foot", listOf(part(noon, noon.plusSeconds(600), 3), part(noon.plusSeconds(600), noon.plusSeconds(900), ROUTE_TYPE_WALK)), null)
-        assertTrue("A walk ending the journey arrives", tripDetailRows(TripDetailState(endsOnFoot), TicketCoverage.Unknown).last() is TripDetailRow.Arrive)
+        assertTrue("A walk ending the journey arrives", tripDetailRows(TripDetailState(endsOnFoot), TicketCoverage.Unknown, notificationsOn = true).last() is TripDetailRow.Arrive)
     }
 
     @Test

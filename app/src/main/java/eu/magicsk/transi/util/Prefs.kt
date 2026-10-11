@@ -31,6 +31,9 @@ object Prefs {
     const val NOTIFY_ON_DELAY_CHANGE = "notify_on_delay_change"
     const val NOTIFY_ON_POSITION_CHANGE = "notify_on_position_change"
 
+    /** JSON [eu.magicsk.transi.data.models.SavedTrip] of the trip followed in the live notification; absent without one. */
+    const val FOLLOWED_TRIP = "followed_trip"
+
     /** Boolean, default false: use the downloaded timetable database and keep it updated. */
     const val OFFLINE_TIMETABLES = "offline_timetables"
 

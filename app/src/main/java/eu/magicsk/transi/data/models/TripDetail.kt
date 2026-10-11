@@ -292,6 +292,25 @@ fun Part.liveConnection(connections: List<MHDTableData>, platform: Int?, schedul
         .minWithOrNull(compareBy({ abs(it.departureTimeCP - time) }, { if (it.headsign == tripHeadsign) 0 else 1 }))
 }
 
+/** The stop whose live board lists a leg's vehicle, that board's platform id, and when the vehicle is due there. */
+data class LiveBoardStop(val stop: Stop, val platform: Int?, val scheduled: Instant)
+
+/**
+ * Where this leg's vehicle shows on a live board at [at], its boarding stop when null (iOS PartLiveTracker.init): the
+ * leg stop's imhd stop, else the stop by station (boarding stop only), name and platform. Null for walks and stops
+ * missing from [stops].
+ */
+fun Part.liveBoardStop(stops: List<Stop>, at: PartStop? = null): LiveBoardStop? {
+    if (isWalk) return null
+    val target = at ?: this.stops?.firstOrNull()
+    val platformLabel = target?.platform ?: startStopCode
+    val boardStop = target?.stopId?.let { id -> stops.firstOrNull { it.id == id } }
+        ?: stops.stop(if (at == null) startStationId else null, target?.name ?: startStopName, platformLabel)
+        ?: return null
+    val platform = boardStop.platform_labels?.firstOrNull { it.label == platformLabel }?.id?.toIntOrNull()
+    return LiveBoardStop(boardStop, platform, target?.time ?: startDeparture)
+}
+
 enum class StopsState { LOADING, FAILED }
 
 /** The journey shown in the trip detail, completed while it is on screen (iOS TripDetailModel). */
@@ -306,9 +325,15 @@ data class TripDetailState(
     val tripDelays: Map<Int, Int?> = emptyMap(),
     /** Rides whose stops in between are shown. */
     val expanded: Set<Int> = emptySet(),
+    /** The trip followed in the live notification while it is this journey. */
+    val followed: FollowedTrip? = null,
 ) {
-    /** The live board's online delay, else the B-API's (null when its vehicle was not running), else the search's. */
+    /**
+     * The followed trip's live delay, so the step it shows agrees; else the live board's online delay, else the B-API's
+     * (null when its vehicle was not running), else the search's.
+     */
     fun knownDelaySeconds(index: Int): Int? {
+        followed?.liveDelays?.get(index)?.let { return it }
         liveConnections[index]?.takeIf { it.type == "online" }?.let { return it.delay * 60 }
         if (tripDelays.containsKey(index)) return tripDelays[index]
         return journey.parts[index].delaySeconds

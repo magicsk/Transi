@@ -10,11 +10,14 @@ import com.google.gson.JsonParseException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import eu.magicsk.transi.data.models.Journey
+import eu.magicsk.transi.data.models.MHDTableData
 import eu.magicsk.transi.data.models.Part
 import eu.magicsk.transi.data.models.StopsState
 import eu.magicsk.transi.data.models.TimetableShape
 import eu.magicsk.transi.data.models.TripDetailState
 import eu.magicsk.transi.data.models.isLive
+import eu.magicsk.transi.data.models.liveBoardStop
+import eu.magicsk.transi.data.models.liveConnection
 import eu.magicsk.transi.data.models.partStops
 import eu.magicsk.transi.data.models.path
 import eu.magicsk.transi.data.models.plannerGson
@@ -22,7 +25,9 @@ import eu.magicsk.transi.data.models.shapeEndpoint
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.idsbk.StopGps
 import eu.magicsk.transi.repository.DataRepository
+import eu.magicsk.transi.repository.FollowedTrips
 import eu.magicsk.transi.repository.IdsbkSession
+import eu.magicsk.transi.repository.LiveBoard
 import eu.magicsk.transi.util.readCachedStops
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -37,7 +42,8 @@ import javax.inject.Inject
 
 /**
  * The trip detail's journey (from the activity's [EXTRA_JOURNEY]), completed while the screen is started: the stops of
- * R-API legs, the legs' live delays from their boarding stops' boards, and the rides' road shapes.
+ * R-API legs, the legs' live delays from their boarding stops' boards, and the rides' road shapes; and the trip followed
+ * in the live notification while it is this journey.
  */
 @HiltViewModel
 class TripDetailViewModel @Inject constructor(
@@ -45,6 +51,7 @@ class TripDetailViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val repository: DataRepository,
     private val idsbk: IdsbkSession,
+    followedTrips: FollowedTrips,
 ) : ViewModel() {
     private val mutableState = MutableLiveData(
         savedState.get<String>(EXTRA_JOURNEY)?.let { json ->
@@ -63,14 +70,20 @@ class TripDetailViewModel @Inject constructor(
 
     // The stops list joins B-API stops to imhd stop ids and finds the boards of the boarding stops.
     private val stops = viewModelScope.async(Dispatchers.IO) { readCachedStops(context).orEmpty().toList() }
-    private val trackers = mutableMapOf<Int, PartLiveTracker>()
-    /** The vehicle followed on each leg, so a restarted tracker never picks the line's next departure. */
+    /** The boarding stop's board of each leg leaving within the hour. */
+    private val boards = mutableMapOf<Int, LiveBoard>()
+    /** The vehicle followed on each leg, so a reopened board never picks the line's next departure. */
     private val busIDs = mutableMapOf<Int, String>()
     private val requestedShapes = mutableSetOf<String>()
     private var liveUpdates: Job? = null
 
     init {
         mutableState.value?.journey?.let(::requestShapes)
+        viewModelScope.launch {
+            followedTrips.trip.collect { trip ->
+                update { copy(followed = trip?.takeIf { it.journey.sameRidesKey == journey.sameRidesKey }) }
+            }
+        }
     }
 
     /** Loads missing stops and follows the legs leaving soon, re-evaluated every minute; [stop] ends the live updates. */
@@ -88,12 +101,12 @@ class TripDetailViewModel @Inject constructor(
         }
     }
 
-    /** Keeps the last known delays: a restarted tracker only finds a vehicle still at the boarding stop. */
+    /** Keeps the last known delays: a reopened board only lists a vehicle still at the boarding stop. */
     fun stop() {
         liveUpdates?.cancel()
         liveUpdates = null
-        trackers.values.forEach(PartLiveTracker::stop)
-        trackers.clear()
+        boards.values.forEach(LiveBoard::close)
+        boards.clear()
     }
 
     fun loadStops(index: Int) {
@@ -152,19 +165,33 @@ class TripDetailViewModel @Inject constructor(
         state.journey.parts.forEachIndexed { index, part ->
             if (part.isWalk) return@forEachIndexed
             val isDue = part.isLive(now, state.knownDelaySeconds(index))
-            if (isDue && index !in trackers) {
-                PartLiveTracker.start(part, stopList, busIDs[index], repository, idsbk, viewModelScope) { connection ->
-                    if (connection?.type == "online") busIDs[index] = connection.busID
-                    // Once our vehicle has left the board, keep its last known delay rather than none.
-                    if (connection == null && busIDs[index] != null) return@start
-                    update {
-                        if (liveConnections[index] == connection) this
-                        else copy(liveConnections = if (connection == null) liveConnections - index else liveConnections + (index to connection))
+            if (isDue && index !in boards) {
+                val target = part.liveBoardStop(stopList) ?: return@forEachIndexed
+                boards[index] = LiveBoard(repository, idsbk, viewModelScope).apply {
+                    // Until the whole board loaded, a vehicle missing from it may only be missing from the regional
+                    // rows, which could take the followed vehicle's place.
+                    onDepartures = { rows ->
+                        if (hasWholeBoard(target.platform ?: -1)) {
+                            onConnection(index, part.liveConnection(rows, target.platform, target.scheduled, busIDs[index]))
+                        }
                     }
-                }?.let { trackers[index] = it }
+                    setStop(target.stop)
+                    connect()
+                }
             } else if (!isDue) {
-                trackers.remove(index)?.stop()
+                boards.remove(index)?.close()
             }
+        }
+    }
+
+    /** The leg's departure on its board: the first vehicle matched live, which it follows from then on. */
+    private fun onConnection(index: Int, connection: MHDTableData?) {
+        if (connection?.type == "online") busIDs[index] = connection.busID
+        // Once our vehicle has left the board, keep its last known delay rather than none.
+        if (connection == null && busIDs[index] != null) return
+        update {
+            if (liveConnections[index] == connection) this
+            else copy(liveConnections = if (connection == null) liveConnections - index else liveConnections + (index to connection))
         }
     }
 

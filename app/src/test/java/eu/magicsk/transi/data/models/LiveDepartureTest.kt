@@ -13,14 +13,17 @@ class LiveDepartureTest {
         MHDTableData(id, 1, line, platform, stopId, "1:2552", "Čiližská", cp, cp * 1000, 0, "online", 12, 12, "Trnavské mýto", false)
 
     @Test
-    fun matchesTheSameRowOrTheSameLineAndSchedule() {
-        val reference = DepartureReference(row("-123:715"))
-        assertTrue(row("-123:715", cp = 1_791_000_060).matches(reference))
+    fun matchesTheSameRowOrTheSameLineAndScheduleFromThePlatform() {
+        val followed = row("-123:715")
+        assertTrue(row("-123:715", cp = 1_791_000_060).matches(followed))
         // A timetable row the regional feed replaced on the board, and back: other ids, same line and schedule.
-        assertTrue(row("4242:82:1791000000", platform = -1).matches(reference))
-        assertFalse(row("-124:715", cp = 1_791_000_060).matches(reference))
-        assertFalse(row("-124:715", line = "71").matches(reference))
-        assertFalse(row("-123:715", stopId = 83).matches(reference))
+        assertTrue(row("4242:82:1791000000", platform = -1).matches(followed))
+        assertTrue(row("-123:715").matches(row("4242:82:1791000000", platform = -1)))
+        assertFalse(row("-124:715", cp = 1_791_000_060).matches(followed))
+        assertFalse(row("-124:715", line = "71").matches(followed))
+        assertFalse(row("-123:715", stopId = 83).matches(followed))
+        // The same line the other way at the same minute, from the opposite platform, is another departure.
+        assertFalse(row("-124:716", platform = 716).matches(followed))
     }
 
     @Test
@@ -57,10 +60,13 @@ class LiveDepartureTest {
     @Test
     fun endsWhenTheWholeBoardMissesItOrLongAfterItLeft() {
         val expected = 1_791_000_000_000
-        assertTrue(departureEnded(null, hasWholeBoard = true, expected, expected))
-        assertFalse("the regional feed alone never ends it", departureEnded(null, hasWholeBoard = false, expected, expected))
-        assertFalse(departureEnded(row("-123:715"), hasWholeBoard = true, expected, expected + 29 * 60_000))
-        assertTrue(departureEnded(row("-123:715"), hasWholeBoard = false, expected, expected + 31 * 60_000))
+        assertTrue(departureEnded(null, seen = true, hasWholeBoard = true, expected, expected))
+        assertFalse("the regional feed alone never ends it", departureEnded(null, seen = true, hasWholeBoard = false, expected, expected))
+        // A late regional bus is listed only by the regional feed, which may answer after the socket's first board.
+        assertFalse("a row never seen on the board cannot leave it", departureEnded(null, seen = false, hasWholeBoard = true, expected, expected))
+        assertTrue("never seen, it still ends 30 min on", departureEnded(null, seen = false, hasWholeBoard = true, expected, expected + 31 * 60_000))
+        assertFalse(departureEnded(row("-123:715"), seen = true, hasWholeBoard = true, expected, expected + 29 * 60_000))
+        assertTrue(departureEnded(row("-123:715"), seen = true, hasWholeBoard = false, expected, expected + 31 * 60_000))
     }
 
     @Test

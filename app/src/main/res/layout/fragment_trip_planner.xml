@@ -47,6 +47,74 @@
             app:iconGravity="textStart" />
     </LinearLayout>
 
+    <!-- While a trip is followed in the live notification: opens its detail. -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/TripPlannerCurrentTrip"
+        style="?attr/materialCardViewFilledStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="6dp"
+        android:checkable="false"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"
+        app:cardBackgroundColor="?attr/colorSurfaceContainerHighest"
+        app:cardCornerRadius="26dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/TripPlannerHeader">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:importantForAccessibility="noHideDescendants"
+            android:minHeight="48dp"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_sensors"
+                app:tint="?attr/colorPrimary" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/roboto_medium"
+                    android:text="@string/trip_current"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <TextView
+                    android:id="@+id/TripPlannerCurrentTripRoute"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="8dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_chevron_right"
+                app:tint="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
     <LinearLayout
         android:id="@+id/TripPlannerPageDots"
         android:layout_width="wrap_content"
@@ -58,7 +126,7 @@
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/TripPlannerHeader" />
+        app:layout_constraintTop_toBottomOf="@id/TripPlannerCurrentTrip" />
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/TripPlannerPager"

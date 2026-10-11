@@ -1,32 +1,25 @@
 package eu.magicsk.transi.data.models
 
-/** iOS LiveActivityConnectionReference: what a followed departure is recognised by on later boards. */
-data class DepartureReference(
-    val stopId: Int,
-    val connectionId: String,
-    val line: String,
-    val departureTimeCP: Long,
-    val platform: Int,
-) {
-    constructor(departure: MHDTableData) :
-        this(departure.stopId, departure.id, departure.line, departure.departureTimeCP, departure.platform)
-}
-
 /**
- * iOS matchesLiveActivityReference: the same stop, then the same row, or the same line at the same scheduled time,
- * since a timetable row and the regional data that replaces it on the board share no id.
+ * iOS matchesLiveActivityReference: this row is the departure [followed] (its row when following started) on a later
+ * board: the same stop, then the same row, or the same line at the same scheduled time from the same platform (the
+ * board's [isSameDeparture] rule), since a timetable row and the regional data that replaces it share no id, and the
+ * regional feed knows no platform (-1).
  */
-fun MHDTableData.matches(reference: DepartureReference): Boolean =
-    stopId == reference.stopId &&
-        (id == reference.connectionId || (line == reference.line && departureTimeCP == reference.departureTimeCP))
+fun MHDTableData.matches(followed: MHDTableData): Boolean =
+    stopId == followed.stopId && (
+        id == followed.id || line == followed.line && departureTimeCP == followed.departureTimeCP &&
+            (platform == followed.platform || platform == -1 || followed.platform == -1)
+        )
 
 /**
- * A followed departure ends once its board, whole for its platform, no longer lists it ([row] is null), as on iOS.
+ * A followed departure ends once its board, whole for its platform, no longer lists it ([row] is null), as on iOS; only
+ * after the board listed it ([seen]), since a regional row may show before the regional feed answered.
  * ponytail: also 30 min after it was last expected, so a board that never drops it or a connection that never comes
  * back cannot keep the service running; iOS relies on the system ending Live Activities instead.
  */
-fun departureEnded(row: MHDTableData?, hasWholeBoard: Boolean, expectedDeparture: Long, now: Long): Boolean =
-    (row == null && hasWholeBoard) || now - expectedDeparture > 30 * 60_000L
+fun departureEnded(row: MHDTableData?, seen: Boolean, hasWholeBoard: Boolean, expectedDeparture: Long, now: Long): Boolean =
+    (row == null && seen && hasWholeBoard) || now - expectedDeparture > 30 * 60_000L
 
 /** The texts the alert rule compares between two updates of a followed departure (iOS Connection fields). */
 data class LiveState(val remaining: String, val delay: String, val lastStop: String)

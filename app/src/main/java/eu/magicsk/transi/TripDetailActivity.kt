@@ -13,11 +13,13 @@ import android.text.TextUtils
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.Insets
 import androidx.core.graphics.createBitmap
@@ -68,9 +70,9 @@ import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.util.getLineColor
 import eu.magicsk.transi.util.getLineTextColor
 import eu.magicsk.transi.util.isDarkTheme
-import eu.magicsk.transi.util.isTrain
 import eu.magicsk.transi.util.seasonPass
 import eu.magicsk.transi.util.useTransportTiles
+import eu.magicsk.transi.util.vehicleIcon
 import eu.magicsk.transi.view_models.TripDetailViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -127,6 +129,15 @@ class TripDetailActivity : AppCompatActivity() {
             onFocus = { focusMap(it, animated = ValueAnimator.areAnimatorsEnabled(), lower = true) },
             onRetry = viewModel::loadStops,
             onToggle = viewModel::toggleExpanded,
+            onStartTrip = ::startTrip,
+            onEndTrip = { LiveUpdatesService.endTrip(this) },
+            onKeepFollowing = { LiveUpdatesService.keepFollowingTrip(this) },
+            onAlternative = { journey ->
+                // iOS opens the connection followed instead in place of this one.
+                LiveUpdatesService.startTrip(this, journey)
+                startActivity(intent(this, journey))
+                finish()
+            },
         )
         binding.tripDetailList.adapter = adapter
         binding.tripDetailList.addOnLayoutChangeListener { list, _, _, _, _, _, _, _, _ -> list.post(::updateSheetHeights) }
@@ -185,8 +196,27 @@ class TripDetailActivity : AppCompatActivity() {
         super.onStop()
     }
 
+    /**
+     * Follows the journey in the trip notification. The walk to each stop and a missed vehicle need the precise location,
+     * so the first start asks for it while the app is on screen (that is all a trip needs; no background location).
+     */
+    private fun startTrip() {
+        val journey = viewModel.state.value?.journey ?: return
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            LiveUpdatesService.startTrip(this, journey)
+        } else {
+            locationRequest.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+        }
+    }
+
+    // The trip starts either way: without the location it shows the steps without distances.
+    private val locationRequest = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        viewModel.state.value?.journey?.let { LiveUpdatesService.startTrip(this, it) }
+    }
+
     private fun render(state: TripDetailState) {
-        adapter.submitList(tripDetailRows(state, TicketCoverage.of(state.journey, pass, catalogue)))
+        val notificationsOn = NotificationManagerCompat.from(this).areNotificationsEnabled()
+        adapter.submitList(tripDetailRows(state, TicketCoverage.of(state.journey, pass, catalogue), notificationsOn))
         if (state.journey == drawnJourney) return
         drawnJourney = state.journey
         val map = map ?: return
@@ -261,11 +291,7 @@ class TripDetailActivity : AppCompatActivity() {
             val color = getColor(getLineColor(line, dark))
             val glyphColor = getColor(getLineTextColor(line))
             // Where a stop has no platform letter, as at train stations.
-            val vehicle = when {
-                isTrain(line) -> R.drawable.ic_train
-                (line.toIntOrNull() ?: 99) < 20 -> R.drawable.ic_tram
-                else -> R.drawable.ic_bus
-            }
+            val vehicle = vehicleIcon(line)
             part.stops.orEmpty().drop(1).dropLast(1).forEach { stop ->
                 stop.gps?.let { gps ->
                     dots += StopDot(

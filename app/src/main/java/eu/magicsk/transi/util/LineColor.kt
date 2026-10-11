@@ -1,6 +1,7 @@
 package eu.magicsk.transi.util
 
 import androidx.annotation.ColorRes
+import androidx.annotation.DrawableRes
 import eu.magicsk.transi.R
 
 /** iOS colorFromLineNum. */
@@ -97,3 +98,11 @@ fun isCityLine(lineNum: String) =
 
 /** S and R trains (like "S20", "R 805") and AT lines into Austria. */
 fun isTrain(lineNum: String) = lineNum.startsWith("S") || lineNum.startsWith("R") || lineNum.startsWith("AT")
+
+/** The vehicle a line runs, for where its badge has no room: trains, trams (below line 20), else buses. */
+@DrawableRes
+fun vehicleIcon(lineNum: String): Int = when {
+    isTrain(lineNum) -> R.drawable.ic_train
+    (lineNum.toIntOrNull() ?: 99) < 20 -> R.drawable.ic_tram
+    else -> R.drawable.ic_bus
+}

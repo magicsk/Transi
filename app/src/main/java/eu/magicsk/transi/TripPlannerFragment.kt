@@ -4,6 +4,7 @@ import android.animation.ValueAnimator
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.text.TextUtils
 import android.view.HapticFeedbackConstants
 import android.view.View
 import android.widget.EditText
@@ -11,12 +12,17 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager2.widget.ViewPager2
 import androidx.core.graphics.ColorUtils
 import com.google.android.material.color.MaterialColors
@@ -31,9 +37,11 @@ import eu.magicsk.transi.adapters.TripPlannerPagerAdapter
 import eu.magicsk.transi.adapters.tripPlannerPages
 import eu.magicsk.transi.data.models.ArrivalDeparture
 import eu.magicsk.transi.data.models.BRATISLAVA
+import eu.magicsk.transi.data.models.Journey
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.databinding.FragmentTripPlannerBinding
+import eu.magicsk.transi.repository.FollowedTrips
 import eu.magicsk.transi.util.isActualLocation
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TripPlannerState
@@ -43,13 +51,22 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import javax.inject.Inject
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
+    @Inject
+    lateinit var followedTrips: FollowedTrips
+
     private val viewModel: TripPlannerViewModel by activityViewModels()
     private val mainViewModel: MainViewModel by activityViewModels()
     private var stopList = Stops()
+    /** The journey followed in the live notification, which the "Current trip" card opens. */
+    private var currentTrip: Journey? = null
     private var backStackListener: FragmentManager.OnBackStackChangedListener? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -78,6 +95,21 @@ class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
         }
         mainViewModel.actualLocation.observe(viewLifecycleOwner) { viewModel.onLocationAvailable() }
         viewModel.state.observe(viewLifecycleOwner) { render(binding, pagerAdapter, it) }
+        binding.TripPlannerCurrentTrip.setOnClickListener {
+            currentTrip?.let { startActivity(TripDetailActivity.intent(requireContext(), it)) }
+        }
+        ViewCompat.replaceAccessibilityAction(
+            binding.TripPlannerCurrentTrip, AccessibilityActionCompat.ACTION_CLICK, getString(R.string.trip_current_action), null,
+        )
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // Only the journey matters here, not the trip's every step.
+                followedTrips.trip.map { it?.journey }.distinctUntilChanged().collect { journey ->
+                    currentTrip = journey
+                    showCurrentTrip(binding)
+                }
+            }
+        }
 
         binding.editTextFrom.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) openTypeAhead(binding, binding.editTextFrom, ORIGIN_FROM)
@@ -163,8 +195,20 @@ class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
         dots.contentDescription = getString(R.string.trip_planner_recent_page, selected + 1, count)
     }
 
+    /** iOS CurrentTripButton: "Current trip", "Start → End". */
+    private fun showCurrentTrip(binding: FragmentTripPlannerBinding) {
+        val parts = currentTrip?.parts
+        binding.TripPlannerCurrentTrip.isVisible = parts != null && !binding.tripSearchFragmentLayout.isVisible
+        parts ?: return
+        val start = parts.first().startStopName ?: getString(R.string.trip_current_start)
+        val end = parts.last().endStopName ?: getString(R.string.trip_current_end)
+        binding.TripPlannerCurrentTripRoute.text = TextUtils.expandTemplate(getText(R.string.trip_detail_route), start, end)
+        binding.TripPlannerCurrentTrip.contentDescription = getString(R.string.trip_current_spoken, start, end)
+    }
+
     private fun showSearchOverlay(binding: FragmentTripPlannerBinding, shown: Boolean) {
         binding.tripSearchFragmentLayout.isVisible = shown
+        showCurrentTrip(binding)
         binding.TripPlannerHeader.isVisible = !shown
         binding.TripPlannerPager.isVisible = !shown
         binding.TripPlannerModeRow.isVisible = !shown

@@ -6,10 +6,14 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- Followed departures: a foreground service and, on Android 16+, Live Update notifications. -->
+    <!-- Followed departures and trips: a foreground service and, on Android 16+, Live Update notifications. A followed
+         trip also receives the location while allowed (only while in use: the service starts from the app on screen),
+         and the device stays awake briefly while an alert is due. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
     <!-- The IDS BK app, opened from a trip's ticket button when installed. -->
@@ -66,15 +70,16 @@
             android:theme="@style/Theme.Transi.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- No type fits: it needs no location, and it is not a data sync (it keeps a live connection open while the
-             user follows a departure, up to its departure). -->
+        <!-- specialUse: no type fits keeping live departure board connections open while the user follows a departure or
+             a trip (it is not a data sync). location: a followed trip also uses the location, when allowed, to give the
+             walking distance and to notice a missed vehicle. -->
         <service
             android:name=".LiveUpdatesService"
             android:exported="false"
-            android:foregroundServiceType="specialUse">
+            android:foregroundServiceType="specialUse|location">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Live public transport departure tracking requested by the user: keeps the real-time departure board connection of the chosen stop open and updates the ongoing notification until the vehicle departs." />
+                android:value="Live public transport tracking requested by the user: keeps the real-time departure board connections of the chosen stops open and updates the ongoing notification until the vehicle departs, or step by step until a planned trip arrives." />
         </service>
 
         <meta-data

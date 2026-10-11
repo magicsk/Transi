@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Start trip button in the trip detail (iOS StartTripButton). -->
+    <string name="trip_start">Start trip</string>
+    <string name="trip_end">End trip</string>
+    <string name="trip_start_action">Show each step in a live notification</string>
+    <string name="trip_end_action">Remove the trip\'s live notification</string>
+    <string name="trip_running">Your trip is shown in a live notification.</string>
+    <string name="trip_notifications_off">Turn on notifications for Transi in Settings to follow this trip.</string>
+    <string name="trip_not_live_yet">You can start the trip up to 1 hour before departure.</string>
+
+    <!-- Countdown: "4 min", "<1 min", "now", or the clock time from an hour ahead; "4m", "1h" in the status bar. -->
+    <string name="trip_countdown_minutes">%d min</string>
+    <string name="trip_countdown_under_minute">&lt;1 min</string>
+    <string name="trip_countdown_now">now</string>
+    <string name="trip_countdown_hours_minimal">%dh</string>
+    <string name="trip_countdown_minutes_minimal">%dm</string>
+    <string name="trip_countdown_under_minute_minimal">&lt;1m</string>
+    <string name="trip_countdown_in">in %s</string>
+    <string name="trip_countdown_at">at %s</string>
+
+    <!-- Distances: "80 m", "1.2 km" (the number comes formatted). -->
+    <string name="trip_meters">%d m</string>
+    <string name="trip_kilometers">%s km</string>
+
+    <!-- Joining parts of a step: "Platform A · in 4 min", "Rajská, platform A". -->
+    <string name="trip_dot">%1$s · %2$s</string>
+    <string name="trip_comma">%1$s, %2$s</string>
+    <string name="trip_stop_platform">%1$s %2$s</string>
+
+    <string name="trip_the_stop">the stop</string>
+    <string name="trip_the_next_stop">the next stop</string>
+    <string name="trip_your_destination">your destination</string>
+    <string name="trip_the_vehicle">the vehicle</string>
+    <string name="trip_the_next_vehicle">The next vehicle</string>
+    <string name="trip_the_next_vehicle_lowercase">the next vehicle</string>
+
+    <!-- Boarding -->
+    <string name="trip_board_at">Board at %s</string>
+    <string name="trip_walk_to">Walk to %s</string>
+    <string name="trip_platform">Platform %s</string>
+    <string name="trip_platform_lowercase">platform %s</string>
+    <string name="trip_distance_to_platform">%1$s to platform %2$s</string>
+    <string name="trip_leaves">leaves %s</string>
+
+    <!-- Riding -->
+    <string name="trip_get_off_now">Get off now</string>
+    <string name="trip_get_off_next">Get off at the next stop</string>
+    <string name="trip_get_off_when">Get off %s</string>
+    <plurals name="trip_get_off_in">
+        <item quantity="one">Get off in %d stop</item>
+        <item quantity="other">Get off in %d stops</item>
+    </plurals>
+    <plurals name="trip_stops_left">
+        <item quantity="one">%d stop</item>
+        <item quantity="other">%d stops</item>
+    </plurals>
+
+    <!-- Changing -->
+    <string name="trip_wait_at_platform">Wait at platform %s</string>
+    <string name="trip_walk_to_platform">Walk to platform %s</string>
+    <string name="trip_wait_at">Wait at %s</string>
+    <string name="trip_vehicle_leaves">%1$s leaves %2$s</string>
+    <string name="trip_distance_to">%1$s to %2$s</string>
+
+    <!-- Walking and arrival -->
+    <string name="trip_arrive">Arrive %s</string>
+    <string name="trip_arrive_lowercase">arrive %s</string>
+    <string name="trip_arrived">Arrived</string>
+    <string name="trip_arrived_minimal">✓</string>
+
+    <!-- A missed ride -->
+    <string name="trip_missed">Missed %s</string>
+    <string name="trip_off_route">Off the route</string>
+    <string name="trip_take">Take %1$s at %2$s from %3$s</string>
+    <string name="trip_finding_connections">Finding other connections…</string>
+    <string name="trip_no_connections">No other connections found</string>
+    <string name="trip_missed_compact">Missed</string>
+    <string name="trip_missed_minimal">!</string>
+
+    <!-- Alerts -->
+    <string name="trip_alert_change_missed">Change likely missed</string>
+    <string name="trip_alert_change_missed_body">%1$s leaves %2$s at %3$s</string>
+    <string name="trip_alert_may_miss">You may miss %s</string>
+    <string name="trip_alert_change_platform">Change to platform %s</string>
+
+    <!-- Warnings -->
+    <string name="trip_warning_tight">Tight change</string>
+    <string name="trip_warning_missed">Change likely missed</string>
+    <string name="trip_warning_may_miss">You may miss it</string>
+
+    <!-- The trip detail while it is followed -->
+    <string name="trip_current_step">Current step</string>
+    <string name="trip_step_line_spoken">Line %s, </string>
+    <string name="trip_step_spoken">%1$s, %2$s. </string>
+    <string name="trip_warning_spoken">%s. </string>
+    <string name="trip_missed_left_without_you">The %s left without you. Follow another connection from where you are:</string>
+    <string name="trip_missed_off_route">You\'re away from the route of the %s. Follow another connection from where you are:</string>
+    <string name="trip_missed_none_found">No other connections found.</string>
+    <string name="trip_same_route">Same route</string>
+    <string name="trip_other_routes">Other routes</string>
+    <string name="trip_keep_following">Keep following this trip</string>
+    <string name="trip_keep_following_action">Go on with this trip\'s steps</string>
+    <string name="trip_alternative_lines_separator">, then line </string>
+    <string name="trip_alternative_spoken">Line %1$s, from %2$s%3$s, %4$s to %5$s</string>
+    <string name="trip_alternative_action">Follow this connection instead</string>
+
+    <!-- Trip planner -->
+    <string name="trip_current">Current trip</string>
+    <string name="trip_current_start">Start</string>
+    <string name="trip_current_end">End</string>
+    <string name="trip_current_spoken">Current trip, %1$s to %2$s</string>
+    <string name="trip_current_action">Show the trip on the map, step by step</string>
+</resources>

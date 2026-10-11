@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The journey's summary card: duration and times, the leg bar and chips, then the ticket or the arrival note. -->
+<!-- The journey's summary card: the followed trip's step, duration and times, the leg bar and chips; the other connections
+     after a missed ride; then the Start/End trip button and the ticket or the arrival note. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -16,6 +17,71 @@
         android:foreground="?attr/selectableItemBackground"
         android:orientation="vertical"
         android:padding="16dp">
+
+        <!-- While the trip is followed, its step as in the notification. -->
+        <LinearLayout
+            android:id="@+id/tripSummaryStep"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="44dp">
+
+                <TextView
+                    android:id="@+id/tripSummaryStepBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:fontFamily="@font/roboto_bold"
+                    android:singleLine="true"
+                    android:textSize="17sp" />
+
+                <ImageView
+                    android:id="@+id/tripSummaryStepIcon"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="center_horizontal"
+                    android:importantForAccessibility="no" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tripSummaryStepTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/roboto_bold"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <TextView
+                    android:id="@+id/tripSummaryStepDetail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/tripSummaryStepWarning"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:drawablePadding="6dp"
+                    android:fontFamily="@font/roboto_medium"
+                    android:textAppearance="?attr/textAppearanceLabelLarge" />
+            </LinearLayout>
+        </LinearLayout>
 
         <com.google.android.flexbox.FlexboxLayout
             android:layout_width="match_parent"
@@ -56,6 +122,77 @@
             app:flexWrap="wrap" />
     </LinearLayout>
 
+    <!-- After the followed trip's ride was missed: the other connections from where the traveller is. -->
+    <LinearLayout
+        android:id="@+id/tripSummaryMissed"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="16dp"
+        android:visibility="gone">
+
+        <com.google.android.material.divider.MaterialDivider
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tripSummaryMissedText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+        <LinearLayout
+            android:id="@+id/tripSummaryMissedSearching"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:indeterminate="true"
+                app:indicatorSize="20dp"
+                app:trackThickness="2dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="@string/trip_finding_connections"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tripSummaryMissedNone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/trip_missed_none_found"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <!-- "Same route" and "Other routes", each with its connections. -->
+        <LinearLayout
+            android:id="@+id/tripSummaryAlternatives"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tripSummaryKeepFollowing"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:minHeight="48dp"
+            android:text="@string/trip_keep_following" />
+    </LinearLayout>
+
     <!-- Journey actions, one full-width control per line. -->
     <LinearLayout
         android:id="@+id/tripSummaryActions"
@@ -69,6 +206,39 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp" />
+
+        <!-- Start trip, filled as the journey's main action; End trip outlined, so a running trip looks different. -->
+        <LinearLayout
+            android:id="@+id/tripSummaryTrip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="12dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/tripSummaryStartTrip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/trip_start" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/tripSummaryEndTrip"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/trip_end" />
+
+            <TextView
+                android:id="@+id/tripSummaryTripNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
 
         <eu.magicsk.transi.TicketCoverageView
             android:id="@+id/tripSummaryTicket"

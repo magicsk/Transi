@@ -1,10 +1,20 @@
 package eu.magicsk.transi.util
 
+import android.content.SharedPreferences
+import eu.magicsk.transi.BuildConfig
 import eu.magicsk.transi.data.models.ArrivalDeparture
 import eu.magicsk.transi.data.models.BRATISLAVA
 import eu.magicsk.transi.data.models.Journey
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.idsbk.RaptorRequest
+import eu.magicsk.transi.data.remote.responses.idsbk.RaptorResponse
+import eu.magicsk.transi.repository.DataRepository
+import eu.magicsk.transi.repository.IdsbkSession
+import eu.magicsk.transi.timetable.OfflineRoutingEngine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -52,6 +62,49 @@ fun RaptorRequest.widened(): RaptorRequest? = copy(
     search_from_hours = if (search_from_hours == SEARCH_HOURS) RETRY_SEARCH_HOURS else search_from_hours,
     search_to_hours = if (search_to_hours == SEARCH_HOURS) RETRY_SEARCH_HOURS else search_to_hours,
 ).takeIf { it != this }
+
+/** The R-API answer, retried once over 8 hours when empty; null when it failed. */
+suspend fun DataRepository.raptorTrip(session: String, body: RaptorRequest): RaptorResponse? {
+    val response = getRaptorTrip(session, body).data ?: return null
+    if (!response.journey.isNullOrEmpty()) return response
+    val retry = body.widened() ?: return response
+    return getRaptorTrip(session, retry).data ?: response
+}
+
+/**
+ * Journeys from [from] to [to] leaving around [date], soonest first, for a followed trip's other connections (iOS
+ * searchJourneys): from both online sources, or from the offline timetables when the offline planner is on and they are
+ * ready, and also when the online sources find nothing.
+ */
+suspend fun searchJourneys(
+    repository: DataRepository,
+    idsbk: IdsbkSession,
+    offline: OfflineRoutingEngine,
+    prefs: SharedPreferences,
+    stops: List<Stop>,
+    from: Stop,
+    to: Stop,
+    date: Instant,
+): List<Journey> = coroutineScope {
+    val maxTransfers = prefs.intPref(Prefs.TRIP_MAX_TRANSFERS, Prefs.TRIP_MAX_TRANSFERS_DEFAULT)
+    val maxWalk = prefs.intPref(Prefs.TRIP_MAX_WALK_DURATION, Prefs.TRIP_MAX_WALK_DURATION_DEFAULT)
+    suspend fun offlineJourneys() = offline.plan(from.name, to.name, date, ArrivalDeparture.DEPARTURE, maxTransfers, maxWalk).orEmpty()
+    if (offline.isReady && prefs.getBoolean(Prefs.OFFLINE_TRIP_PLANNER, false)) return@coroutineScope offlineJourneys()
+    val raptor = async {
+        (if (BuildConfig.R_API_KEY.isEmpty()) null else idsbk.token())?.let { session ->
+            repository.raptorTrip(
+                session, raptorRequest(from.station_id, to.station_id, date, ArrivalDeparture.DEPARTURE, maxWalk, maxTransfers),
+            )
+        }
+    }
+    val imhd = async { repository.getTrip("g${from.id}", "g${to.id}", cepoDate(date), clock(date), false).data }
+    val raptorJourneys = raptor.await()?.journey.orEmpty()
+    val imhdResponse = imhd.await()
+    val journeys = withContext(Dispatchers.Default) {
+        mergeJourneys(emptyList(), mapRaptorJourneys(raptorJourneys) + imhdResponse?.let { mapCepoJourneys(it, stops) }.orEmpty())
+    }
+    if (journeys.isEmpty() && offline.isReady) offlineJourneys() else journeys
+}
 
 /** I-API `pd`: the Bratislava date. */
 fun cepoDate(date: Instant): String = date.atZone(BRATISLAVA).format(cepoDateFormat)
