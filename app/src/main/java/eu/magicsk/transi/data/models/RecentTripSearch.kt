@@ -31,7 +31,8 @@ data class RecentTripSearch(
     val id get() = searchId(from, to)
 
     /** Tells the search whose journeys were cached last from another search between the same stops. */
-    val cacheID get() = "$id:$arrivalDeparture:${if (arrivalDepartureCustomDate) arrivalDepartureDate else "now"}"
+    // A "now" search stores the instant it ran, so the key survives being reopened with that date as a custom one.
+    val cacheID get() = "$id:$arrivalDeparture:$arrivalDepartureDate"
 }
 
 fun searchId(from: Stop?, to: Stop?) = "${from?.id}:${to?.id}"

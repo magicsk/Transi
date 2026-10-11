@@ -304,6 +304,12 @@ class TripPlannerTest {
     }
 
     @Test
+    fun reopenedNowSearchKeepsItsCacheId() {
+        val now = search(1, 2)
+        assertEquals(now.cacheID, now.copy(arrivalDepartureCustomDate = true).cacheID)
+    }
+
+    @Test
     fun recentsSurviveJson() {
         val journeys = mapRaptorJourneys(plannerGson.fromJson(fixture.get("raptor"), RaptorResponse::class.java).journey.orEmpty()) +
             requireNotNull(mapCepoJourneys(cepo, stops))
