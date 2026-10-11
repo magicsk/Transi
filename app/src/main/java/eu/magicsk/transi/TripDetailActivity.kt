@@ -11,6 +11,7 @@ import android.graphics.Path
 import android.os.Bundle
 import android.text.TextUtils
 import android.view.View
+import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.ColorInt
@@ -23,6 +24,8 @@ import androidx.core.graphics.createBitmap
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnLayout
+import androidx.core.view.updateLayoutParams
+import androidx.core.view.updateMargins
 import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -42,7 +45,6 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.gms.maps.model.RoundCap
-import com.google.android.gms.maps.model.TileOverlayOptions
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.color.MaterialColors
 import com.google.maps.android.SphericalUtil
@@ -61,13 +63,14 @@ import eu.magicsk.transi.data.models.plannerGson
 import eu.magicsk.transi.data.remote.responses.idsbk.StopGps
 import eu.magicsk.transi.databinding.ActivityTripDetailBinding
 import eu.magicsk.transi.repository.TicketCatalogueProvider
+import eu.magicsk.transi.util.DEFAULT_MAP_CENTER
 import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.util.getLineColor
 import eu.magicsk.transi.util.getLineTextColor
 import eu.magicsk.transi.util.isDarkTheme
 import eu.magicsk.transi.util.isTrain
 import eu.magicsk.transi.util.seasonPass
-import eu.magicsk.transi.util.transportTileProvider
+import eu.magicsk.transi.util.useTransportTiles
 import eu.magicsk.transi.view_models.TripDetailViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -149,6 +152,9 @@ class TripDetailActivity : AppCompatActivity() {
             binding.tripDetailToolbar.updatePadding(left = bars.left, top = bars.top, right = bars.right)
             // The sheet runs under the navigation bar; its list scrolls clear of it.
             binding.tripDetailList.updatePadding(left = bars.left, right = bars.right, bottom = bars.bottom + dp(16))
+            binding.tripDetailAttribution.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                updateMargins(left = bars.left + dp(8), right = bars.right + dp(8))
+            }
             updateSheetHeights()
             insets
         }
@@ -191,12 +197,9 @@ class TripDetailActivity : AppCompatActivity() {
     private fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
         // Without a Thunderforest key, the default Google basemap.
-        transportTileProvider(isDarkTheme(resources))?.let {
-            googleMap.mapType = GoogleMap.MAP_TYPE_NONE
-            googleMap.addTileOverlay(TileOverlayOptions().fadeIn(false).tileProvider(it))
-        }
+        googleMap.useTransportTiles(isDarkTheme(resources), binding.tripDetailAttribution)
         googleMap.uiSettings.isMapToolbarEnabled = false
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(48.145, 17.107), 12.5f))
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(DEFAULT_MAP_CENTER, 12.5f))
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         ) {
