@@ -145,9 +145,10 @@ class MainActivity : AppCompatActivity() {
         releaseInfoViewModel.releaseInfo.observe(this) { releaseInfo ->
             val version = releaseInfo?.tag_name?.removePrefix("v")
             val downloadUrl = releaseInfo?.assets?.firstOrNull()?.browser_download_url
-            if (!version.isNullOrEmpty() && version != versionName &&
-                downloadUrl != null && supportFragmentManager.findFragmentByTag("updateAlert") == null
+            if (!version.isNullOrEmpty() && version != versionName && downloadUrl != null &&
+                !releaseInfoViewModel.updateOffered && supportFragmentManager.findFragmentByTag("updateAlert") == null
             ) {
+                releaseInfoViewModel.updateOffered = true
                 UpdateAlert.newInstance(version, releaseInfo.body.orEmpty(), downloadUrl)
                     .show(supportFragmentManager, "updateAlert")
             } else if (version == versionName) {

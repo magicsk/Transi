@@ -17,6 +17,9 @@ class ReleaseInfoViewModel @Inject constructor(
     private val releaseInfoLiveData = MutableLiveData<ReleaseInfo?>()
     val releaseInfo: MutableLiveData<ReleaseInfo?> = releaseInfoLiveData
 
+    /** The update was offered once; after Cancel it stays closed through configuration changes until the next launch. */
+    var updateOffered = false
+
     init {
         viewModelScope.launch {
             val releaseInfo = repository.getReleaseInfo()
