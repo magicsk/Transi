@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Wraps the translucent surface colour: a colour state list can only be a background from Android 10 on. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/trip_detail_bar" />
+</shape>

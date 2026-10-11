@@ -68,7 +68,7 @@
         android:id="@+id/tripDetailToolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/trip_detail_bar"
+        android:background="@drawable/trip_detail_bar"
         android:elevation="4dp"
         app:navigationContentDescription="@string/back"
         app:navigationIcon="@drawable/ic_arrow_back" />
