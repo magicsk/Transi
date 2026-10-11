@@ -1,5 +1,6 @@
 package eu.magicsk.transi.timetable
 
+import eu.magicsk.transi.data.remote.responses.idsbk.StopGps
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -7,7 +8,8 @@ import java.time.Instant
 import java.time.LocalDate
 
 class OfflineRoutingEngineTest {
-    private fun stop(name: String) = OfflineStop(name, null, null, null)
+    // Stops share a place unless given one.
+    private fun stop(name: String, lat: Double = 48.15, lon: Double = 17.11) = OfflineStop(name, null, null, StopGps(lon = lon, lat = lat))
     private fun at(hours: Int, minutes: Int) = hours * 3600 + minutes * 60
     private fun trip(line: String, vararg calls: Pair<Int, Int>) =
         OfflineTrip(line, 3, null, calls.map { it.first }.toIntArray(), calls.map { it.second }.toIntArray())
@@ -42,20 +44,46 @@ class OfflineRoutingEngineTest {
     @Test
     fun aNameFindsEveryPlatformOfItsStationElseStopsContainingIt() {
         val stops = listOf(
-            stop("Hodžovo nám."), stop("Hodžovo nám."), stop("Bratislava, Hodžovo nám."), stop("Bratislava, AS"),
-            stop("Autobusová stanica"), stop("Rovinka, Majerská"), stop("Majerská"), stop("Zamajerské"),
+            stop("Hodžovo nám."), stop("Hodžovo nám.", 48.1485), stop("Bratislava, Hodžovo nám."), stop("Bratislava, AS"),
+            stop("Autobusová stanica"), stop("Rovinka, Majerská", 48.0921, 17.2459), stop("Majerská", 48.1518, 17.2004),
+            stop("Zamajerské"),
         )
         assertEquals(setOf(0, 1, 2), stopsNamed(stops, "Hodžovo nám."))
+        assertEquals(setOf(0, 1, 2), stopsNamed(stops, "Bratislava, Hodžovo nám."))
         assertEquals(setOf(3, 4), stopsNamed(stops, "Autobusová stanica"))
-        assertEquals(setOf(5, 6), stopsNamed(stops, "Rovinka, Majerská"))
+        assertEquals(setOf(5), stopsNamed(stops, "Rovinka, Majerská"))
+        assertEquals(setOf(6), stopsNamed(stops, "Majerská"))
+        // Not every platform of the Majerská stations: just the stops of matching names.
         assertEquals(setOf(5, 6, 7), stopsNamed(stops, "majer"))
         assertEquals(emptySet<Int>(), stopsNamed(stops, "Nowhere"))
         assertEquals(emptySet<Int>(), stopsNamed(stops, " "))
     }
 
     @Test
-    fun theFewestRidesWinEvenWhenAChangeArrivesSooner() {
-        assertEquals(listOf(listOf(Leg.Ride(2, 0, 1))), search(listOf(toGamma, fromGamma, direct), at(7, 55)))
+    fun sameNamedStopsOfAnotherTownAreNoStationToWalkWithin() {
+        // 0 Alpha, 1 Stromová and 2 Dunajská Lužná, Stromová 15.9 km apart, 3 Delta.
+        val stops = listOf(
+            stop("Alpha"), stop("Stromová", 48.1638, 17.0981), stop("Dunajská Lužná, Stromová", 48.0809, 17.2718), stop("Delta"),
+        )
+        val trips = listOf(trip("1", 0 to at(8, 0), 2 to at(8, 10)), trip("2", 1 to at(8, 12), 3 to at(8, 20)))
+        assertEquals(setOf(1), stopsNamed(stops, "Stromová"))
+        assertEquals(setOf(2), stopsNamed(stops, "Dunajská Lužná, Stromová"))
+        assertEquals(emptyList<List<Leg>>(), runBlocking { searchJourneys(stops, trips, setOf(0), setOf(3), at(7, 55), false, 6, true) })
+    }
+
+    @Test
+    fun aChangeArrivingSoonerIsFoundBesideTheDirectRideAndDominatedJourneysAreDropped() {
+        // 5 is another platform of Alpha; the feeder from it leaves first but its journey arrives later than the change.
+        val stops = stops + stop("Alpha")
+        val feeder = trip("4", 5 to at(7, 58), 1 to at(8, 6))
+        val slow = trip("5", 1 to at(8, 10), 4 to at(8, 30))
+        val change = listOf(Leg.Ride(0, 0, 2), Leg.Walk(2, 3, at(8, 10)), Leg.Ride(1, 0, 1))
+        val found = runBlocking {
+            searchJourneys(stops, listOf(toGamma, fromGamma, direct, feeder, slow), setOf(0, 5), setOf(4), at(7, 55), false, 6, true)
+        }
+        assertEquals(listOf(listOf(Leg.Ride(2, 0, 1)), change), found)
+        // With a single ride allowed, only the direct one.
+        assertEquals(listOf(listOf(Leg.Ride(2, 0, 1))), search(listOf(toGamma, fromGamma, direct), at(7, 55), maxLegs = 1))
     }
 
     @Test

@@ -428,37 +428,35 @@ class TimetableDatabase @Inject constructor(
         }
     }
 
-    private fun SQLiteDatabase.activeServiceIds(feed: String, date: LocalDate): Set<String> {
-        val day = date.serviceDate()
-        // The weekday column (`monday` … `sunday`) comes from a fixed set of names, never from user input.
-        val weekday = date.dayOfWeek.name.lowercase(Locale.ROOT)
-        val calendar = select(
-            "SELECT service_id FROM calendar WHERE feed = ? AND start_date <= ? AND end_date >= ? AND $weekday = 1",
-            feed, day, day,
-        ).use { c -> buildList { while (c.moveToNext()) c.string("service_id")?.let(::add) } }
-        val exceptions = select(
-            "SELECT service_id, exception_type FROM calendar_dates WHERE feed = ? AND date = ?",
-            feed, day,
-        ).use { c ->
-            buildList {
-                while (c.moveToNext()) {
-                    val serviceId = c.string("service_id") ?: continue
-                    val type = c.int("exception_type") ?: continue
-                    add(serviceId to type)
-                }
-            }
-        }
-        return activeServiceIds(calendar, exceptions)
-    }
-
     // endregion
 
     private companion object {
         const val BUFFER_SIZE = 64 * 1024
     }
+}
 
-    /** Service ids of [feed] running on [date]; for queries run inside [read]. */
-    fun runningServiceIds(db: SQLiteDatabase, feed: String, date: LocalDate): Set<String> = db.activeServiceIds(feed, date)
+/** Service ids of [feed] running on [date]; for queries run inside [TimetableDatabase.read]. */
+internal fun SQLiteDatabase.activeServiceIds(feed: String, date: LocalDate): Set<String> {
+    val day = date.serviceDate()
+    // The weekday column (`monday` … `sunday`) comes from a fixed set of names, never from user input.
+    val weekday = date.dayOfWeek.name.lowercase(Locale.ROOT)
+    val calendar = select(
+        "SELECT service_id FROM calendar WHERE feed = ? AND start_date <= ? AND end_date >= ? AND $weekday = 1",
+        feed, day, day,
+    ).use { c -> buildList { while (c.moveToNext()) c.string("service_id")?.let(::add) } }
+    val exceptions = select(
+        "SELECT service_id, exception_type FROM calendar_dates WHERE feed = ? AND date = ?",
+        feed, day,
+    ).use { c ->
+        buildList {
+            while (c.moveToNext()) {
+                val serviceId = c.string("service_id") ?: continue
+                val type = c.int("exception_type") ?: continue
+                add(serviceId to type)
+            }
+        }
+    }
+    return activeServiceIds(calendar, exceptions)
 }
 
 /** Query with typed bind arguments ([String], [Int] or [Long]); `rawQuery` would bind everything as text. */

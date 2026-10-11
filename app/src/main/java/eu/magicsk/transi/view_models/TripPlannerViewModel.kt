@@ -311,12 +311,15 @@ class TripPlannerViewModel @Inject constructor(
                 prefs.intPref(Prefs.TRIP_MAX_WALK_DURATION, Prefs.TRIP_MAX_WALK_DURATION_DEFAULT),
             )
             if (fetchGeneration != generation) return@launch
-            // Null when the database closed meanwhile (deleted or being updated): online after all.
-            if (journeys == null) {
-                fetch(FetchSource.INITIAL, allowOffline = false)
-            } else {
+            when {
+                // Null when the database closed meanwhile (deleted or being updated): online after all.
+                journeys == null -> fetch(FetchSource.INITIAL, allowOffline = false)
+                // The timetables answered without journeys, as iOS shows "no journeys"; no connection failed.
+                journeys.isEmpty() -> setState {
+                    copy(journeys = null, loading = false, loadingMore = false, error = TripPlannerError.NO_ROUTES)
+                }
                 // Their o- ids page neither online source.
-                onResults(FetchSource.INITIAL, raptorAnswered = false, raptor = journeys, imhd = null)
+                else -> onResults(FetchSource.INITIAL, raptorAnswered = false, raptor = journeys, imhd = null)
             }
         }
     }

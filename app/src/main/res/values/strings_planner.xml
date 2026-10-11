@@ -49,4 +49,6 @@
         <item>168</item>
         <item>-1</item>
     </string-array>
+    <string name="offline_trip_planner">Offline trip planner</string>
+    <string name="offline_trip_planner_summary">Plans trips with the downloaded timetables and turns on offline timetables. Until the database is downloaded, trips are planned online.</string>
 </resources>

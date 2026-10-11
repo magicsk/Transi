@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="offline_trip_planner">Offline trip planner</string>
-    <string name="offline_trip_planner_summary">Plans trips with the downloaded timetables and turns on offline timetables. Until the database is downloaded, trips are planned online.</string>
-</resources>
