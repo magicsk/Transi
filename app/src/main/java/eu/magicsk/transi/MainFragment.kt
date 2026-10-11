@@ -112,6 +112,9 @@ class MainFragment : Fragment() {
                 MHDTableActualTime, AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_CLICK,
                 getString(R.string.table_reconnect), null
             )
+            MHDTableMapButton.setOnClickListener {
+                mainViewModel.tableStop.value?.let { (activity as? MainActivity)?.navigate(DeepLink.Map(it.id)) }
+            }
             MHDTableInfoButton.setOnClickListener {
                 tableViewModel.markInfoTextsRead()
                 ServiceInfoSheet().show(childFragmentManager, "serviceInfo")

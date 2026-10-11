@@ -31,4 +31,5 @@
     <string name="pref_default_stop">Default stop</string>
     <string name="pref_unknown_stop">Unknown stop</string>
     <string name="pref_default_stop_footer">The stop shown when the app opens. Actual location follows the nearest stop.</string>
+    <string name="table_show_on_map">Show stop on map</string>
 </resources>

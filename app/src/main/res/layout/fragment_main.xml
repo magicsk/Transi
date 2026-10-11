@@ -45,6 +45,17 @@
                 android:layout_height="wrap_content"
                 android:contentDescription="@string/table_service_info"
                 app:icon="@drawable/ic_warning"
+                app:layout_constraintEnd_toStartOf="@id/MHDTableMapButton"
+                app:layout_constraintTop_toTopOf="@id/MHDTableStopName"
+                app:layout_constraintBottom_toBottomOf="@id/MHDTableStopName"/>
+
+            <com.google.android.material.button.MaterialButton
+                style="?attr/materialIconButtonStyle"
+                android:id="@+id/MHDTableMapButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/table_show_on_map"
+                app:icon="@drawable/ic_map"
                 app:layout_constraintEnd_toStartOf="@id/MHDTableActualTime"
                 app:layout_constraintTop_toTopOf="@id/MHDTableStopName"
                 app:layout_constraintBottom_toBottomOf="@id/MHDTableStopName"/>
