@@ -36,14 +36,14 @@ class FollowedTrips @Inject constructor(@ApplicationContext context: Context) {
     }
 
     /** The saved trip while it still has steps to show; null when there is none, it is over or unreadable. */
-    fun saved(now: Instant = Instant.now()): SavedTrip? {
+    fun saved(): SavedTrip? {
         val json = prefs.getString(Prefs.FOLLOWED_TRIP, null) ?: return null
         val trip = try {
             savedTripGson.fromJson(json, SavedTrip::class.java)
         } catch (_: JsonParseException) {
             null
         }
-        return trip?.takeIf { it.journey.parts.isNotEmpty() && !it.isOver(now) }
+        return trip?.takeIf { it.journey.parts.isNotEmpty() && !it.isOver(Instant.now()) }
     }
 
     fun save(trip: SavedTrip) = prefs.edit { putString(Prefs.FOLLOWED_TRIP, savedTripGson.toJson(trip)) }

@@ -3,6 +3,8 @@ package eu.magicsk.transi.util
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import eu.magicsk.transi.R
+import eu.magicsk.transi.data.models.TripState
+import eu.magicsk.transi.data.models.TripStep
 
 /** iOS colorFromLineNum. */
 @ColorRes
@@ -105,4 +107,16 @@ fun vehicleIcon(lineNum: String): Int = when {
     isTrain(lineNum) -> R.drawable.ic_train
     (lineNum.toIntOrNull() ?: 99) < 20 -> R.drawable.ic_tram
     else -> R.drawable.ic_bus
+}
+
+/** The followed trip's step: arrived, missed, else its line's vehicle or a walk. */
+@DrawableRes
+fun tripIcon(state: TripState): Int {
+    val line = state.line
+    return when {
+        state.step == TripStep.ARRIVED -> R.drawable.ic_check_circle
+        state.step == TripStep.MISSED -> R.drawable.ic_warning
+        line == null -> R.drawable.ic_directions_walk
+        else -> vehicleIcon(line)
+    }
 }

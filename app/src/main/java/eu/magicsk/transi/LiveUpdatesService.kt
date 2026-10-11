@@ -17,7 +17,6 @@ import android.os.IBinder
 import android.os.Parcelable
 import android.os.PowerManager
 import android.os.SystemClock
-import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -28,7 +27,6 @@ import androidx.core.location.LocationListenerCompat
 import androidx.core.location.LocationManagerCompat
 import androidx.core.location.LocationRequestCompat
 import androidx.core.net.toUri
-import com.google.gson.JsonParseException
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.data.models.AlertTriggers
 import eu.magicsk.transi.data.models.Journey
@@ -61,7 +59,7 @@ import eu.magicsk.transi.util.clock
 import eu.magicsk.transi.util.getLineColor
 import eu.magicsk.transi.util.readCachedStops
 import eu.magicsk.transi.util.searchJourneys
-import eu.magicsk.transi.util.vehicleIcon
+import eu.magicsk.transi.util.tripIcon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.async
@@ -128,9 +126,10 @@ class LiveUpdatesService : Service() {
         wakeLock = getSystemService(PowerManager::class.java).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Transi:LiveUpdates")
             .apply { setReferenceCounted(false) }
         createChannels()
-        // Left from a run the system killed: only its foreground notification went away with it.
+        // Left from a run the system killed: only its foreground notification went away with it. The arrived trip's
+        // last step is not ongoing and times out by itself.
         notificationManager.activeNotifications
-            .filter { it.notification.channelId in CHANNELS }
+            .filter { it.notification.channelId in CHANNELS && it.isOngoing }
             .forEach { notificationManager.cancel(it.id) }
         // iOS refreshes the remaining time every 10 s between board updates.
         scope.launch {
@@ -149,11 +148,19 @@ class LiveUpdatesService : Service() {
                 if (departure != null && stop != null) follow(departure, stop)
             }
             ACTION_STOP -> followed.firstOrNull { it.notificationId == intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0) }?.let(::end)
-            ACTION_START_TRIP -> intent.getStringExtra(EXTRA_JOURNEY)?.let(::decodeJourney)?.let { startTrip(it, fromApp = true) }
+            ACTION_START_TRIP -> intent.getStringExtra(EXTRA_JOURNEY)?.let { startTrip(plannerGson.fromJson(it, Journey::class.java), fromApp = true) }
             ACTION_END_TRIP -> endTrip()
             ACTION_KEEP_FOLLOWING -> trip?.keepFollowing()
-            // From the app as it starts, or the system restarting the service after it ended the process.
-            ACTION_RESTORE_TRIP, null -> if (trip == null) restoreTrip(fromApp = intent != null)
+            // From the app as it starts, or the system restarting the service after it ended the process. A trip the
+            // system restarted gets the location once the app is on screen; showing it again moves the service into the
+            // foreground as a location one.
+            ACTION_RESTORE_TRIP, null -> when {
+                trip == null -> restoreTrip(fromApp = intent != null)
+                intent != null && !tripLocates && startLocation() -> {
+                    tripLocates = true
+                    trip?.let { showTrip(it.state, null) }
+                }
+            }
         }
         if (followed.isEmpty() && trip == null) stopSelf(startId)
         return if (trip != null) START_STICKY else START_NOT_STICKY
@@ -464,17 +471,6 @@ class LiveUpdatesService : Service() {
             .setContentIntent(open("transi://trip/active", TRIP_NOTIFICATION_ID))
     }
 
-    @DrawableRes
-    private fun tripIcon(state: TripState): Int {
-        val line = state.line
-        return when {
-            state.step == TripStep.ARRIVED -> R.drawable.ic_check_circle
-            state.step == TripStep.MISSED -> R.drawable.ic_warning
-            line == null -> R.drawable.ic_directions_walk
-            else -> vehicleIcon(line)
-        }
-    }
-
     // Both kinds
 
     /**
@@ -590,12 +586,6 @@ class LiveUpdatesService : Service() {
         )
     }
 
-    private fun decodeJourney(json: String): Journey? = try {
-        plannerGson.fromJson(json, Journey::class.java)?.takeIf { it.parts.isNotEmpty() }
-    } catch (_: JsonParseException) {
-        null
-    }
-
     /** One followed departure: its row when following started, the row last matched on its board, and what it shows. */
     private class FollowedDeparture(
         val notificationId: Int,
@@ -670,7 +660,10 @@ class LiveUpdatesService : Service() {
             context.startService(Intent(context, LiveUpdatesService::class.java).setAction(ACTION_KEEP_FOLLOWING))
         }
 
-        /** Follows the saved trip again after the process ended; call as the app comes on screen. */
+        /**
+         * Follows the saved trip again after the process ended, or gives the location to one the system restarted; call
+         * as the app comes on screen.
+         */
         fun restoreTrip(context: Context) {
             try {
                 context.startService(Intent(context, LiveUpdatesService::class.java).setAction(ACTION_RESTORE_TRIP))

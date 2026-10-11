@@ -100,7 +100,6 @@ class TripProgressTest {
     private val TripState.titleText get() = shown(title)
     private val TripState.detailText get() = shown(detail)
     private val TripState.compactText get() = shown(compact)
-    private val TripState.minimalText get() = shown(minimal)
 
     private fun alertOf(update: TripUpdate) = update.alert?.let { Triple(it.key, shown(it.title), shown(it.body)) }
 
@@ -224,8 +223,8 @@ class TripProgressTest {
         assertEquals(TripPhase.Board(0), waiting.progress.phase)
         assertEquals(listOf(TripStep.BOARD, "72"), listOf(waiting.state.step, waiting.state.line))
         assertEquals(
-            listOf("Board at Hronská", "Platform A · in 4 min", "4 min", "4m"),
-            listOf(waiting.state.titleText, waiting.state.detailText, waiting.state.compactText, waiting.state.minimalText),
+            listOf("Board at Hronská", "Platform A · in 4 min", "4 min"),
+            listOf(waiting.state.titleText, waiting.state.detailText, waiting.state.compactText),
         )
         assertNull(waiting.state.delay)
         val late = at("07:56", live = mapOf(0 to 120))
@@ -248,8 +247,8 @@ class TripProgressTest {
         val riding = at("08:10:30")
         assertEquals("Pažítková is next, 8 stops to Rajská", TripProgress(TripPhase.Ride(0), 10, 8, 0.56), riding.progress)
         assertEquals(
-            listOf("Get off in 8 stops", "Rajská, platform A", "8 stops", "8"),
-            listOf(riding.state.titleText, riding.state.detailText, riding.state.compactText, riding.state.minimalText),
+            listOf("Get off in 8 stops", "Rajská, platform A", "8 stops"),
+            listOf(riding.state.titleText, riding.state.detailText, riding.state.compactText),
         )
         assertEquals(local("08:21"), riding.state.time)
         val behind = at("08:10:30", passedStops = mapOf(0 to 7))
@@ -275,8 +274,8 @@ class TripProgressTest {
         val change = at("08:25")
         assertEquals(TripPhase.Change(2), change.progress.phase)
         assertEquals(
-            listOf("Walk to platform D", "Kollárovo nám. · 31 leaves in 6 min", "D · 6m", "D", "31"),
-            listOf(change.state.titleText, change.state.detailText, change.state.compactText, change.state.minimalText, change.state.line),
+            listOf("Walk to platform D", "Kollárovo nám. · 31 leaves in 6 min", "D · 6m", "31"),
+            listOf(change.state.titleText, change.state.detailText, change.state.compactText, change.state.line),
         )
         assertEquals(TripWarning.TIGHT_CHANGE, change.state.warning)
         assertEquals(Triple("change-2", "Change to platform D", "Kollárovo nám. · 31 leaves in 6 min"), alertOf(change))
@@ -309,7 +308,7 @@ class TripProgressTest {
         assertEquals("Two-stop leg", 1 to "Get off at the next stop", lastLeg.progress.stopsLeft to lastLeg.state.titleText)
         val arrived = at("08:34")
         assertEquals(TripPhase.Arrived, arrived.progress.phase)
-        assertEquals(listOf("Arrived", "Zochova", "Arrived", "✓"), listOf(arrived.state.titleText, arrived.state.detailText, arrived.state.compactText, arrived.state.minimalText))
+        assertEquals(listOf("Arrived", "Zochova", "Arrived"), listOf(arrived.state.titleText, arrived.state.detailText, arrived.state.compactText))
         assertEquals(local("08:33"), arrived.state.time)
         assertNull(arrived.state.warning)
         assertNull(arrived.alert)
@@ -648,8 +647,8 @@ class TripProgressTest {
         val lostAt = at("08:02", missed = TripMissed(0, boarded = false))
         assertEquals(
             "Missed while searching",
-            listOf<Any?>(TripStep.MISSED, "72", "Missed 72", "Finding other connections…", local("08:00"), "Missed", "!", null, null, null),
-            with(lostAt.state) { listOf(step, line, titleText, detailText, time, compactText, minimalText, delay, progress, warning) },
+            listOf<Any?>(TripStep.MISSED, "72", "Missed 72", "Finding other connections…", local("08:00"), "Missed", null, null, null),
+            with(lostAt.state) { listOf(step, line, titleText, detailText, time, compactText, delay, progress, warning) },
         )
         assertNull(lostAt.alert)
         val nothing = TripMissed(0, boarded = false, alternatives = TripAlternatives())
@@ -712,12 +711,19 @@ class TripProgressTest {
 
     @Test
     fun theDeviceStaysAwakeOnlyNearAStep() {
-        fun near(time: String, journey: Journey = walkChange, missed: TripMissed? = null): Boolean {
-            val update = at(time, journey, missed = missed)
-            return journey.isNearAlert(update.progress, update.state, local(time))
+        fun near(time: String, journey: Journey = walkChange, missed: TripMissed? = null, live: Map<Int, Int> = emptyMap()): Boolean {
+            val update = at(time, journey, live, missed = missed)
+            return journey.isNearAlert(update.progress, update.state, journey.delays(live), local(time))
         }
         assertEquals("Boarding: from 3 minutes before the 72 leaves", listOf(false, true), listOf(near("07:56"), near("07:57")))
-        assertEquals("Riding: the first 6 minutes, then 3 minutes before the arrival", listOf(true, false, true), listOf(near("08:05"), near("08:10"), near("08:18:30")))
+        assertEquals(
+            "Riding: the first 7 minutes, then 3 minutes before the arrival",
+            listOf(true, true, false, true), listOf(near("08:05"), near("08:07"), near("08:10"), near("08:18:30")),
+        )
+        assertEquals(
+            "The 72 leaving 5 minutes late: the first 7 minutes from when it left, while a missed boarding may still show",
+            listOf(true, false), listOf(near("08:12", live = mapOf(0 to 300)), near("08:12:30", live = mapOf(0 to 300))),
+        )
         assertTrue("Changing, 3 minutes before the 31 leaves", near("08:28:30"))
         assertFalse("Walking", near("08:25", finalWalk))
         assertFalse("Arrived", near("08:34"))

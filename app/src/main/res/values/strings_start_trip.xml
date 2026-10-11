@@ -67,7 +67,6 @@
     <string name="trip_arrive">Arrive %s</string>
     <string name="trip_arrive_lowercase">arrive %s</string>
     <string name="trip_arrived">Arrived</string>
-    <string name="trip_arrived_minimal">✓</string>
 
     <!-- A missed ride -->
     <string name="trip_missed">Missed %s</string>
@@ -76,7 +75,6 @@
     <string name="trip_finding_connections">Finding other connections…</string>
     <string name="trip_no_connections">No other connections found</string>
     <string name="trip_missed_compact">Missed</string>
-    <string name="trip_missed_minimal">!</string>
 
     <!-- Alerts -->
     <string name="trip_alert_change_missed">Change likely missed</string>

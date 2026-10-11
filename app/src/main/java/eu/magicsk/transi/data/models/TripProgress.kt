@@ -126,8 +126,6 @@ data class TripState(
     val progress: Double? = null,
     /** The status bar chip: "4 min", "3 stops", "D · 6m". */
     val compact: TripText,
-    /** The shortest form: "4m", "3", "D". */
-    val minimal: TripText,
     /** The next change's spare time is short or gone. */
     val warning: TripWarning? = null,
     /** Alerts already shown, so each one fires once per step, also after the trip is restored. */
@@ -408,8 +406,8 @@ private fun Journey.state(progress: TripProgress, now: Instant, delays: Map<Int,
 
     fun content(
         step: TripStep, line: String?, title: TripText, detail: TripText, time: Instant, delay: Int? = null,
-        fraction: Double? = null, compact: TripText, minimal: TripText,
-    ) = TripState(step, line, title, detail, time, delay, fraction, compact, minimal, warning, alerted)
+        fraction: Double? = null, compact: TripText,
+    ) = TripState(step, line, title, detail, time, delay, fraction, compact, warning, alerted)
 
     return when (phase) {
         is TripPhase.Board -> {
@@ -427,7 +425,7 @@ private fun Journey.state(progress: TripProgress, now: Instant, delays: Map<Int,
             }
             content(
                 TripStep.BOARD, part.routeShortName, text(if (meters == null) R.string.trip_board_at else R.string.trip_walk_to, stop),
-                detail, time, minutesLate(phase.part), compact = countdown.short, minimal = countdown.minimal,
+                detail, time, minutesLate(phase.part), compact = countdown.short,
             )
         }
         is TripPhase.Ride -> {
@@ -451,7 +449,6 @@ private fun Journey.state(progress: TripProgress, now: Instant, delays: Map<Int,
                 TripStep.RIDE, part.routeShortName, title, detail, time, minutesLate(phase.part), progress.fraction,
                 compact = stopsLeft?.let { if (it == 0) text(R.string.trip_countdown_now) else TripText.Plural(R.plurals.trip_stops_left, it) }
                     ?: countdown.short,
-                minimal = stopsLeft?.let { TripText.Raw(it.toString()) } ?: countdown.minimal,
             )
         }
         is TripPhase.Change -> {
@@ -476,7 +473,6 @@ private fun Journey.state(progress: TripProgress, now: Instant, delays: Map<Int,
                 TripStep.CHANGE, part.routeShortName, title, where?.let { text(R.string.trip_dot, it, leaves) } ?: leaves,
                 time, minutesLate(phase.part),
                 compact = code?.let { text(R.string.trip_dot, it, countdown.minimal) } ?: countdown.short,
-                minimal = code?.let(TripText::Raw) ?: countdown.minimal,
             )
         }
         is TripPhase.Walk -> {
@@ -487,13 +483,13 @@ private fun Journey.state(progress: TripProgress, now: Instant, delays: Map<Int,
                 TripStep.WALK, null, text(R.string.trip_walk_to, walk.endStopName ?: text(R.string.trip_your_destination)),
                 away(walk.endStopGps)?.let { text(R.string.trip_dot, distanceText(it), text(R.string.trip_arrive_lowercase, countdown.phrase)) }
                     ?: text(R.string.trip_arrive, countdown.phrase),
-                time, compact = countdown.short, minimal = countdown.minimal,
+                time, compact = countdown.short,
             )
         }
         TripPhase.Arrived -> content(
             TripStep.ARRIVED, null, text(R.string.trip_arrived), TripText.Raw(parts.lastOrNull()?.endStopName.orEmpty()),
             parts.lastOrNull()?.let { shifted(it.endArrival, lastTransit) } ?: now,
-            compact = text(R.string.trip_arrived), minimal = text(R.string.trip_arrived_minimal),
+            compact = text(R.string.trip_arrived),
         )
     }
 }
@@ -521,7 +517,7 @@ private fun Journey.missedState(missed: TripMissed, delays: Map<Int, Int>, alert
         detail,
         // Until there is another one, when the missed vehicle left.
         leaves ?: part?.let { it.startDeparture.expected(delays[missed.part]) } ?: Instant.EPOCH,
-        compact = text(R.string.trip_missed_compact), minimal = text(R.string.trip_missed_minimal), alerted = alerted,
+        compact = text(R.string.trip_missed_compact), alerted = alerted,
     )
 }
 
@@ -589,14 +585,19 @@ private fun Journey.nextTransit(index: Int): Int? = parts.indices.firstOrNull { 
 
 /**
  * Near a step the alerts and missed rides are timed by, when the service keeps the device awake for its refreshes:
- * 3 minutes before a vehicle leaves or arrives, and the first 6 minutes of a ride, while a missed boarding shows.
+ * 3 minutes before a vehicle leaves or arrives, and the first 7 minutes of a ride, from its departure shifted by
+ * [delays] (seconds by part index) like the ride: a missed boarding shows within 5 minutes without a live delay, 45 s
+ * off the ride and a refresh.
  */
-fun Journey.isNearAlert(progress: TripProgress, state: TripState, now: Instant): Boolean {
+fun Journey.isNearAlert(progress: TripProgress, state: TripState, delays: Map<Int, Int>, now: Instant): Boolean {
     if (state.step == TripStep.MISSED) return false
     val untilStep = seconds(now, state.time)
     return when (val phase = progress.phase) {
         is TripPhase.Board, is TripPhase.Change -> untilStep <= 180
-        is TripPhase.Ride -> untilStep <= 180 || seconds(parts[phase.part].startDeparture, now) <= 360
+        is TripPhase.Ride -> {
+            val departed = parts[phase.part].startDeparture.plusSeconds((delays[phase.part] ?: 0).toLong())
+            untilStep <= 180 || seconds(departed, now) <= 420
+        }
         else -> false
     }
 }

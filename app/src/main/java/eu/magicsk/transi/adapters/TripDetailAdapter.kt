@@ -84,6 +84,7 @@ import eu.magicsk.transi.util.customizeLineText
 import eu.magicsk.transi.util.getLineColor
 import eu.magicsk.transi.util.getLineTextColor
 import eu.magicsk.transi.util.isDarkTheme
+import eu.magicsk.transi.util.tripIcon
 import java.time.Duration
 import java.time.Instant
 import kotlin.math.ceil
@@ -400,12 +401,12 @@ class TripDetailAdapter(
         if (line != null) {
             customizeLineText(b.tripSummaryStepBadge, line, context, context.resources)
         } else {
-            val (icon, color) = when (step.step) {
-                TripStep.ARRIVED -> R.drawable.ic_check_circle to ContextCompat.getColor(context, R.color.table_green)
-                TripStep.MISSED -> R.drawable.ic_warning to ContextCompat.getColor(context, R.color.table_orange)
-                else -> R.drawable.ic_directions_walk to MaterialColors.getColor(b.root, androidx.appcompat.R.attr.colorPrimary)
+            val color = when (step.step) {
+                TripStep.ARRIVED -> ContextCompat.getColor(context, R.color.table_green)
+                TripStep.MISSED -> ContextCompat.getColor(context, R.color.table_orange)
+                else -> MaterialColors.getColor(b.root, androidx.appcompat.R.attr.colorPrimary)
             }
-            b.tripSummaryStepIcon.setImageResource(icon)
+            b.tripSummaryStepIcon.setImageResource(tripIcon(step))
             b.tripSummaryStepIcon.imageTintList = ColorStateList.valueOf(color)
         }
         b.tripSummaryStepTitle.text = step.title.resolve(context)

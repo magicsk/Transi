@@ -88,8 +88,8 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         updateLocation()
         timetableDatabase.retryIfFailed()
-        // A trip followed when the process ended goes on (iOS restore()).
-        if (followedTrips.trip.value == null && followedTrips.saved() != null) LiveUpdatesService.restoreTrip(this)
+        // A trip followed when the process ended goes on (iOS restore()); one the system restarted gets the location back.
+        if (followedTrips.saved() != null) LiveUpdatesService.restoreTrip(this)
     }
 
     override fun onStop() {

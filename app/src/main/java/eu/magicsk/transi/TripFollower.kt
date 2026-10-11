@@ -86,7 +86,7 @@ class TripFollower(
         private set
 
     /** Whether the service keeps the device awake for the refreshes near a step. */
-    fun isNearAlert(now: Instant) = progress?.let { journey.isNearAlert(it, state, now) } ?: false
+    fun isNearAlert(now: Instant) = progress?.let { journey.isNearAlert(it, state, journey.delays(live.delays), now) } ?: false
 
     /** Positions the journey, loads the stops R-API legs leave out, then refreshes every 15 s and on every board update. */
     fun start() {

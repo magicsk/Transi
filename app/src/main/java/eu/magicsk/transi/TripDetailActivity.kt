@@ -202,16 +202,11 @@ class TripDetailActivity : AppCompatActivity() {
 
     /**
      * Follows the journey in the trip notification. The walk to each stop and a missed vehicle need the precise location,
-     * so the first start asks for it while the app is on screen (that is all a trip needs; no background location).
+     * so the first start asks for it while the app is on screen (that is all a trip needs; no background location). Once
+     * granted, the request answers at once without a dialog.
      */
-    private fun startTrip() {
-        val journey = viewModel.state.value?.journey ?: return
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            LiveUpdatesService.startTrip(this, journey)
-        } else {
-            locationRequest.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
-        }
-    }
+    private fun startTrip() =
+        locationRequest.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
 
     // The trip starts either way: without the location it shows the steps without distances.
     private val locationRequest = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {

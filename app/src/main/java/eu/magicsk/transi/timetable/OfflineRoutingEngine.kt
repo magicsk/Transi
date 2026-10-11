@@ -6,6 +6,7 @@ import eu.magicsk.transi.data.models.Journey
 import eu.magicsk.transi.data.models.Part
 import eu.magicsk.transi.data.models.PartStop
 import eu.magicsk.transi.data.models.ROUTE_TYPE_WALK
+import eu.magicsk.transi.data.models.distance
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.idsbk.StopGps
 import kotlinx.coroutines.Dispatchers
@@ -17,8 +18,6 @@ import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
 import kotlin.coroutines.CoroutineContext
-import kotlin.math.cos
-import kotlin.math.hypot
 
 /** Ids of offline journeys, which page like neither online source. */
 const val OFFLINE_JOURNEY_PREFIX = "o-"
@@ -41,7 +40,6 @@ private const val MAX_WAIT = 12 * HOUR
 // Same-named stops this close are platforms of one station (the widest real one, Americké nám., spans 416 m);
 // farther ones are stops of another town, like Rovinka, Majerská 7.5 km from Majerská.
 private const val STATION_RADIUS_METERS = 500.0
-private const val EARTH_RADIUS_METERS = 6_371_000.0
 
 private const val BUS_STATION = "Autobusová stanica"
 private val TOWN_PREFIXES = listOf("Bratislava, ", "Rovinka, ", "Dunajská Lužná, ", "Miloslavov, ")
@@ -297,12 +295,8 @@ internal fun stopsNamed(stops: List<OfflineStop>, name: String, place: StopGps):
         .toSet()
 }
 
-/** Whether [a] and [b] are within [STATION_RADIUS_METERS] (equirectangular distance, exact enough at this range). */
-internal fun isNear(a: StopGps, b: StopGps): Boolean {
-    val x = Math.toRadians(b.lon - a.lon) * cos(Math.toRadians((a.lat + b.lat) / 2))
-    val y = Math.toRadians(b.lat - a.lat)
-    return hypot(x, y) * EARTH_RADIUS_METERS <= STATION_RADIUS_METERS
-}
+/** Whether [a] and [b] are within [STATION_RADIUS_METERS]. */
+internal fun isNear(a: StopGps, b: StopGps): Boolean = a.distance(b) <= STATION_RADIUS_METERS
 
 internal class OfflineStop(val name: String, val platform: String?, val zone: String?, val gps: StopGps) {
     val station = stationName(name)
