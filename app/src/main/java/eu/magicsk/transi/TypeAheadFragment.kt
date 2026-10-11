@@ -48,6 +48,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
 
 /**
  * Stop search over the screen that opened it. Origins: "editText" (table), "editTextFrom"/"editTextTo" (trip planner)
@@ -283,7 +284,8 @@ class TypeAheadFragment : Fragment() {
         override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
             val position = viewHolder.bindingAdapterPosition
             if (position == RecyclerView.NO_POSITION) return
-            typeAheadAdapter.notifyItemChanged(position)
+            // The reordered list's change brings the row back. A second change while that animation runs would make
+            // the RecyclerView reuse the swiped-out row, which ItemTouchHelper never resets.
             onFavoriteToggled(typeAheadAdapter.getStop(position))
         }
 
@@ -292,7 +294,8 @@ class TypeAheadFragment : Fragment() {
             dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean
         ) {
             val position = viewHolder.bindingAdapterPosition
-            if (dX != 0f && position != RecyclerView.NO_POSITION) {
+            // Fully swiped out, the row is toggled already: its background would show the opposite action until it is back.
+            if (dX != 0f && abs(dX) < viewHolder.itemView.width && position != RecyclerView.NO_POSITION) {
                 val favorite = typeAheadAdapter.currentList[position].favorite
                 val context = recyclerView.context
                 val item = viewHolder.itemView

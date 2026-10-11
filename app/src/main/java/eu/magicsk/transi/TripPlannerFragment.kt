@@ -168,7 +168,9 @@ class TripPlannerFragment : Fragment(R.layout.fragment_trip_planner) {
         pagerAdapter.submit(pages)
         val currentIndex = pages.indexOfFirst { it.isCurrent }
         if (currentIndex >= 0 && currentIndex != binding.TripPlannerPager.currentItem) {
-            binding.TripPlannerPager.setCurrentItem(currentIndex, ValueAnimator.areAnimatorsEnabled())
+            // Before its first layout a smooth scroll stops at once and leaves the recreated pager on page 0.
+            val animate = ValueAnimator.areAnimatorsEnabled() && binding.TripPlannerPager.isLaidOut
+            binding.TripPlannerPager.setCurrentItem(currentIndex, animate)
         }
         showPageDots(binding.TripPlannerPageDots, pages.size, currentIndex.coerceAtLeast(0), searching)
     }

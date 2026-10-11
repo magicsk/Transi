@@ -88,6 +88,9 @@ class TripPlannerPagerAdapter(
 
             override fun areContentsTheSame(oldPosition: Int, newPosition: Int) =
                 oldPages[oldPosition] == newPages[newPosition]
+
+            // Keeps the page's holder, so more journeys append in place instead of cross-fading to another holder.
+            override fun getChangePayload(oldPosition: Int, newPosition: Int) = REBIND
         }).dispatchUpdatesTo(this)
     }
 

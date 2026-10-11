@@ -121,7 +121,7 @@ class MHDTableAdapter(
                 platformLabels?.firstOrNull { it.id.toIntOrNull() == item.platform }?.label.orEmpty()
 
             MHDTableListDeparture.text = context.getString(R.string.departureTime, clockText(context, item.departureTime))
-            MHDTableListLastStop.isVisible = online
+            MHDTableListLastStop.isVisible = online && item.lastStopName != "none"
             MHDTableListLastStop.text = item.lastStopName
             MHDTableListVehicleText.text = vehicle?.let {
                 context.getString(R.string.vehicleText, it.type, item.busID.drop(2))

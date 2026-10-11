@@ -41,7 +41,8 @@ class TableViewModel @Inject constructor(
     private val board = LiveBoard(repository, idsbk, viewModelScope)
 
     init {
-        board.onStatus = { status.value = it }
+        // The board reports "connected" with every update; the status bar reacts to changes only (iOS ConnectionStatusBar).
+        board.onStatus = { if (it != status.value) status.value = it }
         board.onDepartures = { departures.value = it }
         board.onEmpty = { empty.value = it }
         board.onVehicles = { vehicles.value = it }
