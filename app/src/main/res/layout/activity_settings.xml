@@ -12,8 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:navigationContentDescription="@string/back"
-        app:navigationIcon="@drawable/ic_arrow_back"
-        app:title="@string/settings" />
+        app:navigationIcon="@drawable/ic_arrow_back" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/settingsFragment"

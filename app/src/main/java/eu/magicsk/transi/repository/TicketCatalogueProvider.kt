@@ -4,14 +4,11 @@ import android.content.Context
 import androidx.annotation.MainThread
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
-import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
 import eu.magicsk.transi.data.models.TicketCatalogue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +21,10 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** The IDS BK ticket catalogue, cached in files/ticket_types.json and checked for changes at most once a day. */
+/**
+ * The IDS BK ticket catalogue, cached in files/ticket_types.json and checked for changes at most once a day. Only
+ * [complete][TicketCatalogue.isComplete] catalogues are published or cached; others count as a failed load.
+ */
 @Singleton
 class TicketCatalogueProvider @Inject constructor(
     @ApplicationContext context: Context,
@@ -33,7 +33,6 @@ class TicketCatalogueProvider @Inject constructor(
 ) {
     data class State(
         val catalogue: TicketCatalogue? = null,
-        val isLoading: Boolean = false,
         /** Nothing cached and the last fetch failed. */
         val loadFailed: Boolean = false,
     )
@@ -45,23 +44,21 @@ class TicketCatalogueProvider @Inject constructor(
     private val gson = Gson()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
-    /** When the catalogue was last confirmed current, in epoch milliseconds. Main thread only. */
+    /** When the catalogue was last confirmed current, in epoch milliseconds. Main thread only, like [job]. */
     private var checkedAt: Long? = null
+    private var job: Job? = null
 
     /** Publishes the cached catalogue, then refreshes it when the cache is a day old. */
     @MainThread
     fun load() {
-        if (state.value.isLoading) return
-        checkedAt?.let { if (System.currentTimeMillis() - it < REFRESH_INTERVAL_MS) return }
-        mutableState.update { it.copy(isLoading = true, loadFailed = false) }
-        scope.launch {
+        if (job?.isActive == true || isFresh(checkedAt)) return
+        mutableState.update { it.copy(loadFailed = false) }
+        job = scope.launch {
             val (cached, cachedAt) = withContext(Dispatchers.IO) { readCache() }
-            // The file's modification time records the last check.
-            val isFresh = cachedAt != null && System.currentTimeMillis() - cachedAt < REFRESH_INTERVAL_MS
             if (cached != null) mutableState.update { it.copy(catalogue = cached) }
-            if (cached != null && isFresh) {
+            // The file's modification time records the last check.
+            if (cached != null && isFresh(cachedAt)) {
                 checkedAt = cachedAt
-                mutableState.update { it.copy(isLoading = false) }
                 return@launch
             }
 
@@ -69,7 +66,7 @@ class TicketCatalogueProvider @Inject constructor(
                 ?.let { repository.getTicketTypes(it, cached?.cacheKey ?: "null").data }
             val now = System.currentTimeMillis()
             when {
-                fetched?.tickets != null && fetched.zones != null -> {
+                fetched?.isComplete == true -> {
                     checkedAt = now
                     mutableState.value = State(catalogue = fetched)
                     withContext(Dispatchers.IO) { writeCache(fetched) }
@@ -77,17 +74,21 @@ class TicketCatalogueProvider @Inject constructor(
                 // Only the cached key came back: the cached copy is current. Anything else keeps it unconfirmed.
                 fetched != null && cached?.isConfirmed(fetched) == true -> {
                     checkedAt = now
-                    mutableState.update { it.copy(isLoading = false) }
                     withContext(Dispatchers.IO) { file.setLastModified(now) }
                 }
-                else -> mutableState.update { it.copy(isLoading = false, loadFailed = it.catalogue == null) }
+                else -> mutableState.update { it.copy(loadFailed = it.catalogue == null) }
             }
         }
     }
 
-    /** The cached catalogue and when it was last checked; nulls without a readable cache. */
+    /** Checked less than a day ago; a check in the future, from a clock that was wrong, is stale. */
+    private fun isFresh(checkedAt: Long?) =
+        checkedAt != null && System.currentTimeMillis() - checkedAt in 0 until REFRESH_INTERVAL_MS
+
+    /** The cached catalogue and when it was last checked; a null catalogue without a readable, complete cache. */
     private fun readCache(): Pair<TicketCatalogue?, Long?> = try {
-        gson.fromJson(file.readText(), TicketCatalogue::class.java) to file.lastModified().takeIf { it > 0 }
+        gson.fromJson(file.readText(), TicketCatalogue::class.java)?.takeIf { it.isComplete } to
+            file.lastModified().takeIf { it > 0 }
     } catch (_: IOException) {
         null to null
     } catch (_: JsonParseException) {
@@ -102,17 +103,7 @@ class TicketCatalogueProvider @Inject constructor(
         }
     }
 
-    @EntryPoint
-    @InstallIn(SingletonComponent::class)
-    interface Accessor {
-        fun ticketCatalogueProvider(): TicketCatalogueProvider
-    }
-
-    companion object {
-        private const val REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000L
-
-        /** The singleton, for classes Hilt doesn't inject (the settings screens). */
-        fun from(context: Context): TicketCatalogueProvider =
-            EntryPointAccessors.fromApplication(context, Accessor::class.java).ticketCatalogueProvider()
+    private companion object {
+        const val REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000L
     }
 }

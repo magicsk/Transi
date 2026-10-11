@@ -53,6 +53,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
     @Inject
     lateinit var timetableDatabase: TimetableDatabase
 
+    @Inject
+    lateinit var ticketCatalogueProvider: TicketCatalogueProvider
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         preferenceManager.sharedPreferencesName = Prefs.FILE
         // One XML per section, in the iOS order.
@@ -225,7 +228,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         update()
-        TicketCatalogueProvider.from(requireContext()).load()
+        ticketCatalogueProvider.load()
     }
 
     // The seek bars show their value in their titles.

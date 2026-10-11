@@ -14,15 +14,19 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
+import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.data.models.SeasonPass
 import eu.magicsk.transi.data.models.TicketCatalogue
 import eu.magicsk.transi.repository.TicketCatalogueProvider
 import eu.magicsk.transi.util.Prefs
+import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 /** "My pass" zones: "100 + 101" together, then 101 and the regional zones from the IDS BK catalogue, or network-wide. */
+@AndroidEntryPoint
 class PassZonesFragment : PreferenceFragmentCompat() {
-    private val provider by lazy { TicketCatalogueProvider.from(requireContext()) }
+    @Inject
+    lateinit var provider: TicketCatalogueProvider
 
     /** Zone name → its row; "100" is "100 + 101". */
     private val zoneRows = mutableMapOf<String, CheckBoxPreference>()
@@ -76,15 +80,17 @@ class PassZonesFragment : PreferenceFragmentCompat() {
         val list = findPreference<PreferenceCategory>(KEY_LIST) ?: return
         zoneRows.filterKeys { it != "100" }.values.forEach(list::removePreference)
         zoneRows.keys.retainAll(setOf("100"))
-        zones.filter { it.zoneName != "100" }.forEach { zone ->
+        for (zone in zones) {
+            // Published catalogues name every zone.
+            val name = zone.zoneName?.takeIf { it != "100" } ?: continue
             val row = CheckBoxPreference(preferenceManager.context).apply {
-                title = zone.zoneName
+                title = name
                 summary = zone.zoneDescription
                 isPersistent = false
                 isIconSpaceReserved = false
             }
             list.addPreference(row)
-            addZone(zone.zoneName, row)
+            addZone(name, row)
         }
     }
 

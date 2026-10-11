@@ -15,7 +15,6 @@ import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import androidx.core.view.isVisible
-import eu.magicsk.transi.data.models.IdsBkLinks
 import eu.magicsk.transi.data.models.SeasonPass
 import eu.magicsk.transi.data.models.TicketCatalogue
 import eu.magicsk.transi.data.models.TicketCoverage
@@ -108,10 +107,17 @@ class TicketCoverageView @JvmOverloads constructor(
         resources.getQuantityString(plural, zones.size, zones.joinToString(", "))
 }
 
+/** The official IDS BK app. It publishes no ticket or purchase deep links; launching it opens its home screen. */
+private const val IDS_BK_PACKAGE = "com.casperise.urbi.online.bid"
+
+/** Tried in order when the app isn't installed: the Play Store app, else its web page. */
+private val idsBkStoreUrls =
+    listOf("market://details?id=$IDS_BK_PACKAGE", "https://play.google.com/store/apps/details?id=$IDS_BK_PACKAGE")
+
 /** Opens the IDS BK app, else its Play Store page: in the store app, then on the web. */
 fun openIdsBk(context: Context) {
-    val intents = listOfNotNull(context.packageManager.getLaunchIntentForPackage(IdsBkLinks.PACKAGE)) +
-        IdsBkLinks.storeUrls.map { Intent(Intent.ACTION_VIEW, it.toUri()) }
+    val intents = listOfNotNull(context.packageManager.getLaunchIntentForPackage(IDS_BK_PACKAGE)) +
+        idsBkStoreUrls.map { Intent(Intent.ACTION_VIEW, it.toUri()) }
     for (intent in intents) {
         try {
             context.startActivity(intent)

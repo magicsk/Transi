@@ -12,15 +12,10 @@ import java.util.Currency
 import java.util.Locale
 import kotlin.math.ceil
 
-/** The official IDS BK app. It publishes no ticket or purchase deep links; launching it opens its home screen. */
-object IdsBkLinks {
-    const val PACKAGE = "com.casperise.urbi.online.bid"
-
-    /** Tried in order when the app isn't installed: the Play Store app, else its web page. */
-    val storeUrls = listOf("market://details?id=$PACKAGE", "https://play.google.com/store/apps/details?id=$PACKAGE")
-}
-
-/** B-API `ticket/types/{cache_key}`. While `cache_key` is current only [cacheKey] comes back. */
+/**
+ * B-API `ticket/types/{cache_key}`. While `cache_key` is current only [cacheKey] comes back. Gson leaves missing
+ * fields null; TicketCatalogueProvider publishes only [isComplete] catalogues.
+ */
 data class TicketCatalogue(
     val tickets: List<Ticket>? = null,
     val zones: List<Zone>? = null,
@@ -32,20 +27,27 @@ data class TicketCatalogue(
         @SerializedName("ticket_type") val ticketType: Int,
         /** Null for network-wide tickets. */
         @SerializedName("zones_count") val zonesCount: Int?,
-        val name: String,
-        val price: Double,
-        val currency: String,
+        val name: String?,
+        val price: Double?,
+        val currency: String?,
         /** Minutes. */
         @SerializedName("time_duration") val timeDuration: Int,
         val discounted: Boolean,
     ) {
         /** [price] in [currency], like "€1.09". */
         fun formattedPrice(locale: Locale = Locale.getDefault(Locale.Category.FORMAT)): String {
+            val price = price ?: return ""
             val format = NumberFormat.getCurrencyInstance(locale)
-            try {
-                format.currency = Currency.getInstance(currency)
+            val unit = try {
+                Currency.getInstance(currency.orEmpty())
             } catch (_: IllegalArgumentException) {
-                return "$price $currency"
+                return "$price ${currency.orEmpty()}".trimEnd()
+            }
+            format.currency = unit
+            // The locale's own currency set the digits: without this yen locales show "€1" and dinar ones "€1.090".
+            unit.defaultFractionDigits.takeIf { it >= 0 }?.let {
+                format.minimumFractionDigits = it
+                format.maximumFractionDigits = it
             }
             return format.format(price)
         }
@@ -54,9 +56,15 @@ data class TicketCatalogue(
     data class Zone(
         @SerializedName("zone_id") val zoneId: Int,
         /** Like "100". */
-        @SerializedName("zone_name") val zoneName: String,
+        @SerializedName("zone_name") val zoneName: String?,
         @SerializedName("zone_description") val zoneDescription: String?,
     )
+
+    /** Whether this is a whole catalogue with every field the app reads, as iOS decoding requires. */
+    val isComplete: Boolean
+        get() = tickets != null && zones != null &&
+            tickets.all { it.name != null && it.price != null && it.currency != null } &&
+            zones.all { it.zoneName != null }
 
     /** Full-fare single-journey tickets ("Základné lístky"), network-wide included. */
     val basicSingles: List<Ticket>
@@ -66,7 +74,7 @@ data class TicketCatalogue(
     fun singleTicket(zoneCount: Int, minutes: Int): Ticket? {
         val singles = basicSingles
         return singles.filter { (it.zonesCount ?: Int.MAX_VALUE) >= zoneCount && it.timeDuration >= minutes }
-            .minByOrNull { it.price }
+            .minByOrNull { it.price ?: Double.MAX_VALUE }
             ?: singles.firstOrNull { it.zonesCount == null }
     }
 
@@ -82,7 +90,7 @@ data class TicketCatalogue(
             val zone = zones.firstOrNull {
                 if (journey.isRaptor) it.zoneId.toString() == journeyZone else it.zoneName == journeyZone
             } ?: return null
-            zone.zoneName
+            zone.zoneName ?: return null
         }
     }
 }

@@ -1,11 +1,13 @@
 package eu.magicsk.transi.data.models
 
 import com.google.gson.Gson
+import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import eu.magicsk.transi.data.remote.responses.idsbk.RaptorResponse
 import eu.magicsk.transi.util.mapRaptorJourneys
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -134,12 +136,31 @@ class TicketCatalogueTest {
             assertEquals("$zones zones, $minutes min", expected, catalogue.singleTicket(zones, minutes)?.ticketId)
         }
         val basic30 = requireNotNull(catalogue.singleTicket(2, 30))
-        assertEquals(1.09, basic30.price, 0.0)
+        assertEquals(1.09, basic30.price)
         assertEquals(30, basic30.timeDuration)
         assertEquals(2, basic30.zonesCount)
         assertEquals("EUR", basic30.currency)
         assertEquals("Základný", basic30.name)
         assertEquals("€1.09", basic30.formattedPrice(Locale.US))
+        // Euro cents even where the local currency has none (yen) or three digits (Kuwaiti dinar).
+        assertEquals("€1.09", basic30.formattedPrice(Locale.JAPAN))
+        assertEquals("€1.09", basic30.formattedPrice(Locale.forLanguageTag("en-KW")))
+    }
+
+    @Test
+    fun incompleteCataloguesAreRejected() {
+        assertTrue("Fixture", catalogue.isComplete)
+        assertFalse("Cache key alone", TicketCatalogue(cacheKey = "2026-09-30T22:28:22.724Z").isComplete)
+        // Gson leaves a missing field null, whatever the Kotlin type says.
+        val missing = listOf("tickets" to "price", "tickets" to "currency", "tickets" to "name", "zones" to "zone_name")
+        for ((list, field) in missing) {
+            val json = fixture.getAsJsonObject("catalogue").deepCopy()
+            json.getAsJsonArray(list)[1].asJsonObject.remove(field)
+            assertFalse("Without $field", gson.fromJson(json, TicketCatalogue::class.java).isComplete)
+        }
+        val nullPrice = fixture.getAsJsonObject("catalogue").deepCopy()
+        nullPrice.getAsJsonArray("tickets")[1].asJsonObject.add("price", JsonNull.INSTANCE)
+        assertFalse("Null price", gson.fromJson(nullPrice, TicketCatalogue::class.java).isComplete)
     }
 
     @Test
@@ -351,14 +372,5 @@ class TicketCatalogueTest {
         assertEquals(7 * 24 - 1L, Duration.between(spring.start, spring.end).toHours())
         // 23:30 UTC on 9 October is already 10 October in Bratislava.
         assertEquals(local("2026-10-10 00:00"), SeasonPass(1, Instant.parse("2026-10-09T23:30:00Z"), emptySet()).start)
-    }
-
-    @Test
-    fun idsBkOpensTheAppThenItsStorePage() {
-        assertEquals("com.casperise.urbi.online.bid", IdsBkLinks.PACKAGE)
-        assertEquals(
-            listOf("market://details?id=com.casperise.urbi.online.bid", "https://play.google.com/store/apps/details?id=com.casperise.urbi.online.bid"),
-            IdsBkLinks.storeUrls,
-        )
     }
 }
