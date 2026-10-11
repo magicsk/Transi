@@ -4,6 +4,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.HapticFeedbackConstants
 import android.view.View
+import android.widget.Button
 import androidx.annotation.StringRes
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
@@ -11,7 +12,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.chip.Chip
 import com.google.android.material.datepicker.MaterialDatePicker
 import eu.magicsk.transi.adapters.TimetableAdapter
 import eu.magicsk.transi.data.remote.responses.idsbk.Departure
@@ -96,9 +96,9 @@ class TimetableFragment : Fragment(R.layout.fragment_timetable) {
         binding.TimetableTitleLine.contentDescription = getString(R.string.timetable_line_description, shortName)
         binding.TimetableStops.adapter = adapter
         binding.TimetableDateButton.setOnClickListener { pickDate() }
-        binding.TimetableDirections.setOnCheckedStateChangeListener { group, checkedIds ->
-            val index = checkedIds.firstOrNull()?.let { group.indexOfChild(group.findViewById(it)) }
-            if (index != null && index != directionIndex) {
+        binding.TimetableDirections.addOnButtonCheckedListener { group, checkedId, isChecked ->
+            val index = group.indexOfChild(group.findViewById(checkedId))
+            if (isChecked && index != directionIndex) {
                 directionIndex = index
                 tripIndex = NEXT_TRIP
                 load { fetchDepartures() }
@@ -192,14 +192,12 @@ class TimetableFragment : Fragment(R.layout.fragment_timetable) {
         val directions = directions.orEmpty()
         if (group.childCount != directions.size) {
             group.removeAllViews()
+            // The group gives each button an id.
             directions.forEach { direction ->
-                val chip = layoutInflater.inflate(R.layout.timetable_direction_chip, group, false) as Chip
-                chip.id = View.generateViewId()
-                chip.text = direction.direction
-                group.addView(chip)
+                group.addView((layoutInflater.inflate(R.layout.timetable_direction_button, group, false) as Button).apply { text = direction.direction })
             }
         }
-        group.getChildAt(directionIndex)?.let { if (group.checkedChipId != it.id) group.check(it.id) }
+        group.getChildAt(directionIndex)?.let { if (group.checkedButtonId != it.id) group.check(it.id) }
 
         val departures = departures.orEmpty()
         val last = (departures.size - 1).coerceAtLeast(0)

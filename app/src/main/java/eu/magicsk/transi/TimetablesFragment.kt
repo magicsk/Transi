@@ -2,9 +2,9 @@ package eu.magicsk.transi
 
 import android.content.res.ColorStateList
 import android.graphics.Typeface
+import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.RippleDrawable
 import android.os.Bundle
-import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -105,10 +105,17 @@ class TimetablesFragment : Fragment(R.layout.fragment_timetables) {
         return TextView(context).apply {
             textSize = 22f
             typeface = Typeface.DEFAULT_BOLD
-            gravity = Gravity.CENTER
-            minWidth = 48f.dpToPx(context)
-            minHeight = 48f.dpToPx(context)
+            // iOS text height, so a one-digit line is a circle.
+            includeFontPadding = false
             customizeLineText(this, route.short_name, context, resources)
+            // The badge keeps the iOS shape on every screen; only its touch target grows to 48dp, above and below it,
+            // keeping at least the iOS 5dp around it so rows of large text do not touch.
+            val inset = maxOf(5f.dpToPx(context), (48f.dpToPx(context) - lineHeight - paddingTop - paddingBottom + 1) / 2)
+            val horizontal = paddingLeft
+            val vertical = paddingTop + inset
+            // An inset background replaces the padding with its insets.
+            background = InsetDrawable(background, 0, inset, 0, inset)
+            setPadding(horizontal, vertical, horizontal, vertical)
             foreground = RippleDrawable(
                 ColorStateList.valueOf(ContextCompat.getColor(context, R.color.colorControlHighlight)),
                 null,
@@ -118,7 +125,7 @@ class TimetablesFragment : Fragment(R.layout.fragment_timetables) {
             layoutParams = FlexboxLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-            ).apply { setMargins(4f.dpToPx(context), 4f.dpToPx(context), 4f.dpToPx(context), 4f.dpToPx(context)) }
+            ).apply { setMargins(2f.dpToPx(context), 0, 2f.dpToPx(context), 0) }
             setOnClickListener { openLine(route, offline) }
         }
     }

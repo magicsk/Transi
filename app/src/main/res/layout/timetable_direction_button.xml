@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The toggle group keeps each label on one line, ellipsized, like the iOS segmented picker. -->
+<Button xmlns:android="http://schemas.android.com/apk/res/android"
+    style="?attr/materialButtonOutlinedStyle"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1" />

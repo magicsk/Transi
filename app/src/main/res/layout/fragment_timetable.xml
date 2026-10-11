@@ -45,7 +45,8 @@
                 tools:text="11 Oct 2026" />
         </LinearLayout>
 
-        <com.google.android.material.chip.ChipGroup
+        <!-- iOS segmented direction picker. -->
+        <com.google.android.material.button.MaterialButtonToggleGroup
             android:id="@+id/TimetableDirections"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
