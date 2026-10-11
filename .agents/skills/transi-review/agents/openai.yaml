@@ -1,4 +1,4 @@
 interface:
   display_name: "Transi Review"
   short_description: "Review Transi changes for real regressions"
-  default_prompt: "Use $transi-review to review the current diff against master."
+  default_prompt: "Use $transi-review to review the current diff against main."

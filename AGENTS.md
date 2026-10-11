@@ -28,7 +28,7 @@ Public transit app for Bratislava. This repository is the native Android app; it
 
 - Start with `git status`, branches, and worktrees. Preserve unrelated staged, unstaged, ignored, and generated files.
 - Trace the real flow and every caller before changing shared code. Fix root causes at the narrowest shared point.
-- For a new feature, use `$transi-feature`. For a reported defect, use `$transi-issue`. To take one or more features or issues from plan to merged `master` through worktrees and subagents, use `$implement`. For review, use `$transi-review`. For emulator captures and the evidence site, use `$transi-visual-proof`.
+- For a new feature, use `$transi-feature`. For a reported defect, use `$transi-issue`. To take one or more features or issues from plan to merged `main` through worktrees and subagents, use `$implement`. For review, use `$transi-review`. For emulator captures and the evidence site, use `$transi-visual-proof`.
 - Keep diffs narrow. Do not opportunistically rewrite the architecture, reformat unrelated code, bump versions, publish releases, push, or merge unless requested.
 
 ## Verification

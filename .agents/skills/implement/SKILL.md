@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Take one or more Transi Android features or issues from a proposed plan to merged `master`, using isolated Git worktrees and subagents. Use when the user asks to implement, build, or fix work end to end, especially several items at once; use transi-feature or transi-issue directly for a single in-place change.
+description: Take one or more Transi Android features or issues from a proposed plan to merged `main`, using isolated Git worktrees and subagents. Use when the user asks to implement, build, or fix work end to end, especially several items at once; use transi-feature or transi-issue directly for a single in-place change.
 ---
 
 # Implement
@@ -18,16 +18,16 @@ You coordinate; subagents write and review the code. You own the plan, the gates
 1. Inspect `git status`, branches, `git worktree list`, and the code every item touches: callers, shared models, persistence, manifest, and resources.
 2. Split the request into items. Mark each as a feature (`$transi-feature`) or an issue (`$transi-issue`) and write its acceptance criteria.
 3. Give each independent item its own track: one worktree, one branch, one subagent, approved and merged as a unit. Items that edit the same files or depend on each other share a track or get an explicit merge order. Shared hot spots in this repo are `app/build.gradle.kts`, `AndroidManifest.xml`, `res/values/strings.xml`, `nav_graph.xml`, `MainActivity.kt`, and `DataRepository.kt`; give their edits an explicit merge order. A shared track that contains an issue follows `$transi-issue`.
-4. Compare each track's files with the main checkout's uncommitted changes. New worktrees start from committed `master` and cannot see those changes, and the merge cannot overwrite them. Ask about each overlap now and hold only that track. Suggest committing those edits to `master` first.
+4. Compare each track's files with the main checkout's uncommitted changes. New worktrees start from committed `main` and cannot see those changes, and the merge cannot overwrite them. Ask about each overlap now and hold only that track. Suggest committing those edits to `main` first.
 5. Post the plan: tracks, acceptance criteria, files, branch names, merge order, checks, and the emulator scenarios that will prove each criterion.
 6. Start the unblocked tracks in the same turn. Hold a track only if the user asked to review the plan first, or if an open question would change its UX, data, scope, or compatibility. Ask all open questions in one compact batch.
 
 ## 2. Create worktrees and the ledger
 
-You are already in a linked worktree when `git rev-parse --git-dir` differs from `git rev-parse --git-common-dir`. Reuse it only if the plan has one track and its non-`master` branch is clean and contains `master` with no other commits (`git rev-list --count master..HEAD` prints `0`). Otherwise create one worktree per track from local `master`:
+You are already in a linked worktree when `git rev-parse --git-dir` differs from `git rev-parse --git-common-dir`. Reuse it only if the plan has one track and its non-`main` branch is clean and contains `main` with no other commits (`git rev-list --count main..HEAD` prints `0`). Otherwise create one worktree per track from local `main`:
 
 ```bash
-git -C <main checkout> worktree add -b <feat|fix>/<slug> ~/.config/superpowers/worktrees/Transi-android/<slug> master
+git -C <main checkout> worktree add -b <feat|fix>/<slug> ~/.config/superpowers/worktrees/Transi-android/<slug> main
 ln -s "<main checkout>/local.properties" ~/.config/superpowers/worktrees/Transi-android/<slug>/local.properties
 ```
 
@@ -64,7 +64,7 @@ Gate every track, then commit it in its worktree with a `feat:`/`fix:` message t
 
 For each track:
 
-1. Spawn a fresh read-only review subagent that did not write the code. It runs `$transi-review` on `git diff master...<branch>`. Tell it emulator proof comes later: it must not use the emulator or report missing proof.
+1. Spawn a fresh read-only review subagent that did not write the code. It runs `$transi-review` on `git diff main...<branch>`. Tell it emulator proof comes later: it must not use the emulator or report missing proof.
 2. Check every finding against the code yourself. Mark it **fix** (real) or **reject** (wrong, speculative, or out of scope) with a one-line reason. If nothing is marked fix, go to section 5.
 3. Spawn a new fix subagent with only the findings marked fix, the worktree path, and the no-shortcut rules. Rerun the gate.
 4. Spawn one more fresh review subagent on the updated branch and judge its findings the same way. Send confirmed findings to another fix subagent, then rerun the gate. Do not run a third review. List anything still unresolved in the handoff.
@@ -77,7 +77,7 @@ Check the evidence before sending it. Open each page, view every screenshot and 
 
 ## 6. Hand off and request merge approval
 
-For each track, report what changed, the branch and commits, check and build results, review findings fixed and rejected, the local and Tailnet evidence URLs, and anything unresolved or blocked. Ask for approval to merge each branch into `master`, then stop until the user answers. Do not push.
+For each track, report what changed, the branch and commits, check and build results, review findings fixed and rejected, the local and Tailnet evidence URLs, and anything unresolved or blocked. Ask for approval to merge each branch into `main`, then stop until the user answers. Do not push.
 
 If the user requests changes, make them in the same worktree, rerun the gate and the affected proof, and ask again.
 
@@ -86,11 +86,11 @@ If the user requests changes, make them in the same worktree, rerun the gate and
 Only after explicit approval, merge the approved tracks in plan order. Rebase in the track's worktree. Run merge, worktree, and branch commands against the main checkout, never the current directory:
 
 ```bash
-git -C <worktree> rebase master
+git -C <worktree> rebase main
 git -C <main checkout> merge --ff-only <branch>
 ```
 
-Rebase each approved track onto the new `master`, then rerun the gate before merging it. If a rebase conflict changes behavior, re-prove that track and ask for approval again. Never stash, reset, or overwrite uncommitted changes in the main checkout. If a merge would touch them, stop that track and ask.
+Rebase each approved track onto the new `main`, then rerun the gate before merging it. If a rebase conflict changes behavior, re-prove that track and ask for approval again. Never stash, reset, or overwrite uncommitted changes in the main checkout. If a merge would touch them, stop that track and ask.
 
 After merging, clean up everything in the ledger and nothing outside it. This cleanup is the user's request to remove the routes and emulators that `$transi-visual-proof` keeps. Keep only what an unapproved track still needs: its worktree, its branch, and its evidence route along with any server behind that route.
 

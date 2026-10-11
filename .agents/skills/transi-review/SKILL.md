@@ -9,7 +9,7 @@ Review the requested change against its real base and the repository rules. Opti
 
 ## Establish the target
 
-1. Inspect status, branches, worktrees, the requested base, and the complete diff. Do not assume `master` or a remote ref is current.
+1. Inspect status, branches, worktrees, the requested base, and the complete diff. Do not assume `main` or a remote ref is current.
 2. Read every changed file in context. Trace callers, shared models, persistence, networking, manifest entries, resources, and UI state affected by the change.
 3. Keep the review read-only unless fixes were explicitly requested.
 
