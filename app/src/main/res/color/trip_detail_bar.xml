@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The title bar over the trip map: the surface, letting a little of the map show through. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:alpha="0.92" android:color="?attr/colorSurface" />
+</selector>

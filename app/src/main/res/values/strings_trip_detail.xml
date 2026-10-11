@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Title and time ranges: "Hronská → Zochova", "16:04 → 16:36". ^1 and ^2 keep their styling. -->
+    <string name="trip_detail_route">^1 → ^2</string>
+    <string name="trip_detail_open">Show the journey</string>
+
+    <!-- Summary card -->
+    <string name="trip_detail_minutes">%d min</string>
+    <string name="trip_detail_no_changes">No changes</string>
+    <plurals name="trip_detail_changes">
+        <item quantity="one">%d change</item>
+        <item quantity="other">%d changes</item>
+    </plurals>
+    <string name="trip_detail_walk">%d min walk</string>
+    <string name="trip_detail_no_walking">No walking</string>
+    <string name="trip_detail_zone">Zone %s</string>
+    <string name="trip_detail_zones">Zones %s</string>
+    <string name="trip_detail_arrived">This journey has already arrived.</string>
+    <string name="trip_detail_summary_spoken">%1$d min, %2$s to %3$s, %4$s, %5$s, %6$s</string>
+    <string name="trip_detail_summary_action">Show the whole route on the map</string>
+
+    <!-- Sections -->
+    <string name="trip_detail_steps">Steps</string>
+    <string name="trip_detail_stops">Stops</string>
+
+    <!-- Steps -->
+    <!-- "16:04 – 16:31", then " · 18 stops". -->
+    <string name="trip_detail_time_range">^1 – ^2</string>
+    <plurals name="trip_detail_stop_count">
+        <item quantity="one">" · %d stop"</item>
+        <item quantity="other">" · %d stops"</item>
+    </plurals>
+    <string name="trip_detail_walk_to">Walk %1$d min to %2$s</string>
+    <string name="trip_detail_walk_to_platform">Walk %1$d min to platform %2$s</string>
+    <string name="trip_detail_change_at">Change at %s</string>
+    <string name="trip_detail_spare">%d min to spare</string>
+    <string name="trip_detail_tight">Tight change: %d min to spare</string>
+    <string name="trip_detail_missed">Likely missed by %d min</string>
+    <string name="trip_detail_leg_action">Show this leg on the map</string>
+    <string name="trip_detail_walk_action">Show this walk on the map</string>
+    <string name="trip_detail_change_action">Show this change on the map</string>
+    <string name="trip_detail_stop_action">Show this stop on the map</string>
+
+    <!-- Stops timeline -->
+    <string name="trip_detail_to">to %s</string>
+    <string name="trip_detail_loading_stops">Loading stops</string>
+    <string name="trip_detail_stops_failed">Couldn\'t load the stops</string>
+    <string name="trip_detail_retry">Retry</string>
+    <plurals name="trip_detail_stops_between">
+        <item quantity="one">%1$d stop · %2$d min</item>
+        <item quantity="other">%1$d stops · %2$d min</item>
+    </plurals>
+    <string name="trip_detail_expanded">Expanded</string>
+    <string name="trip_detail_collapsed">Collapsed</string>
+    <string name="trip_detail_show_stops">Show the stops in between</string>
+    <string name="trip_detail_hide_stops">Hide the stops in between</string>
+    <string name="trip_detail_zone_border">Zone %1$s → %2$s</string>
+    <string name="trip_detail_zone_border_spoken">Zone border, %1$s to %2$s</string>
+    <string name="trip_detail_get_off">Get off</string>
+    <string name="trip_detail_arrive">Arrive</string>
+
+    <!-- TalkBack -->
+    <string name="trip_detail_time_spoken">%1$s, scheduled %2$s</string>
+    <string name="trip_detail_platform_spoken">, platform %s</string>
+    <string name="trip_detail_on_time_spoken">, on time</string>
+    <plurals name="trip_detail_late_spoken">
+        <item quantity="one">, %d minute late</item>
+        <item quantity="other">, %d minutes late</item>
+    </plurals>
+    <plurals name="trip_detail_early_spoken">
+        <item quantity="one">, %d minute early</item>
+        <item quantity="other">, %d minutes early</item>
+    </plurals>
+    <plurals name="trip_detail_stops_spoken">
+        <item quantity="one">, %d stop</item>
+        <item quantity="other">, %d stops</item>
+    </plurals>
+    <string name="trip_detail_ride_spoken">Line %1$s to %2$s, departs %3$s from %4$s</string>
+    <string name="trip_detail_arrives_spoken">, arrives %1$s at %2$s</string>
+    <string name="trip_detail_board_spoken">Board line %1$s to %2$s at %3$s from %4$s</string>
+    <string name="trip_detail_stop_spoken">%1$s, %2$s</string>
+    <string name="trip_detail_get_off_spoken">Get off at %1$s at %2$s</string>
+    <string name="trip_detail_arrive_spoken">Arrive at %1$s at %2$s</string>
+    <string name="trip_detail_pin_start">Start, %s</string>
+    <string name="trip_detail_pin_destination">Destination, %s</string>
+    <string name="trip_detail_pin_board">Board line %1$s at %2$s</string>
+    <string name="trip_detail_pin_get_off">Get off line %1$s at %2$s</string>
+</resources>

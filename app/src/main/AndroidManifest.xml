@@ -56,6 +56,11 @@
             android:label="@string/settings" />
 
         <activity
+            android:name=".TripDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Transi.NoActionBar" />
+
+        <activity
             android:name=".StopPickerActivity"
             android:exported="false"
             android:theme="@style/Theme.Transi.NoActionBar"

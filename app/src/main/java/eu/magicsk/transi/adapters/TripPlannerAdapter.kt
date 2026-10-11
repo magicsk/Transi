@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import eu.magicsk.transi.R
+import eu.magicsk.transi.TripDetailActivity
 import eu.magicsk.transi.data.models.BRATISLAVA
 import eu.magicsk.transi.data.models.Journey
 import eu.magicsk.transi.data.models.Part
@@ -34,6 +35,7 @@ import eu.magicsk.transi.util.isDarkTheme
 import eu.magicsk.transi.util.sendNotification
 import eu.magicsk.transi.view_models.TripPlannerError
 import eu.magicsk.transi.view_models.TripPlannerState
+import java.time.Instant
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -183,6 +185,10 @@ class TripPlannerAdapter : ListAdapter<TripPlannerRow, RecyclerView.ViewHolder>(
         }
 
         val card = binding.TripPlannerCard
+        card.setOnClickListener { context.startActivity(TripDetailActivity.intent(context, journey)) }
+        ViewCompat.replaceAccessibilityAction(
+            card, AccessibilityActionCompat.ACTION_CLICK, context.getString(R.string.trip_detail_open), null
+        )
         card.setOnLongClickListener {
             notifyJourney(context, journey)
             true
@@ -245,19 +251,24 @@ private object RowDiff : DiffUtil.ItemCallback<TripPlannerRow>() {
 
 private val dayFormat = DateTimeFormatter.ofPattern("EEE d MMM")
 
+/** The Bratislava day of [date]: null today, "Tomorrow", "Yesterday", else like "Wed 7 Oct". */
+fun dayUnlessToday(context: Context, date: Instant): String? {
+    val today = LocalDate.now(BRATISLAVA)
+    return when (val day = date.atZone(BRATISLAVA).toLocalDate()) {
+        today -> null
+        today.plusDays(1) -> context.getString(R.string.trip_planner_tomorrow)
+        today.minusDays(1) -> context.getString(R.string.trip_planner_yesterday)
+        else -> day.format(dayFormat)
+    }
+}
+
 /** "{day if not today} HH:mm | {minutes} min | N zone(s)". */
 private fun journeyHeader(context: Context, journey: Journey): String {
     val first = journey.parts.firstOrNull()
     val last = journey.parts.lastOrNull()
     if (first == null || last == null) return context.getString(R.string.error)
     val time = clock(first.startDeparture)
-    val today = LocalDate.now(BRATISLAVA)
-    val day = when (val date = first.startDeparture.atZone(BRATISLAVA).toLocalDate()) {
-        today -> null
-        today.plusDays(1) -> context.getString(R.string.trip_planner_tomorrow)
-        today.minusDays(1) -> context.getString(R.string.trip_planner_yesterday)
-        else -> date.format(dayFormat)
-    }
+    val day = dayUnlessToday(context, first.startDeparture)
     val zones = journey.zones?.size ?: 0
     return context.getString(
         R.string.trip_planner_journey_header,

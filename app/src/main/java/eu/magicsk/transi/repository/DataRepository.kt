@@ -1,7 +1,9 @@
 package eu.magicsk.transi.repository
 
 import dagger.hilt.android.scopes.ActivityScoped
+import eu.magicsk.transi.data.models.BApiTrip
 import eu.magicsk.transi.data.models.TicketCatalogue
+import eu.magicsk.transi.data.models.TimetableShape
 import eu.magicsk.transi.data.remote.ApiRequests
 import eu.magicsk.transi.data.remote.GithubRequests
 import eu.magicsk.transi.data.remote.IdsbkRequests
@@ -48,6 +50,10 @@ class DataRepository @Inject constructor(
 
     suspend fun getTicketTypes(xSession: String, cacheKey: String): Resource<TicketCatalogue> =
         call { idsbkApi.getTicketTypes(cacheKey, xSession) }
+
+    suspend fun getTripStops(xSession: String, tripId: Int): Resource<BApiTrip> = call { idsbkApi.getTrip(tripId, xSession) }
+
+    suspend fun getTimetableShape(endpoint: String): Resource<TimetableShape> = call { api.getTimetableShape(endpoint) }
 
     suspend fun getStops(): Resource<Stops> = call { api.getStops() }
 

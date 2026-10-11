@@ -2,6 +2,7 @@ package eu.magicsk.transi.data.remote
 
 import android.os.Parcelable
 import eu.magicsk.transi.BuildConfig
+import eu.magicsk.transi.data.models.BApiTrip
 import eu.magicsk.transi.data.models.TicketCatalogue
 import eu.magicsk.transi.data.remote.responses.idsbk.*
 import kotlinx.parcelize.Parcelize
@@ -51,6 +52,14 @@ interface IdsbkRequests {
         @Header("X-Session") xSession: String,
         @Header("X-API-Key") apiKey: String = BuildConfig.IDSBK_API_KEY,
     ): RegionalDepartures
+
+    /** A run's stops and its delay, for the trip detail. */
+    @GET("trip/{tripId}/")
+    suspend fun getTrip(
+        @Path("tripId") tripId: Int,
+        @Header("X-Session") xSession: String,
+        @Header("X-API-Key") apiKey: String = BuildConfig.IDSBK_API_KEY,
+    ): BApiTrip
 
     @GET("route/{city}/")
     suspend fun getTimetables(
