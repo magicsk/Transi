@@ -49,7 +49,7 @@ Public transit app for Bratislava. This repository is the native Android app; it
 
 ## Secrets
 
-- `local.properties` is gitignored and holds `IDSBK_API_KEY`, `GOOGLE_MAPS_API_KEY`, `THUNDERFOREST_API_KEY` (map tiles) and `R_API_KEY` (raptor trip planner); a missing key degrades that feature instead of breaking the build. Never print, copy, or commit it; symlink it into worktrees. Never put key values into logs, evidence pages, or commit messages.
+- `local.properties` is gitignored and holds `IDSBK_API_KEY`, `GOOGLE_MAPS_API_KEY`, `THUNDERFOREST_API_KEY` (map tiles) and `R_API_KEY` with `R_API_URL` (raptor trip planner key and server address); a missing key degrades that feature instead of breaking the build. Never print, copy, or commit it; symlink it into worktrees. Never put key values into logs, evidence pages, or commit messages.
 
 ## Visual evidence and sharing
 

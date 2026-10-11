@@ -9,7 +9,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import eu.magicsk.transi.BuildConfig
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.models.ArrivalDeparture
 import eu.magicsk.transi.data.models.CACHED_JOURNEY_LIMIT
@@ -38,6 +37,7 @@ import eu.magicsk.transi.util.mergeJourneys
 import eu.magicsk.transi.util.nearest
 import eu.magicsk.transi.util.nextPagingDates
 import eu.magicsk.transi.util.pagingDatesFor
+import eu.magicsk.transi.util.hasRaptorApi
 import eu.magicsk.transi.util.raptorRequest
 import eu.magicsk.transi.util.raptorTrip
 import kotlinx.coroutines.Dispatchers
@@ -264,7 +264,7 @@ class TripPlannerViewModel @Inject constructor(
             return
         }
 
-        val withRaptor = source != FetchSource.MORE_IMHD && BuildConfig.R_API_KEY.isNotEmpty()
+        val withRaptor = source != FetchSource.MORE_IMHD && hasRaptorApi
         val withImhd = source != FetchSource.MORE_RAPTOR
         val raptorDate = if (source == FetchSource.INITIAL) search.date else paging.raptor ?: search.date
         val imhdDate = if (source == FetchSource.INITIAL) search.date else paging.imhd ?: search.date

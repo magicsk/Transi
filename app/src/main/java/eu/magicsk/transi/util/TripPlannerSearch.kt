@@ -35,6 +35,9 @@ val Stop.isActualLocation get() = id <= 0
 /** The first real stop: the stops list is sorted by distance once the location is known. */
 fun List<Stop>.nearest() = firstOrNull { it.id > 0 }
 
+/** The R-API needs both its address and its key from local.properties. */
+val hasRaptorApi get() = BuildConfig.R_API_KEY.isNotEmpty() && BuildConfig.R_API_URL.isNotEmpty()
+
 fun raptorRequest(
     fromStationId: Int,
     toStationId: Int,
@@ -91,7 +94,7 @@ suspend fun searchJourneys(
     suspend fun offlineJourneys() = offline.plan(from, to, date, ArrivalDeparture.DEPARTURE, maxTransfers, maxWalk).orEmpty()
     if (offline.isReady && prefs.getBoolean(Prefs.OFFLINE_TRIP_PLANNER, false)) return@coroutineScope offlineJourneys()
     val raptor = async {
-        (if (BuildConfig.R_API_KEY.isEmpty()) null else idsbk.token())?.let { session ->
+        (if (hasRaptorApi) idsbk.token() else null)?.let { session ->
             repository.raptorTrip(
                 session, raptorRequest(from.station_id, to.station_id, date, ArrivalDeparture.DEPARTURE, maxWalk, maxTransfers),
             )
