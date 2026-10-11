@@ -307,13 +307,13 @@ class TripPlannerViewModel @Inject constructor(
         offlineJob?.cancel()
         offlineJob = viewModelScope.launch {
             val journeys = offlineRouting.plan(
-                fromStop.name, toStop.name, search.date, search.arrivalDeparture,
+                fromStop, toStop, search.date, search.arrivalDeparture,
                 prefs.intPref(Prefs.TRIP_MAX_TRANSFERS, Prefs.TRIP_MAX_TRANSFERS_DEFAULT),
                 prefs.intPref(Prefs.TRIP_MAX_WALK_DURATION, Prefs.TRIP_MAX_WALK_DURATION_DEFAULT),
             )
             if (fetchGeneration != generation) return@launch
             when {
-                // Null when the database closed meanwhile (deleted or being updated): online after all.
+                // Null when the database closed meanwhile (deleted or being updated) or lacks a stop: online after all.
                 journeys == null -> fetch(FetchSource.INITIAL, allowOffline = false)
                 // The timetables answered without journeys, as iOS shows "no journeys"; no connection failed.
                 journeys.isEmpty() -> setState {

@@ -88,7 +88,7 @@ suspend fun searchJourneys(
 ): List<Journey> = coroutineScope {
     val maxTransfers = prefs.intPref(Prefs.TRIP_MAX_TRANSFERS, Prefs.TRIP_MAX_TRANSFERS_DEFAULT)
     val maxWalk = prefs.intPref(Prefs.TRIP_MAX_WALK_DURATION, Prefs.TRIP_MAX_WALK_DURATION_DEFAULT)
-    suspend fun offlineJourneys() = offline.plan(from.name, to.name, date, ArrivalDeparture.DEPARTURE, maxTransfers, maxWalk).orEmpty()
+    suspend fun offlineJourneys() = offline.plan(from, to, date, ArrivalDeparture.DEPARTURE, maxTransfers, maxWalk).orEmpty()
     if (offline.isReady && prefs.getBoolean(Prefs.OFFLINE_TRIP_PLANNER, false)) return@coroutineScope offlineJourneys()
     val raptor = async {
         (if (BuildConfig.R_API_KEY.isEmpty()) null else idsbk.token())?.let { session ->
