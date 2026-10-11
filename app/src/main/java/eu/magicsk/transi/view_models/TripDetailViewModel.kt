@@ -11,19 +11,16 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import eu.magicsk.transi.data.models.Journey
 import eu.magicsk.transi.data.models.MHDTableData
-import eu.magicsk.transi.data.models.Part
+import eu.magicsk.transi.data.models.REGIONAL_BUS_ID
 import eu.magicsk.transi.data.models.StopsState
-import eu.magicsk.transi.data.models.TimetableShape
 import eu.magicsk.transi.data.models.TripDetailState
 import eu.magicsk.transi.data.models.isLive
 import eu.magicsk.transi.data.models.liveBoardStop
 import eu.magicsk.transi.data.models.liveConnection
 import eu.magicsk.transi.data.models.partStops
-import eu.magicsk.transi.data.models.path
 import eu.magicsk.transi.data.models.plannerGson
 import eu.magicsk.transi.data.models.shapeEndpoint
 import eu.magicsk.transi.data.remote.responses.Stop
-import eu.magicsk.transi.data.remote.responses.idsbk.StopGps
 import eu.magicsk.transi.repository.DataRepository
 import eu.magicsk.transi.repository.FollowedTrips
 import eu.magicsk.transi.repository.IdsbkSession
@@ -37,7 +34,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
-import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 /**
@@ -64,9 +60,6 @@ class TripDetailViewModel @Inject constructor(
     )
     /** Null when the screen was opened without a journey. */
     val state: LiveData<TripDetailState?> = mutableState
-
-    /** Counts the ride shapes loaded for this screen; the map redraws its lines when it moves. */
-    val shapesLoaded = MutableLiveData(0)
 
     // The stops list joins B-API stops to imhd stop ids and finds the boards of the boarding stops.
     private val stops = viewModelScope.async(Dispatchers.IO) { readCachedStops(context).orEmpty().toList() }
@@ -137,21 +130,12 @@ class TripDetailViewModel @Inject constructor(
         copy(expanded = if (index in expanded) expanded - index else expanded + index)
     }
 
-    /** The ride along the roads and tracks once its shape loaded; null while straight. */
-    fun shapedPath(part: Part): List<StopGps>? {
-        val shape = part.shapeEndpoint?.let(shapes::get) ?: return null
-        return shape.path(part.stops.orEmpty().mapNotNull { it.gps })
-    }
-
-    // Once per screen for each ride whose stops all have a position; kept for the app run. Offline or on an error the
-    // ride stays straight.
+    // ponytail: once per screen for each ride whose stops all have a position, so reopening a journey fetches its
+    // shapes again; an app-wide cache if that shows. Offline or on an error the ride stays straight.
     private fun requestShapes(journey: Journey) {
-        journey.parts.mapNotNull { it.shapeEndpoint }.filter { !shapes.containsKey(it) && requestedShapes.add(it) }.forEach { endpoint ->
+        journey.parts.mapNotNull { it.shapeEndpoint }.filter(requestedShapes::add).forEach { endpoint ->
             viewModelScope.launch {
-                repository.getTimetableShape(endpoint).data?.let {
-                    shapes[endpoint] = it
-                    shapesLoaded.value = (shapesLoaded.value ?: 0) + 1
-                }
+                repository.getTimetableShape(endpoint).data?.let { shape -> update { copy(shapes = shapes + (endpoint to shape)) } }
             }
         }
     }
@@ -184,9 +168,12 @@ class TripDetailViewModel @Inject constructor(
         }
     }
 
-    /** The leg's departure on its board: the first vehicle matched live, which it follows from then on. */
+    /**
+     * The leg's departure on its board: the first vehicle matched live, which it follows from then on. A regional row
+     * standing in for a timetable one names no vehicle, so it is never followed.
+     */
     private fun onConnection(index: Int, connection: MHDTableData?) {
-        if (connection?.type == "online") busIDs[index] = connection.busID
+        if (connection?.type == "online" && connection.busID != REGIONAL_BUS_ID) busIDs[index] = connection.busID
         // Once our vehicle has left the board, keep its last known delay rather than none.
         if (connection == null && busIDs[index] != null) return
         update {
@@ -205,8 +192,5 @@ class TripDetailViewModel @Inject constructor(
 
     companion object {
         const val EXTRA_JOURNEY = "journey"
-
-        /** Ride shapes by request, kept while the app runs. */
-        private val shapes = ConcurrentHashMap<String, TimetableShape>()
     }
 }

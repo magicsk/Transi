@@ -114,6 +114,9 @@ fun mergeDepartures(socket: List<MHDTableData>, regional: List<MHDTableData>, no
     return (published + regionalOnly).sortedWith(compareBy({ it.departureTime }, { it.id }))
 }
 
+/** The busID of regional rows: they name no vehicle, so a leg never follows one by it. */
+const val REGIONAL_BUS_ID = "0:0"
+
 /** Regional rows of [stop] that can still be boarded there, timed from the device's local midnight like iOS. */
 fun regionalDepartures(departures: List<RegionalDeparture>, stop: Stop, now: ZonedDateTime): List<MHDTableData> {
     val startOfToday = now.toLocalDate().atStartOfDay(now.zone)
@@ -131,7 +134,7 @@ fun regionalDepartures(departures: List<RegionalDeparture>, stop: Stop, now: Zon
                 stop.platform_labels?.firstOrNull { it.label == code }?.id?.toIntOrNull()
             } ?: -1,
             stopId = stop.id,
-            busID = "0:0",
+            busID = REGIONAL_BUS_ID,
             headsign = departure.trip_headsign.orEmpty(),
             departureTimeCP = scheduledSeconds,
             departureTime = scheduled.plusMinutes(delayMinutes.toLong()).toInstant().toEpochMilli(),

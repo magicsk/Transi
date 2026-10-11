@@ -14,6 +14,7 @@ import androidx.core.os.BundleCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnAttach
+import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
@@ -51,6 +52,7 @@ import eu.magicsk.transi.view_models.TableViewModel
 import eu.magicsk.transi.view_models.TripPlannerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /**
  * The Map tab (iOS MapKitView): Thunderforest transport tiles, clustered stops, following the location, and a sheet
@@ -173,7 +175,7 @@ class MapFragment : Fragment(R.layout.fragment_map) {
             // Fully expanded, the sheet ends that far below the map; the padding lets the last row scroll into view.
             binding.mapSheetList.updatePadding(bottom = topInset)
             binding.mapAttribution.updateLayoutParams<ViewGroup.MarginLayoutParams> { topMargin += topInset }
-            map?.setPadding(0, topInset, 0, 0)
+            updateMapPadding()
         }
         ViewCompat.setAccessibilityHeading(binding.mapSheetStopName, true)
 
@@ -246,7 +248,8 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         }
         googleMap.uiSettings.isMapToolbarEnabled = false
         googleMap.uiSettings.isMyLocationButtonEnabled = false
-        googleMap.setPadding(0, topInset, 0, 0)
+        // After the next layout, which measures the attribution just shown.
+        binding.root.doOnLayout { updateMapPadding() }
         googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(camera ?: CameraPosition.fromLatLngZoom(DEFAULT_MAP_CENTER, DEFAULT_ZOOM)))
         mainViewModel.actualLocation.value?.takeIf { follow }?.let {
             googleMap.moveCamera(CameraUpdateFactory.newLatLng(LatLng(it.latitude, it.longitude)))
@@ -283,6 +286,13 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         }
         showStops()
         showRequestedStop()
+    }
+
+    /** Below the status bar, and below the attribution while it shows, so the map's compass stays clear of both. */
+    private fun updateMapPadding() {
+        val attribution = binding?.mapAttribution ?: return
+        val below = if (attribution.isVisible) attribution.height + (8 * resources.displayMetrics.density).roundToInt() else 0
+        map?.setPadding(0, topInset + below, 0, 0)
     }
 
     // The list is sorted again with every location fix; the markers change only when the stops do.

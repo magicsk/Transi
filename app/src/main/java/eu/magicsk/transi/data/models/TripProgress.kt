@@ -242,8 +242,8 @@ data class TripLiveData(
 
     /**
      * Takes in the leg's departure on [target]'s board, which only reports the vehicle followed (from [busIDs], or the
-     * first one live), null while the board does not list it. A stop's board lists a vehicle with the stop it left last
-     * (not this one) until it leaves this stop, then drops it.
+     * first one live; a regional row standing in for it names none), null while the board does not list it. A stop's
+     * board lists a vehicle with the stop it left last (not this one) until it leaves this stop, then drops it.
      */
     fun receive(connection: MHDTableData?, target: TripTrackerTarget, journey: Journey, now: Instant) {
         val index = target.part
@@ -251,7 +251,7 @@ data class TripLiveData(
         val delay = connection?.liveDelaySeconds
         if (connection != null && delay != null) {
             delays = delays + (index to delay)
-            busIDs = busIDs + (index to connection.busID)
+            if (connection.busID != REGIONAL_BUS_ID) busIDs = busIDs + (index to connection.busID)
             listed = listed + (target to Instant.ofEpochMilli(connection.departureTime))
             // A loop line passes a stop twice, so take the one nearest before this stop.
             val left = stops.indices.lastOrNull { it < target.stop && sameStop(stops[it].name, connection.lastStopName) }

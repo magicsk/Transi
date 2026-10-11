@@ -416,6 +416,20 @@ class TripProgressTest {
     }
 
     @Test
+    fun aRegionalRowStandingInForTheTimetableIsNeverTheFollowedVehicle() {
+        val leg = walkChange.parts[0]
+        val hronska = TripTrackerTarget(0, 0)
+        val scheduled = leg.startDeparture
+        val boards = TripLiveData()
+        fun receive(row: MHDTableData) =
+            boards.receive(leg.liveConnection(listOf(row), null, scheduled, boards.busIDs[0]), hronska, walkChange, scheduled)
+        receive(row(leg, REGIONAL_BUS_ID, "none", scheduled.plusSeconds(60), late = 60))
+        assertEquals("Its delay counts, but it names no vehicle", emptyMap<Int, String>() to mapOf(0 to 60), boards.busIDs to boards.delays)
+        receive(row(leg, lastStop = "none", leaves = scheduled.plusSeconds(120), late = 120))
+        assertEquals("The socket row gone live is the vehicle then", mapOf(0 to "1:2552") to mapOf(0 to 120), boards.busIDs to boards.delays)
+    }
+
+    @Test
     fun boardsThatListAVehicleUntilItLeavesCountDownEveryStop() {
         // The 72 ends at Rajská, so its board never lists it: follow it to Ondrejský cintorín.
         assertCountsDown(replayBoards(walkChange, 60, "07:58", "08:24"), 17, 17, TripPhase.Change(2), "The 72 to Rajská")

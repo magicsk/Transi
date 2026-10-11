@@ -327,6 +327,8 @@ data class TripDetailState(
     val expanded: Set<Int> = emptySet(),
     /** The trip followed in the live notification while it is this journey. */
     val followed: FollowedTrip? = null,
+    /** The rides' road shapes loaded so far, by [Part.shapeEndpoint]. */
+    val shapes: Map<String, TimetableShape> = emptyMap(),
 ) {
     /**
      * The followed trip's live delay, so the step it shows agrees; else the live board's online delay, else the B-API's

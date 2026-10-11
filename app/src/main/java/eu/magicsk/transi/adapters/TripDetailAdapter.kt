@@ -58,6 +58,7 @@ import eu.magicsk.transi.data.models.TripWarning
 import eu.magicsk.transi.data.models.ZoneChange
 import eu.magicsk.transi.data.models.delayColor
 import eu.magicsk.transi.data.models.delayMinutes
+import eu.magicsk.transi.data.models.delayText
 import eu.magicsk.transi.data.models.expected
 import eu.magicsk.transi.data.models.hasArrived
 import eu.magicsk.transi.data.models.isLive
@@ -490,7 +491,7 @@ class TripDetailAdapter(
                 R.string.trip_alternative_spoken,
                 lines.joinToString(context.getString(R.string.trip_alternative_lines_separator)),
                 ride.startStopName.orEmpty(),
-                texts.platformSpoken(ride.startStopCode),
+                context.platformSpoken(ride.startStopCode),
                 texts.spokenTime(ride.startDeparture, ride.delaySeconds),
                 texts.spokenTime(last.endArrival, lastDelay),
             )
@@ -687,7 +688,7 @@ class TripDetailAdapter(
                 texts.delay(b.timelineDelay, row.delay)
                 b.root.contentDescription = context.getString(
                     R.string.trip_detail_board_spoken, line, row.part.tripHeadsign.orEmpty(), texts.spokenTime(row.stop.time, row.delay), row.stop.name,
-                ) + texts.platformSpoken(row.stop.platform) + texts.delaySpoken(row.delay)
+                ) + context.platformSpoken(row.stop.platform) + texts.delaySpoken(row.delay)
                 tappable(row.stop.gps)
             }
             is TripDetailRow.StopsLoading -> {
@@ -732,7 +733,7 @@ class TripDetailAdapter(
                 b.timelineDetail.text = texts.stop(row.stop.name, row.stop.platform, size)
                 b.root.contentDescription = context.getString(
                     R.string.trip_detail_stop_spoken, texts.spokenTime(row.stop.time, row.delay), row.stop.name,
-                ) + texts.platformSpoken(row.stop.platform)
+                ) + context.platformSpoken(row.stop.platform)
                 tappable(row.stop.gps)
             }
             is TripDetailRow.Zone -> {
@@ -761,7 +762,7 @@ class TripDetailAdapter(
                 val time = texts.spokenTime(row.stop.time, row.delay)
                 b.root.contentDescription = context.getString(
                     if (row.isLast) R.string.trip_detail_arrive_spoken else R.string.trip_detail_get_off_spoken, time, row.stop.name,
-                ) + texts.platformSpoken(row.stop.platform)
+                ) + context.platformSpoken(row.stop.platform)
                 tappable(row.stop.gps)
             }
             is TripDetailRow.Walk -> {
@@ -825,6 +826,10 @@ class TripDetailAdapter(
     }
 }
 
+/** ", platform X" spoken after a stop, by the sheet's rows and the map's pins; empty without a platform. */
+fun Context.platformSpoken(platform: String?): String =
+    platform?.takeIf { it.isNotEmpty() }?.let { getString(R.string.trip_detail_platform_spoken, it) }.orEmpty()
+
 /** The sheet's wording, worded and styled as on iOS. */
 private class Texts(view: View) {
     private val context: Context = view.context
@@ -864,9 +869,6 @@ private class Texts(view: View) {
         return if (expected == planned) planned else context.getString(R.string.trip_detail_time_spoken, expected, planned)
     }
 
-    fun platformSpoken(platform: String?): String =
-        platform?.takeIf { it.isNotEmpty() }?.let { context.getString(R.string.trip_detail_platform_spoken, it) }.orEmpty()
-
     fun delaySpoken(seconds: Int?): String {
         val minutes = delayMinutes(seconds ?: return "")
         return when {
@@ -880,11 +882,8 @@ private class Texts(view: View) {
     fun delay(view: TextView, seconds: Int?) {
         view.isVisible = seconds != null
         val minutes = delayMinutes(seconds ?: return)
-        view.text = when {
-            minutes > 0 -> context.getString(R.string.delay, minutes.toString())
-            minutes < 0 -> context.getString(R.string.inAdvance, (-minutes).toString())
-            else -> context.getString(R.string.table_no_delay)
-        }
+        val (text, value) = delayText(minutes, "online")
+        view.text = context.getString(text, value)
         view.setTextColor(ContextCompat.getColor(context, delayColor(minutes, "online")))
     }
 
@@ -893,9 +892,9 @@ private class Texts(view: View) {
         return context.getString(
             R.string.trip_detail_ride_spoken, part.routeShortName.orEmpty(), part.tripHeadsign.orEmpty(),
             spokenTime(part.startDeparture, delay), part.startStopName.orEmpty(),
-        ) + platformSpoken(part.startStopCode) +
+        ) + context.platformSpoken(part.startStopCode) +
             context.getString(R.string.trip_detail_arrives_spoken, spokenTime(part.endArrival, delay), part.endStopName.orEmpty()) +
-            platformSpoken(part.endStopCode) +
+            context.platformSpoken(part.endStopCode) +
             (if (stopCount > 0) context.resources.getQuantityString(R.plurals.trip_detail_stops_spoken, stopCount, stopCount) else "") +
             delaySpoken(delay)
     }

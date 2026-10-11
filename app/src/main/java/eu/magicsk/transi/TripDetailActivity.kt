@@ -26,6 +26,7 @@ import androidx.core.graphics.createBitmap
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnLayout
+import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
 import androidx.core.view.updatePadding
@@ -52,16 +53,20 @@ import com.google.android.material.color.MaterialColors
 import com.google.maps.android.SphericalUtil
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.TripDetailAdapter
+import eu.magicsk.transi.adapters.platformSpoken
 import eu.magicsk.transi.adapters.tripDetailRows
 import eu.magicsk.transi.data.models.Journey
 import eu.magicsk.transi.data.models.MapFocus
 import eu.magicsk.transi.data.models.SeasonPass
 import eu.magicsk.transi.data.models.TicketCatalogue
 import eu.magicsk.transi.data.models.TicketCoverage
+import eu.magicsk.transi.data.models.TimetableShape
 import eu.magicsk.transi.data.models.TripDetailState
 import eu.magicsk.transi.data.models.focusPoints
 import eu.magicsk.transi.data.models.partPoints
+import eu.magicsk.transi.data.models.path
 import eu.magicsk.transi.data.models.plannerGson
+import eu.magicsk.transi.data.models.shapeEndpoint
 import eu.magicsk.transi.data.remote.responses.idsbk.StopGps
 import eu.magicsk.transi.databinding.ActivityTripDetailBinding
 import eu.magicsk.transi.repository.TicketCatalogueProvider
@@ -98,6 +103,7 @@ class TripDetailActivity : AppCompatActivity() {
     /** The sheet height the map fits above while the sheet moves. */
     private var lastStableState = BottomSheetBehavior.STATE_HALF_EXPANDED
     private var drawnJourney: Journey? = null
+    private var drawnShapes = emptyMap<String, TimetableShape>()
     private val lines = mutableListOf<Polyline>()
     private val pins = mutableListOf<Marker>()
     private val dots = mutableListOf<StopDot>()
@@ -161,8 +167,7 @@ class TripDetailActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             binding.tripDetailToolbar.updatePadding(left = bars.left, top = bars.top, right = bars.right)
-            // The sheet runs under the navigation bar; its list scrolls clear of it.
-            binding.tripDetailList.updatePadding(left = bars.left, right = bars.right, bottom = bars.bottom + dp(16))
+            binding.tripDetailList.updatePadding(left = bars.left, right = bars.right)
             binding.tripDetailAttribution.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                 updateMargins(left = bars.left + dp(8), right = bars.right + dp(8))
             }
@@ -172,7 +177,6 @@ class TripDetailActivity : AppCompatActivity() {
 
         (supportFragmentManager.findFragmentById(R.id.tripDetailMap) as? SupportMapFragment)?.getMapAsync(::onMapReady)
         viewModel.state.observe(this) { it?.let(::render) }
-        viewModel.shapesLoaded.observe(this) { drawnJourney?.let { journey -> map?.let { drawLines(it, journey) } } }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 ticketCatalogue.state.collect { state ->
@@ -217,9 +221,13 @@ class TripDetailActivity : AppCompatActivity() {
     private fun render(state: TripDetailState) {
         val notificationsOn = NotificationManagerCompat.from(this).areNotificationsEnabled()
         adapter.submitList(tripDetailRows(state, TicketCoverage.of(state.journey, pass, catalogue), notificationsOn))
-        if (state.journey == drawnJourney) return
+        val sameJourney = state.journey == drawnJourney
+        if (sameJourney && state.shapes == drawnShapes) return
         drawnJourney = state.journey
+        drawnShapes = state.shapes
         val map = map ?: return
+        // A shape loaded: only the lines change.
+        if (sameJourney) return drawLines(map, state.journey)
         drawRoute(map, state.journey)
         if (focus == MapFocus.Route) focusMap(MapFocus.Route, animated = false)
     }
@@ -243,6 +251,7 @@ class TripDetailActivity : AppCompatActivity() {
             }
         }
         drawnJourney?.let { drawRoute(googleMap, it) }
+        // After the next layout, which measures the attribution just shown, so the map's controls go below it.
         binding.root.doOnLayout { focus?.let { focusMap(it, animated = false) } }
     }
 
@@ -251,11 +260,14 @@ class TripDetailActivity : AppCompatActivity() {
         val toolbarHeight = binding.tripDetailToolbar.height
         if (behavior.expandedOffset != toolbarHeight) behavior.expandedOffset = toolbarHeight
         val list = binding.tripDetailList
+        // The sheet runs under the navigation bar, and fully expanded it ends the bar's height below the screen; its
+        // list scrolls clear of both.
+        list.updatePadding(bottom = bars.bottom + dp(16) + toolbarHeight)
         // Measured while the list shows its top.
         if (list.canScrollVertically(-1)) return
         val summary = list.findViewHolderForAdapterPosition(0) as? TripDetailAdapter.SummaryHolder ?: return
         val summaryEnd = list.top + summary.itemView.top + summary.binding.tripSummary.bottom
-        val peek = min(summaryEnd + dp(12) + bars.bottom, (binding.root.height * HALF_RATIO * 0.8f).roundToInt())
+        val peek = min(summaryEnd + dp(12) + bars.bottom, (binding.root.height * behavior.halfExpandedRatio * 0.8f).roundToInt())
         if (peek > 0 && peek != behavior.peekHeight) behavior.setPeekHeight(peek, true)
     }
 
@@ -335,7 +347,7 @@ class TripDetailActivity : AppCompatActivity() {
                 lines += map.addPolyline(line(points, getColor(R.color.table_grey), 5f, WALK_Z).pattern(listOf(Dot(), Gap(9 * density))))
                 return@forEach
             }
-            val path = viewModel.shapedPath(part) ?: points
+            val path = part.shapeEndpoint?.let(drawnShapes::get)?.path(part.stops.orEmpty().mapNotNull { it.gps }) ?: points
             lines += map.addPolyline(line(path, casing, 9f, CASING_Z))
             lines += map.addPolyline(line(path, getColor(getLineColor(part.routeShortName.orEmpty(), dark)), 5f, RIDE_Z))
         }
@@ -356,9 +368,6 @@ class TripDetailActivity : AppCompatActivity() {
                 .icon(pinIcon(color, glyphColor, platform, glyph)).anchor(0.5f, PIN_ANCHOR),
         )?.let(pins::add)
     }
-
-    private fun platformSpoken(platform: String?) =
-        platform?.takeIf { it.isNotEmpty() }?.let { getString(R.string.trip_detail_platform_spoken, it) }.orEmpty()
 
     /** A balloon in the line's colour with the platform letter, or [glyph] without one; its tip on the stop. */
     private fun pinIcon(@ColorInt color: Int, @ColorInt glyphColor: Int, letter: String?, @DrawableRes glyph: Int): BitmapDescriptor {
@@ -445,8 +454,10 @@ class TripDetailActivity : AppCompatActivity() {
         if (resting == BottomSheetBehavior.STATE_EXPANDED) return
         val width = binding.root.width
         val height = binding.root.height
-        val top = binding.tripDetailToolbar.height
-        val bottom = if (resting == BottomSheetBehavior.STATE_COLLAPSED) behavior.peekHeight else (height * HALF_RATIO).roundToInt()
+        // Below the attribution while it shows, so the map's own controls stay clear of it.
+        val attribution = binding.tripDetailAttribution
+        val top = binding.tripDetailToolbar.height + if (attribution.isVisible) attribution.height + dp(8) else 0
+        val bottom = if (resting == BottomSheetBehavior.STATE_COLLAPSED) behavior.peekHeight else (height * behavior.halfExpandedRatio).roundToInt()
         val room = min(width - bars.left - bars.right, height - top - bottom)
         if (room <= 0) return
         map.setPadding(bars.left, top, bars.right, bottom)
@@ -493,8 +504,6 @@ class TripDetailActivity : AppCompatActivity() {
     private val StopGps.latLng get() = LatLng(lat, lon)
 
     companion object {
-        /** The sheet's half height, as a share of the screen (iOS medium detent). */
-        private const val HALF_RATIO = 0.5f
         /** The share of a pin's bitmap below its balloon, down to the tip. */
         private const val PIN_TIP = 0.25f
         private const val PIN_ANCHOR = 0.97f
