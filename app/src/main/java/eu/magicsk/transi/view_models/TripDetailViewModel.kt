@@ -174,8 +174,9 @@ class TripDetailViewModel @Inject constructor(
      */
     private fun onConnection(index: Int, connection: MHDTableData?) {
         if (connection?.type == "online" && connection.busID != REGIONAL_BUS_ID) busIDs[index] = connection.busID
-        // Once our vehicle has left the board, keep its last known delay rather than none.
-        if (connection == null && busIDs[index] != null) return
+        // Once a live row has left the board (ours, or a regional row naming no vehicle), keep its last known delay
+        // until another live row replaces it, rather than falling back to the timetable or none.
+        if (connection?.type != "online" && mutableState.value?.liveConnections?.get(index)?.type == "online") return
         update {
             if (liveConnections[index] == connection) this
             else copy(liveConnections = if (connection == null) liveConnections - index else liveConnections + (index to connection))
