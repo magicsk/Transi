@@ -27,6 +27,16 @@ class MHDTableTest {
     }
 
     @Test
+    fun linkedDepartureMatchesOnlyAtItsStop() {
+        // Socket ids are "{tripId}:{platform}", so the board of the stop being left can list the same id.
+        val oldStop = listOf(departure("9", 1, "11:20", id = "77:1").copy(stopId = 93))
+        val newStop = listOf(departure("4", 2, "11:21", id = "5:2"), departure("9", 1, "11:24", id = "77:1"))
+        assertEquals(-1, oldStop.indexOfDeparture(82, "77:1"))
+        assertEquals(1, newStop.indexOfDeparture(82, "77:1"))
+        assertEquals(-1, newStop.indexOfDeparture(82, "78:1"))
+    }
+
+    @Test
     fun matchesSocketAndRegionalTrips() {
         // Socket rounds casCP to the minute; regional schedules are whole minutes.
         val cases = listOf(

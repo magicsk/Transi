@@ -77,6 +77,12 @@ fun replacePlatforms(rows: List<MHDTableData>, message: Map<Int, Map<Int, List<M
 }
 
 /**
+ * Where a linked departure ([MHDTableData.id]) of [stopId] is listed, or -1. Socket ids repeat across stops, so a
+ * board still showing another stop never matches.
+ */
+fun List<MHDTableData>.indexOfDeparture(stopId: Int, id: String): Int = indexOfFirst { it.id == id && it.stopId == stopId }
+
+/**
  * The socket and regional feeds share no trip id and their timetables can be up to 3 minutes apart. That is close
  * enough to hide a live duplicate, but some lines run every 2 minutes, so a timetable-only row takes over, and hides,
  * live data only on the exact schedule. Regional platforms can be unknown (-1).

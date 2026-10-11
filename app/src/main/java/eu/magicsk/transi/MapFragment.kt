@@ -1,24 +1,21 @@
 package eu.magicsk.transi
 
 import android.content.Context
-import android.graphics.Canvas
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedCallback
-import androidx.annotation.ColorInt
-import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.createBitmap
-import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.os.BundleCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnAttach
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -37,8 +34,6 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.TileOverlayOptions
-import com.google.android.gms.maps.model.UrlTileProvider
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.maps.android.clustering.ClusterItem
 import com.google.maps.android.clustering.ClusterManager
@@ -47,14 +42,15 @@ import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.MHDTableAdapter
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.databinding.FragmentMapBinding
+import eu.magicsk.transi.util.DEFAULT_MAP_CENTER
 import eu.magicsk.transi.util.hasLocationPermission
 import eu.magicsk.transi.util.isDarkTheme
+import eu.magicsk.transi.util.useTransportTiles
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TableViewModel
 import eu.magicsk.transi.view_models.TripPlannerViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.net.URL
 
 /**
  * The Map tab (iOS MapKitView): Thunderforest transport tiles, clustered stops, following the location, and a sheet
@@ -176,6 +172,7 @@ class MapFragment : Fragment(R.layout.fragment_map) {
             sheet.expandedOffset = topInset
             // Fully expanded, the sheet ends that far below the map; the padding lets the last row scroll into view.
             binding.mapSheetList.updatePadding(bottom = topInset)
+            binding.mapAttribution.updateLayoutParams<ViewGroup.MarginLayoutParams> { topMargin += topInset }
             map?.setPadding(0, topInset, 0, 0)
         }
         ViewCompat.setAccessibilityHeading(binding.mapSheetStopName, true)
@@ -194,13 +191,13 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         tableViewModel.vehicles.observe(viewLifecycleOwner) { adapter.vehicles = it }
         tableViewModel.status.observe(viewLifecycleOwner) { renderBoardState() }
         tableViewModel.empty.observe(viewLifecycleOwner) { renderBoardState() }
-        mainViewModel.mapStop.observe(viewLifecycleOwner) { showRequestedStop() }
+        mainViewModel.pendingLink.observe(viewLifecycleOwner) { showRequestedStop() }
 
         binding.mapSheetClose.setOnClickListener { closeSheet() }
-        // iOS: switch to the planner and plan from Actual location to this stop.
+        // iOS: switch to the planner and plan to this stop, from Actual location once there is a fix.
         binding.mapSheetDirections.setOnClickListener {
             val stop = selectedStop ?: return@setOnClickListener
-            tripPlannerViewModel.planFromActualLocationTo(stop)
+            tripPlannerViewModel.planFromActualLocationTo(stop, located = mainViewModel.actualLocation.value != null)
             closeSheet()
             (activity as? MainActivity)?.navigate(DeepLink.Trip)
         }
@@ -240,23 +237,17 @@ class MapFragment : Fragment(R.layout.fragment_map) {
     }
 
     private fun onMapReady(googleMap: GoogleMap) {
-        if (binding == null) return
+        val binding = binding ?: return
         map = googleMap
         val dark = isDarkTheme(resources)
-        if (BuildConfig.THUNDERFOREST_API_KEY.isEmpty()) {
-            // Without a Thunderforest key the Google basemap stays, dark in dark mode.
-            if (dark) googleMap.setMapStyle(MapStyleOptions(getString(R.string.style_json)))
-        } else {
-            googleMap.mapType = GoogleMap.MAP_TYPE_NONE
-            googleMap.addTileOverlay(
-                TileOverlayOptions().fadeIn(false).tileProvider(TransportTiles(if (dark) "transport-dark" else "transport"))
-            )
+        // Without a Thunderforest key the Google basemap stays, dark in dark mode.
+        if (!googleMap.useTransportTiles(dark, binding.mapAttribution) && dark) {
+            googleMap.setMapStyle(MapStyleOptions(getString(R.string.style_json)))
         }
-        googleMap.setMaxZoomPreference(TransportTiles.MAX_ZOOM.toFloat())
         googleMap.uiSettings.isMapToolbarEnabled = false
         googleMap.uiSettings.isMyLocationButtonEnabled = false
         googleMap.setPadding(0, topInset, 0, 0)
-        googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(camera ?: CameraPosition.fromLatLngZoom(DEFAULT_CENTER, DEFAULT_ZOOM)))
+        googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(camera ?: CameraPosition.fromLatLngZoom(DEFAULT_MAP_CENTER, DEFAULT_ZOOM)))
         mainViewModel.actualLocation.value?.takeIf { follow }?.let {
             googleMap.moveCamera(CameraUpdateFactory.newLatLng(LatLng(it.latitude, it.longitude)))
         }
@@ -315,10 +306,11 @@ class MapFragment : Fragment(R.layout.fragment_map) {
     // iOS openedURL "transi://map/{id}": selects that stop and zooms to about 500 m around it.
     private fun showRequestedStop() {
         if (isPicker) return
-        val id = mainViewModel.mapStop.value ?: return
+        val link = mainViewModel.pendingLink.value as? DeepLink.Map ?: return
+        val id = link.stopId ?: return
         val map = map ?: return
         if (stops.isEmpty()) return
-        mainViewModel.mapStop.value = null
+        mainViewModel.consumeLink(link)
         val stop = stops.firstOrNull { it.id == id } ?: return
         setFollow(false)
         select(stop)
@@ -437,38 +429,17 @@ class MapFragment : Fragment(R.layout.fragment_map) {
     private class PlaceRenderer(
         context: Context, map: GoogleMap, clusterManager: ClusterManager<Place>,
     ) : DefaultClusterRenderer<Place>(context, map, clusterManager) {
+        // Mutated: tinting the shared drawable state would tint every other ic_marker too.
         private val markerIcon: BitmapDescriptor by lazy {
-            vectorToBitmap(context, R.drawable.ic_marker, ContextCompat.getColor(context, R.color.md_theme_light_primary))
+            ContextCompat.getDrawable(context, R.drawable.ic_marker)?.mutate()?.let { drawable ->
+                drawable.setTint(ContextCompat.getColor(context, R.color.md_theme_light_primary))
+                BitmapDescriptorFactory.fromBitmap(drawable.toBitmap())
+            } ?: BitmapDescriptorFactory.defaultMarker()
         }
 
         // The title is the marker's TalkBack label and the picker's info window.
         override fun onBeforeClusterItemRendered(item: Place, markerOptions: MarkerOptions) {
             markerOptions.title(item.title).icon(markerIcon)
-        }
-
-        private fun vectorToBitmap(context: Context, @DrawableRes id: Int, @ColorInt color: Int): BitmapDescriptor {
-            val drawable = ResourcesCompat.getDrawable(context.resources, id, null) ?: return BitmapDescriptorFactory.defaultMarker()
-            val bitmap = createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight)
-            val canvas = Canvas(bitmap)
-            drawable.setBounds(0, 0, canvas.width, canvas.height)
-            DrawableCompat.setTint(drawable, color)
-            drawable.draw(canvas)
-            return BitmapDescriptorFactory.fromBitmap(bitmap)
-        }
-    }
-
-    /** Thunderforest [style] tiles at 512 px (@2x), as iOS TransportTiles; zooms the server lacks get none. */
-    private class TransportTiles(private val style: String) : UrlTileProvider(TILE_SIZE, TILE_SIZE) {
-        // Built from parts: a malformed URL's exception message would carry the API key.
-        override fun getTileUrl(x: Int, y: Int, zoom: Int): URL? {
-            if (zoom !in 0..MAX_ZOOM || x !in 0 until (1 shl zoom) || y !in 0 until (1 shl zoom)) return null
-            return URL("https", HOST, "/$style/$zoom/$x/$y@2x.png?apikey=${BuildConfig.THUNDERFOREST_API_KEY}")
-        }
-
-        companion object {
-            const val MAX_ZOOM = 22
-            const val TILE_SIZE = 512
-            const val HOST = "tile.thunderforest.com"
         }
     }
 
@@ -478,7 +449,6 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         private const val STATE_CAMERA = "camera"
         private const val STATE_FOLLOW = "follow"
         private const val STATE_STOP_ID = "stopId"
-        private val DEFAULT_CENTER = LatLng(48.145, 17.107)
         // About 500 m across a phone in portrait, iOS's default region.
         private const val DEFAULT_ZOOM = 16.3f
         // iOS zooms into a cluster to 0.6× its span: log2(1 / 0.6).

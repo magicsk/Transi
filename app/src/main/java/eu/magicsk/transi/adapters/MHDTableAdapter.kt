@@ -24,6 +24,7 @@ import eu.magicsk.transi.data.models.MHDTableVehicle
 import eu.magicsk.transi.data.models.clockText
 import eu.magicsk.transi.data.models.delayColor
 import eu.magicsk.transi.data.models.delayText
+import eu.magicsk.transi.data.models.indexOfDeparture
 import eu.magicsk.transi.data.models.remainingMinutes
 import eu.magicsk.transi.data.models.remainingText
 import eu.magicsk.transi.data.remote.responses.PlatformLabel
@@ -54,9 +55,9 @@ class MHDTableAdapter(
     /** Rebinds every row in place: remaining times, corners, platforms and vehicles. */
     fun refresh() = notifyItemRangeChanged(0, itemCount, REFRESH)
 
-    /** Expands the listed row with [id]; its position, or -1 when it is not listed. */
-    fun expand(id: String): Int {
-        val position = currentList.indexOfFirst { it.id == id }
+    /** Expands the listed departure [id] of [stopId]; its position, or -1 when it is not listed. */
+    fun expand(stopId: Int, id: String): Int {
+        val position = currentList.indexOfDeparture(stopId, id)
         if (position >= 0 && expanded.add(id)) notifyItemChanged(position)
         return position
     }

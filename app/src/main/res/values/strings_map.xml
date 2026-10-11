@@ -8,6 +8,8 @@
     <string name="map_close">Close</string>
     <string name="map_show_on_map">Show on map</string>
     <string name="map_timetable">Timetable</string>
+    <!-- Thunderforest's terms: credit for the tiles and the data on every map that shows them. -->
+    <string name="map_attribution" translatable="false">Maps © <a href="https://www.thunderforest.com/">Thunderforest</a>, Data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a></string>
     <string name="deep_link_error_title">Unable to navigate</string>
     <string name="deep_link_error_message">Opened URL is either expired or no longer supported.</string>
 </resources>

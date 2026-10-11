@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import eu.magicsk.transi.DeepLink
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.Stops
 import eu.magicsk.transi.data.remote.responses.idsbk.Session
@@ -43,13 +44,11 @@ class MainViewModel @Inject constructor(
     /** The table follows the nearest stop (iOS changeLocation). */
     val followLocation = MutableLiveData(true)
 
-    // Set by MainActivity.navigate and cleared by the tab that carries them out.
-    /** The departure the table expands once it is listed: its stop id and departure id. */
-    val expandDeparture = MutableLiveData<Pair<Int, String>?>()
-    /** The stop the Map tab selects once its stops are loaded. */
-    val mapStop = MutableLiveData<Int?>()
-    /** The line (short name) the Timetables tab opens once its routes are loaded. */
-    val timetableLine = MutableLiveData<String?>()
+    /**
+     * The last link (iOS pendingNavigation), set by MainActivity.navigate: the table expands its departure, the Map tab
+     * selects its stop and the Timetables tab opens its line once they can, then [consumeLink] it.
+     */
+    val pendingLink = MutableLiveData<DeepLink?>()
 
     private val idsbkSessionData = MutableLiveData<Session?>()
     val idsbkSession: MutableLiveData<Session?> = idsbkSessionData
@@ -70,6 +69,11 @@ class MainViewModel @Inject constructor(
     fun setLocationAvailable(value: Boolean) {
         locationAvailable.value = value
         choose { chooser.onLocationAvailable(value) }
+    }
+
+    /** Clears [link] once its tab carried it out, unless another link replaced it meanwhile. */
+    fun consumeLink(link: DeepLink) {
+        if (pendingLink.value === link) pendingLink.value = null
     }
 
     /** -1 follows the nearest stop; any other stop turns following off. */

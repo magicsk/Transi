@@ -51,7 +51,7 @@ class TimetablesFragment : Fragment(R.layout.fragment_timetables) {
             renderRoutes(binding, it)
             openRequestedLine()
         }
-        mainViewModel.timetableLine.observe(viewLifecycleOwner) { openRequestedLine() }
+        mainViewModel.pendingLink.observe(viewLifecycleOwner) { openRequestedLine() }
         viewModel.routesFailed.observe(viewLifecycleOwner) { failed ->
             if (failed) {
                 showTimetableError(
@@ -134,9 +134,10 @@ class TimetablesFragment : Fragment(R.layout.fragment_timetables) {
 
     // iOS pendingTimetableLine: a linked line opens once the routes are loaded; an unknown one leaves the list.
     private fun openRequestedLine() {
-        val line = mainViewModel.timetableLine.value ?: return
+        val link = mainViewModel.pendingLink.value as? DeepLink.Timetable ?: return
+        val line = link.line ?: return
         val data = viewModel.routes.value ?: return
-        mainViewModel.timetableLine.value = null
+        mainViewModel.consumeLink(link)
         data.routes.firstOrNull { it.short_name == line }?.let { openLine(it, data.offline) }
     }
 }

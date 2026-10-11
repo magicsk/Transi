@@ -93,7 +93,7 @@ class MainFragment : Fragment() {
                 tableAdapter.submitList(departures) { expandRequested(tableAdapter) }
                 updateState()
             }
-            mainViewModel.expandDeparture.observe(viewLifecycleOwner) { expandRequested(tableAdapter) }
+            mainViewModel.pendingLink.observe(viewLifecycleOwner) { expandRequested(tableAdapter) }
             tableViewModel.vehicles.observe(viewLifecycleOwner) { tableAdapter.vehicles = it }
             tableViewModel.status.observe(viewLifecycleOwner) { status ->
                 showStatus(status)
@@ -259,13 +259,15 @@ class MainFragment : Fragment() {
         binding.MHDTableStatus.isVisible = showStatusBar && !statusHidden && !tableViewModel.departures.value.isNullOrEmpty()
     }
 
-    // A linked departure opens once the table lists it (iOS expandedConnectionId).
+    // A linked departure opens once the table lists it at its stop (iOS expandedConnectionId).
+    // ponytail: one that never shows (already gone) stays requested until the next link replaces it.
     private fun expandRequested(adapter: MHDTableAdapter) {
-        val (stopId, departureId) = mainViewModel.expandDeparture.value ?: return
-        if (stopId != mainViewModel.tableStop.value?.id) return
-        val position = adapter.expand(departureId)
+        val link = mainViewModel.pendingLink.value as? DeepLink.Table ?: return
+        val stopId = link.stopId ?: return
+        val departureId = link.departureId ?: return
+        val position = adapter.expand(stopId, departureId)
         if (position < 0) return
-        mainViewModel.expandDeparture.value = null
+        mainViewModel.consumeLink(link)
         _binding?.MHDTableList?.scrollToPosition(position)
     }
 

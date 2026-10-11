@@ -121,6 +121,15 @@ class MainActivity : AppCompatActivity() {
         intent.replaceExtras(null as Bundle?)
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null && reroutesLink(intent.action, intent.flags, isTaskRoot)) {
+            // Finishing first, so CLEAR_TOP skips this instance and finds the task's own MainActivity.
+            finish()
+            startActivity(
+                Intent(Intent.ACTION_VIEW, intent.data, this, MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            )
+            return
+        }
         val versionName = BuildConfig.VERSION_NAME
         // A fresh install has no update to describe; checked before MainViewModel can cache a stops version.
         val prefs = Prefs.get(this)
@@ -234,26 +243,28 @@ class MainActivity : AppCompatActivity() {
             DeepLink.Trip, DeepLink.ActiveTrip -> R.id.navigationTripPlanner
             is DeepLink.Table -> {
                 link.stopId?.let(mainViewModel::changeTableStop)
-                mainViewModel.expandDeparture.value = link.departureId?.let { id -> link.stopId?.let { it to id } }
                 R.id.navigationTable
             }
             is DeepLink.Timetable -> R.id.navigationTimetables
-            is DeepLink.Map -> {
-                mainViewModel.mapStop.value = link.stopId
-                R.id.navigationMap
-            }
+            is DeepLink.Map -> R.id.navigationMap
             DeepLink.Invalid -> {
-                UnableToNavigateDialog().show(supportFragmentManager, "unableToNavigate")
+                // One dialog however many bad links arrive.
+                if (supportFragmentManager.findFragmentByTag(UNABLE_TO_NAVIGATE) == null) {
+                    UnableToNavigateDialog().show(supportFragmentManager, UNABLE_TO_NAVIGATE)
+                }
                 return
             }
         }
         if (supportFragmentManager.backStackEntryCount > 0) closeSearch()
         // Selecting the current tab again would recreate its screen.
         if (binding.navView.selectedItemId != tab) binding.navView.selectedItemId = tab
-        if (link is DeepLink.Timetable) {
-            // A line opens from the list, so a line screen restored with the tab makes way for it first.
-            if (link.line != null) navController.popBackStack(R.id.navigationTimetables, false)
-            mainViewModel.timetableLine.value = link.line
-        }
+        // A line opens from the list, so a line screen restored with the tab makes way for it first.
+        if (link is DeepLink.Timetable && link.line != null) navController.popBackStack(R.id.navigationTimetables, false)
+        // The tab carries out the rest once its screen can.
+        mainViewModel.pendingLink.value = link
+    }
+
+    private companion object {
+        const val UNABLE_TO_NAVIGATE = "unableToNavigate"
     }
 }

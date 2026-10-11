@@ -1,6 +1,7 @@
 package eu.magicsk.transi
 
 import android.app.Dialog
+import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -66,6 +67,14 @@ fun parseDeepLink(url: String?): DeepLink {
 }
 
 private fun String.toStopId(): Int? = takeIf(STOP_ID::matches)?.toInt()?.takeIf { it > 0 }
+
+/**
+ * Whether a link that started a second MainActivity, over the app's other screens (singleTop reuses only one on top)
+ * or in another app's task, goes to the task's own MainActivity instead. That re-sent link carries CLEAR_TOP, so it is
+ * never re-sent again.
+ */
+fun reroutesLink(action: String?, flags: Int, isTaskRoot: Boolean): Boolean =
+    action == Intent.ACTION_VIEW && !isTaskRoot && flags and Intent.FLAG_ACTIVITY_CLEAR_TOP == 0
 
 /** iOS "Unable to navigate" alert for links that lead nowhere. */
 class UnableToNavigateDialog : DialogFragment() {

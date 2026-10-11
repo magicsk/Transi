@@ -1,6 +1,9 @@
 package eu.magicsk.transi
 
+import android.content.Intent
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DeepLinkTest {
@@ -28,6 +31,16 @@ class DeepLinkTest {
     fun lineAndMapStop() {
         assertLink(DeepLink.Timetable("N61"), "transi://timetable/N61")
         assertLink(DeepLink.Map(93), "transi://map/93")
+    }
+
+    @Test
+    fun linkOverOtherScreensGoesToTheRootOnce() {
+        assertTrue(reroutesLink(Intent.ACTION_VIEW, Intent.FLAG_ACTIVITY_NEW_TASK, isTaskRoot = false))
+        // Already re-sent (or a notification's CLEAR_TOP link, which never stacks a second one).
+        assertFalse(reroutesLink(Intent.ACTION_VIEW, Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP, false))
+        assertFalse(reroutesLink(Intent.ACTION_VIEW, Intent.FLAG_ACTIVITY_NEW_TASK, isTaskRoot = true))
+        assertFalse(reroutesLink(Intent.ACTION_MAIN, 0, isTaskRoot = false))
+        assertFalse(reroutesLink(null, 0, isTaskRoot = false))
     }
 
     @Test
