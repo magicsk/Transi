@@ -21,6 +21,16 @@ object Prefs {
     /** String set of the service info texts already read; replaced the JSON in "readInfoTexts". */
     const val READ_INFO_TEXTS = "read_info_texts"
 
+    /** Boolean, default true: followed departures alert with a sound. */
+    const val LIVE_ACTIVITIES_SOUNDS = "live_activities_sounds"
+    /** Int seconds, 30…600: a followed departure alerts only when it is less than this away. */
+    const val LIVE_ACTIVITY_THRESHOLD = "live_activity_threshold"
+    const val LIVE_ACTIVITY_THRESHOLD_DEFAULT = 200
+    /** Booleans, default true: which changes of a followed departure alert. */
+    const val NOTIFY_ON_TIME_CHANGE = "notify_on_time_change"
+    const val NOTIFY_ON_DELAY_CHANGE = "notify_on_delay_change"
+    const val NOTIFY_ON_POSITION_CHANGE = "notify_on_position_change"
+
     /** Boolean, default false: use the downloaded timetable database and keep it updated. */
     const val OFFLINE_TIMETABLES = "offline_timetables"
 

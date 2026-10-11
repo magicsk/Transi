@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.GradientDrawable
-import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.DrawableRes
@@ -22,14 +21,15 @@ import com.google.android.material.color.MaterialColors
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.models.MHDTableData
 import eu.magicsk.transi.data.models.MHDTableVehicle
+import eu.magicsk.transi.data.models.clockText
 import eu.magicsk.transi.data.models.delayColor
 import eu.magicsk.transi.data.models.delayText
 import eu.magicsk.transi.data.models.remainingMinutes
+import eu.magicsk.transi.data.models.remainingText
 import eu.magicsk.transi.data.remote.responses.PlatformLabel
 import eu.magicsk.transi.databinding.TableListItemBinding
 import eu.magicsk.transi.util.customizeLineText
 import eu.magicsk.transi.util.dpToPx
-import java.util.Date
 
 class MHDTableAdapter(
     private val onLongClick: (MHDTableData) -> Unit,
@@ -119,7 +119,7 @@ class MHDTableAdapter(
             MHDTableListPlatform.text =
                 platformLabels?.firstOrNull { it.id.toIntOrNull() == item.platform }?.label.orEmpty()
 
-            MHDTableListDeparture.text = context.getString(R.string.departureTime, clock(context, item.departureTime))
+            MHDTableListDeparture.text = context.getString(R.string.departureTime, clockText(context, item.departureTime))
             MHDTableListLastStop.isVisible = online
             MHDTableListLastStop.text = item.lastStopName
             MHDTableListVehicleText.text = vehicle?.let {
@@ -152,14 +152,10 @@ class MHDTableAdapter(
     // "now" is a pulsing pair of dots, outlined when the time is only scheduled; reduced motion keeps them still.
     private fun bindRemainingTime(holder: MHDTableViewHolder, item: MHDTableData, context: Context) {
         val time = holder.binding.MHDTableListTime
-        val minutes = remainingMinutes(item.departureTime, System.currentTimeMillis())
+        val now = System.currentTimeMillis()
+        val minutes = remainingMinutes(item.departureTime, now)
         val online = item.type == "online"
-        val text = when {
-            minutes == null -> context.getString(R.string.table_now)
-            minutes == 0 -> context.getString(R.string.table_under_minute)
-            minutes > 59 -> clock(context, item.departureTime)
-            else -> context.getString(R.string.table_minutes, minutes)
-        }.let { if (online) it else context.getString(R.string.table_approximate, it) }
+        val text = remainingText(context, item.departureTime, item.type, now)
         if (minutes == null) {
             val indicator = if (online) R.drawable.ic_filled_now else R.drawable.ic_outline_now
             if (holder.nowIndicator != indicator) {
@@ -177,8 +173,6 @@ class MHDTableAdapter(
             time.contentDescription = null
         }
     }
-
-    private fun clock(context: Context, millis: Long): String = DateFormat.getTimeFormat(context).format(Date(millis))
 
     companion object {
         private val REFRESH = Any()

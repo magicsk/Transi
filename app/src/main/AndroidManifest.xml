@@ -6,7 +6,10 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <!-- Followed departures: a foreground service and, on Android 16+, Live Update notifications. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 
     <!-- The IDS BK app, opened from a trip's ticket button when installed. -->
@@ -58,9 +61,16 @@
             android:theme="@style/Theme.Transi.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
 
-        <receiver
-            android:name=".receivers.MHDTableCancelNotificationReceiver"
-            android:exported="false"/>
+        <!-- No type fits: it needs no location, and it is not a data sync (it keeps a live connection open while the
+             user follows a departure, up to its departure). -->
+        <service
+            android:name=".LiveUpdatesService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Live public transport departure tracking requested by the user: keeps the real-time departure board connection of the chosen stop open and updates the ongoing notification until the vehicle departs." />
+        </service>
 
         <meta-data
             android:name="preloaded_fonts"

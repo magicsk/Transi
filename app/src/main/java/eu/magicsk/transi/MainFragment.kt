@@ -26,10 +26,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.adapters.MHDTableAdapter
 import eu.magicsk.transi.databinding.FragmentMainBinding
+import eu.magicsk.transi.repository.LiveBoard.Status
 import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TableViewModel
-import eu.magicsk.transi.view_models.TableViewModel.Status
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay

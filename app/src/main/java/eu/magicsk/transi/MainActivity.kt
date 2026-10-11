@@ -181,11 +181,8 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-        createChannel(
-            getString(R.string.table_notification_channel_id),
-            getString(R.string.table_notification_channel_name),
-            getString(R.string.table_notification_channel_description)
-        )
+        // Followed departures post to LiveUpdatesService's own channels now.
+        getSystemService(NotificationManager::class.java).deleteNotificationChannel(LiveUpdatesService.LEGACY_CHANNEL)
         createChannel(
             getString(R.string.trip_planner_notification_channel_id),
             getString(R.string.trip_planner_notification_channel_name),

@@ -61,6 +61,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
         // One XML per section, in the iOS order.
         val sections = listOf(
             R.xml.prefs_general,
+            R.xml.prefs_live_updates,
+            R.xml.prefs_notification_triggers,
             R.xml.prefs_timetables,
             R.xml.prefs_trip_planner,
             R.xml.prefs_my_pass,
@@ -69,6 +71,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         setPreferencesFromResource(sections.first(), rootKey)
         sections.drop(1).forEach(::addPreferencesFromResource)
         bindGeneral()
+        bindLiveUpdates()
         bindTimetables()
         bindTripPlanner()
         bindMyPass()
@@ -84,6 +87,30 @@ class SettingsFragment : PreferenceFragmentCompat() {
             )
             list.updatePadding(left = bars.left, right = bars.right, bottom = bars.bottom)
             insets
+        }
+    }
+
+    // The threshold's title shows it as iOS does ("X min Y sec"); dragging snaps to the iOS stepper's 30 s steps.
+    private fun bindLiveUpdates() {
+        val threshold = requireNotNull(findPreference<SeekBarPreference>(Prefs.LIVE_ACTIVITY_THRESHOLD))
+        fun showTitle(seconds: Int) {
+            val minutes = getString(R.string.pref_live_updates_threshold_minutes, seconds / 60)
+            val rest = resources.getQuantityString(R.plurals.pref_live_updates_threshold_seconds, seconds % 60, seconds % 60)
+            val value = when {
+                seconds % 60 == 0 -> minutes
+                seconds < 60 -> rest
+                else -> getString(R.string.pref_live_updates_threshold_minutes_seconds, minutes, rest)
+            }
+            threshold.title = getString(R.string.pref_live_updates_threshold, value)
+        }
+        showTitle(threshold.value)
+        threshold.setOnPreferenceChangeListener { _, newValue ->
+            val seconds = newValue as? Int ?: return@setOnPreferenceChangeListener false
+            val step = (seconds + 15) / 30 * 30
+            // Stores the step instead; rejecting the raw value moves the bar back to it.
+            if (step != seconds) threshold.value = step
+            showTitle(step)
+            step == seconds
         }
     }
 

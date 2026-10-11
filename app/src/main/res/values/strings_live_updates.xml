@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="live_updates_channel">Live updates</string>
+    <string name="live_updates_channel_description">Departures you follow, updated until the vehicle leaves</string>
+    <string name="live_updates_alerts_channel">Departure alerts</string>
+    <string name="live_updates_alerts_channel_description">Alerts with sound as a followed vehicle gets closer</string>
+    <string name="live_updates_silent_alerts_channel">Silent departure alerts</string>
+    <string name="live_updates_silent_alerts_channel_description">Alerts as a followed vehicle gets closer, when sound effects are off in Settings</string>
+
+    <string name="live_updates_summary">%1$s · %2$s</string>
+    <string name="live_updates_last_stop">Last stop: %1$s</string>
+    <string name="live_updates_vehicle_ac">%1$s · air-conditioned</string>
+    <string name="live_updates_vehicle_no_ac">%1$s · not air-conditioned</string>
+    <string name="live_updates_alert_title">%1$s ▶ %2$s in %3$s</string>
+    <string name="live_updates_short_minutes">%1$dm</string>
+    <string name="live_updates_short_under_minute">&lt;1</string>
+    <string name="live_updates_short_clock">:%1$02d</string>
+    <string name="live_updates_stop">Stop</string>
+    <string name="live_updates_notifications_off">Notifications are off for Transi. Turn them on in Settings to follow this departure.</string>
+
+    <string name="pref_live_updates">Live updates</string>
+    <string name="pref_live_updates_sounds">Sound effects</string>
+    <string name="pref_live_updates_threshold">Notification threshold: %1$s</string>
+    <string name="pref_live_updates_threshold_minutes_seconds">%1$s %2$s</string>
+    <string name="pref_live_updates_threshold_minutes">%1$d min</string>
+    <plurals name="pref_live_updates_threshold_seconds">
+        <item quantity="one">%1$d sec</item>
+        <item quantity="other">%1$d sec</item>
+    </plurals>
+    <string name="pref_notification_triggers">Notification triggers</string>
+    <string name="pref_notify_time_change">Departure time change</string>
+    <string name="pref_notify_delay_change">Delay change</string>
+    <string name="pref_notify_position_change">Vehicle position change</string>
+</resources>

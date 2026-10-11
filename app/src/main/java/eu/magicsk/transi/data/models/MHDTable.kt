@@ -1,32 +1,19 @@
 package eu.magicsk.transi.data.models
 
+import android.content.Context
+import android.text.format.DateFormat
 import androidx.annotation.ColorRes
 import eu.magicsk.transi.R
 import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.data.remote.responses.idsbk.RegionalDeparture
 import org.json.JSONArray
 import org.json.JSONObject
+import java.time.Instant
+import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.util.Date
 import kotlin.math.abs
 import kotlin.math.roundToLong
-
-/** Rows of the last `tabs` message and the vehicles seen, for the departure notification socket. */
-class MHDTable {
-    val tabs = mutableListOf<MHDTableData>()
-    val vehicleInfo = mutableListOf<MHDTableVehicle>()
-
-    fun addTabs(data: JSONArray): MutableList<MHDTableData> {
-        tabs.clear()
-        tabs.addAll(parseTabs(data).values.flatMap { it.values.flatten() })
-        return tabs
-    }
-
-    fun addVehicleInfo(data: JSONObject) {
-        val vehicle = parseVehicle(data)
-        val index = vehicleInfo.indexOfFirst { it.issi == vehicle.issi }
-        if (index >= 0) vehicleInfo[index] = vehicle else vehicleInfo.add(vehicle)
-    }
-}
 
 private fun JSONObject.stringOrNull(name: String): String? = if (isNull(name)) null else optString(name)
 
@@ -166,6 +153,34 @@ fun remainingMinutes(departureTime: Long, now: Long): Int? {
         else -> null
     }
 }
+
+/** iOS getDepartureTimeRemainingText: "N min", "<1 min", "now", or the clock time from 60 min on; "~" unless live. */
+fun remainingText(context: Context, departureTime: Long, type: String, now: Long): String {
+    val minutes = remainingMinutes(departureTime, now)
+    val text = when {
+        minutes == null -> context.getString(R.string.table_now)
+        minutes == 0 -> context.getString(R.string.table_under_minute)
+        minutes > 59 -> clockText(context, departureTime)
+        else -> context.getString(R.string.table_minutes, minutes)
+    }
+    return if (type == "online") text else context.getString(R.string.table_approximate, text)
+}
+
+/** iOS getShortDepartureTimeRemainingText: "Nm", "<1", "now", or ":mm" of the clock time from 60 min on. */
+fun shortRemainingText(context: Context, departureTime: Long, now: Long): String {
+    val minutes = remainingMinutes(departureTime, now)
+    return when {
+        minutes == null -> context.getString(R.string.table_now)
+        minutes == 0 -> context.getString(R.string.live_updates_short_under_minute)
+        minutes > 59 -> context.getString(
+            R.string.live_updates_short_clock, Instant.ofEpochMilli(departureTime).atZone(ZoneId.systemDefault()).minute
+        )
+        else -> context.getString(R.string.live_updates_short_minutes, minutes)
+    }
+}
+
+/** The clock time in the device's 12/24-hour format. */
+fun clockText(context: Context, millis: Long): String = DateFormat.getTimeFormat(context).format(Date(millis))
 
 /** iOS getDelayText as a string resource and its minutes argument. */
 fun delayText(delay: Int, type: String): Pair<Int, Int> = when {
