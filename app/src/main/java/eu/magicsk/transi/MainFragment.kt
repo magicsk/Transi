@@ -90,9 +90,10 @@ class MainFragment : Fragment() {
             mainViewModel.actualLocation.observe(viewLifecycleOwner) { updatePositionButton() }
 
             tableViewModel.departures.observe(viewLifecycleOwner) { departures ->
-                tableAdapter.submitList(departures)
+                tableAdapter.submitList(departures) { expandRequested(tableAdapter) }
                 updateState()
             }
+            mainViewModel.expandDeparture.observe(viewLifecycleOwner) { expandRequested(tableAdapter) }
             tableViewModel.vehicles.observe(viewLifecycleOwner) { tableAdapter.vehicles = it }
             tableViewModel.status.observe(viewLifecycleOwner) { status ->
                 showStatus(status)
@@ -248,14 +249,21 @@ class MainFragment : Fragment() {
         }
     }
 
-    // iOS VirtualTableList: rows; a spinner until the socket connects; the empty state once both feeds answered.
     private fun updateState() {
         val binding = _binding ?: return
-        val rows = tableViewModel.departures.value.orEmpty()
-        val connected = tableViewModel.status.value == Status.CONNECTED
-        binding.MHDTableLoading.isVisible = rows.isEmpty() && !connected
-        binding.MHDTableEmpty.isVisible = rows.isEmpty() && connected && tableViewModel.empty.value == true
-        binding.MHDTableStatus.isVisible = showStatusBar && !statusHidden && rows.isNotEmpty()
+        binding.MHDTableLoading.isVisible = tableViewModel.showsLoading
+        binding.MHDTableEmpty.isVisible = tableViewModel.showsEmpty
+        binding.MHDTableStatus.isVisible = showStatusBar && !statusHidden && !tableViewModel.departures.value.isNullOrEmpty()
+    }
+
+    // A linked departure opens once the table lists it (iOS expandedConnectionId).
+    private fun expandRequested(adapter: MHDTableAdapter) {
+        val (stopId, departureId) = mainViewModel.expandDeparture.value ?: return
+        if (stopId != mainViewModel.tableStop.value?.id) return
+        val position = adapter.expand(departureId)
+        if (position < 0) return
+        mainViewModel.expandDeparture.value = null
+        _binding?.MHDTableList?.scrollToPosition(position)
     }
 
     private companion object {

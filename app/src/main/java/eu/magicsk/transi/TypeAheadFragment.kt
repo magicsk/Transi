@@ -58,7 +58,6 @@ class TypeAheadFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var typeAheadAdapter: TypeAheadAdapter
     private lateinit var origin: String
-    private val mapFragment: MapFragment = MapFragment()
     private var showDirections = false
     private var stopsList: List<Stop> = emptyList()
     private var eText: EditText? = null
@@ -104,10 +103,7 @@ class TypeAheadFragment : Fragment() {
 
     private fun onListItemClick(view: View, stop: Stop) {
         if (stop.type == "map") {
-            val mapBundle = Bundle()
-            mapBundle.putSerializable("stopsList", Stops().apply { addAll(stopsList) })
-            mapBundle.putString("origin", origin)
-            mapFragment.arguments = mapBundle
+            val mapFragment = MapFragment().apply { arguments = Bundle().apply { putString(MapFragment.ARG_ORIGIN, origin) } }
             val id = if (origin == "editText") R.id.searchFragmentLayout else R.id.tripSearchFragmentLayout
             val name = if (origin == "editText") "typeAhead" else "tripTypeAhead"
             activity?.supportFragmentManager?.beginTransaction()?.apply {

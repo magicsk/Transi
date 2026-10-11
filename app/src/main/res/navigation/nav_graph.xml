@@ -38,29 +38,10 @@
         android:name="eu.magicsk.transi.TimetableDetailFragment"
         android:label="TimetableFragment"
         tools:layout="@layout/fragment_timetable_detail"/>
-
-
-
     <fragment
-        android:id="@+id/typeAheadFragment"
-        android:name="eu.magicsk.transi.TypeAheadFragment"
-        android:label="TypeAheadFragment"
-        tools:layout="@layout/fragment_type_ahead">
-        <argument
-            android:name="stopsList"
-            app:argType="eu.magicsk.transi.data.remote.responses.Stops"/>
-        <action
-            android:id="@+id/action_typeAheadFragment_to_mapFragment"
-            app:destination="@id/mapFragment"/>
-    </fragment>
-    <fragment
-        android:id="@+id/mapFragment"
+        android:id="@+id/navigationMap"
         android:name="eu.magicsk.transi.MapFragment"
         android:label="MapFragment"
-        tools:layout="@layout/fragment_map">
-        <argument
-            android:name="stopsList"
-            app:argType="eu.magicsk.transi.data.remote.responses.Stops"/>
-    </fragment>
+        tools:layout="@layout/fragment_map"/>
 
 </navigation>

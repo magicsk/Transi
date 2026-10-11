@@ -60,7 +60,11 @@ class TableStopChooser(
             return
         }
         if (current?.id == stopId) return
-        val stop = stops.firstOrNull { it.id == stopId } ?: return
+        val stop = stops.firstOrNull { it.id == stopId } ?: run {
+            // Picked before the first list (a deep link at launch): shown with it, like a restored stop.
+            if (stops.isEmpty() && !switchOnly) restoredStopId = stopId
+            return
+        }
         if (!switchOnly) follow = false
         current = stop
     }

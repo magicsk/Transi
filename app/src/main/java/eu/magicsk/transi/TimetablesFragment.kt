@@ -47,7 +47,11 @@ class TimetablesFragment : Fragment(R.layout.fragment_timetables) {
         viewModel.routesLoading.observe(viewLifecycleOwner) { loading ->
             if (loading) binding.TimetablesLoading.show() else binding.TimetablesLoading.hide()
         }
-        viewModel.routes.observe(viewLifecycleOwner) { renderRoutes(binding, it) }
+        viewModel.routes.observe(viewLifecycleOwner) {
+            renderRoutes(binding, it)
+            openRequestedLine()
+        }
+        mainViewModel.timetableLine.observe(viewLifecycleOwner) { openRequestedLine() }
         viewModel.routesFailed.observe(viewLifecycleOwner) { failed ->
             if (failed) {
                 showTimetableError(
@@ -115,16 +119,24 @@ class TimetablesFragment : Fragment(R.layout.fragment_timetables) {
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
             ).apply { setMargins(4f.dpToPx(context), 4f.dpToPx(context), 4f.dpToPx(context), 4f.dpToPx(context)) }
-            setOnClickListener {
-                findNavController().navigate(
-                    R.id.action_navigationTimetables_to_navigationTimetable,
-                    Bundle().apply {
-                        putInt(ARG_ROUTE_ID, route.route_id)
-                        putString(ARG_SHORT_NAME, route.short_name)
-                        putBoolean(ARG_OFFLINE, offline)
-                    },
-                )
-            }
+            setOnClickListener { openLine(route, offline) }
         }
+    }
+
+    private fun openLine(route: Route, offline: Boolean) = findNavController().navigate(
+        R.id.action_navigationTimetables_to_navigationTimetable,
+        Bundle().apply {
+            putInt(ARG_ROUTE_ID, route.route_id)
+            putString(ARG_SHORT_NAME, route.short_name)
+            putBoolean(ARG_OFFLINE, offline)
+        },
+    )
+
+    // iOS pendingTimetableLine: a linked line opens once the routes are loaded; an unknown one leaves the list.
+    private fun openRequestedLine() {
+        val line = mainViewModel.timetableLine.value ?: return
+        val data = viewModel.routes.value ?: return
+        mainViewModel.timetableLine.value = null
+        data.routes.firstOrNull { it.short_name == line }?.let { openLine(it, data.offline) }
     }
 }

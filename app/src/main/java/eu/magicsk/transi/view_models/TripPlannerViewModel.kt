@@ -130,6 +130,12 @@ class TripPlannerViewModel @Inject constructor(
         runPendingSearch()
     }
 
+    /** iOS fetchTripToActualStop (map Directions): from Actual location to [stop]; without a fix the planner says so. */
+    fun planFromActualLocationTo(stop: Stop) {
+        setState { copy(from = actualLocation, to = stop) }
+        requestSearch()
+    }
+
     /** From the stop pickers: picking a stop runs the search. */
     fun setSelectedFromStop(value: Stop) {
         setState { copy(from = value) }

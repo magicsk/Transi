@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="map_tab">Map</string>
+    <string name="map_my_location">My location</string>
+    <string name="map_following_location">Following your location</string>
+    <string name="map_not_following_location">Not following your location</string>
+    <string name="map_directions">Directions to this stop</string>
+    <string name="map_close">Close</string>
+    <string name="map_show_on_map">Show on map</string>
+    <string name="map_timetable">Timetable</string>
+    <string name="deep_link_error_title">Unable to navigate</string>
+    <string name="deep_link_error_message">Opened URL is either expired or no longer supported.</string>
+</resources>

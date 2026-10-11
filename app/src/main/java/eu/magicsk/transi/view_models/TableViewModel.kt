@@ -49,6 +49,10 @@ class TableViewModel @Inject constructor(
     val infoTexts = MutableLiveData<List<String>>(emptyList())
     val unreadInfoCount = MutableLiveData(0)
 
+    // iOS VirtualTableList: rows; a spinner until the socket connects; the empty state once both feeds answered.
+    val showsLoading get() = departures.value.isNullOrEmpty() && status.value != Status.CONNECTED
+    val showsEmpty get() = departures.value.isNullOrEmpty() && status.value == Status.CONNECTED && empty.value == true
+
     private val prefs = Prefs.get(context)
     private val readInfoTexts = prefs.getStringSet(Prefs.READ_INFO_TEXTS, null).orEmpty().toMutableSet()
     // Read by emitStart on the socket thread.

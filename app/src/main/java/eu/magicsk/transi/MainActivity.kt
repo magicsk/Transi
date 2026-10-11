@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Intent
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -23,6 +24,7 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.fragment.app.FragmentManager
+import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
@@ -49,6 +51,7 @@ class MainActivity : AppCompatActivity() {
     private var _binding: ActivityMainBinding? = null
     private val binding get() = _binding!!
     private lateinit var locationManager: LocationManager
+    private lateinit var navController: NavController
     // Until the first permission prompt is answered the table neither follows the location nor falls back to the default stop.
     private var locationPermissionPending = false
 
@@ -113,6 +116,9 @@ class MainActivity : AppCompatActivity() {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Exported for transi:// links: nothing here reads extras, and dropping them keeps NavController
+        // from following the deep-link destination and arguments extras it would otherwise trust.
+        intent.replaceExtras(null as Bundle?)
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val versionName = BuildConfig.VERSION_NAME
@@ -137,6 +143,9 @@ class MainActivity : AppCompatActivity() {
         _binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
+        val navHostFragment =
+            supportFragmentManager.findFragmentById(R.id.navHostFragment) as NavHostFragment
+        navController = navHostFragment.navController
         ViewCompat.setOnApplyWindowInsetsListener(view) { root, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
             val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
@@ -147,8 +156,10 @@ class MainActivity : AppCompatActivity() {
                 right = bars.right,
                 bottom = if (imeVisible) max(insets.getInsets(WindowInsetsCompat.Type.ime()).bottom, bars.bottom) else 0
             )
-            // The top margin is the status bar strip; statusBarBackground fills it.
-            binding.navHostFragment.updateLayoutParams<ViewGroup.MarginLayoutParams> { topMargin = bars.top }
+            // The top margin is the status bar strip; statusBarBackground fills it. The map runs under the status bar
+            // and pads its own controls (MapFragment).
+            val mapShown = navController.currentDestination?.id == R.id.navigationMap
+            binding.navHostFragment.updateLayoutParams<ViewGroup.MarginLayoutParams> { topMargin = if (mapShown) 0 else bars.top }
             binding.navView.isVisible = !imeVisible
             binding.navView.updatePadding(bottom = bars.bottom)
             WindowInsetsCompat.CONSUMED
@@ -161,9 +172,7 @@ class MainActivity : AppCompatActivity() {
         }
         locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
 
-        val navHostFragment =
-            supportFragmentManager.findFragmentById(R.id.navHostFragment) as NavHostFragment
-        val navController = navHostFragment.navController
+        navController.addOnDestinationChangedListener { _, _, _ -> ViewCompat.requestApplyInsets(view) }
         binding.navView.setupWithNavController(navController)
         binding.navView.setOnItemSelectedListener { item ->
             if (supportFragmentManager.backStackEntryCount > 0) closeSearch()
@@ -205,6 +214,49 @@ class MainActivity : AppCompatActivity() {
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 ) + notificationPermission
             )
+            openLink(intent)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        intent.replaceExtras(null as Bundle?)
+        super.onNewIntent(intent)
+        setIntent(intent)
+        openLink(intent)
+    }
+
+    // A task relaunched from Recents gets its original intent again, so its link was already followed.
+    private fun openLink(intent: Intent) {
+        if (intent.action != Intent.ACTION_VIEW || intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return
+        navigate(parseDeepLink(intent.dataString))
+    }
+
+    /** The one way to switch tabs from links and from screens (iOS pendingNavigation): the tab plus what it should show. */
+    fun navigate(link: DeepLink) {
+        val tab = when (link) {
+            DeepLink.Trip, DeepLink.ActiveTrip -> R.id.navigationTripPlanner
+            is DeepLink.Table -> {
+                link.stopId?.let(mainViewModel::changeTableStop)
+                mainViewModel.expandDeparture.value = link.departureId?.let { id -> link.stopId?.let { it to id } }
+                R.id.navigationTable
+            }
+            is DeepLink.Timetable -> R.id.navigationTimetables
+            is DeepLink.Map -> {
+                mainViewModel.mapStop.value = link.stopId
+                R.id.navigationMap
+            }
+            DeepLink.Invalid -> {
+                UnableToNavigateDialog().show(supportFragmentManager, "unableToNavigate")
+                return
+            }
+        }
+        if (supportFragmentManager.backStackEntryCount > 0) closeSearch()
+        // Selecting the current tab again would recreate its screen.
+        if (binding.navView.selectedItemId != tab) binding.navView.selectedItemId = tab
+        if (link is DeepLink.Timetable) {
+            // A line opens from the list, so a line screen restored with the tab makes way for it first.
+            if (link.line != null) navController.popBackStack(R.id.navigationTimetables, false)
+            mainViewModel.timetableLine.value = link.line
         }
     }
 }

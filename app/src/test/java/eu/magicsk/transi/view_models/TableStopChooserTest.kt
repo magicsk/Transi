@@ -97,6 +97,17 @@ class TableStopChooserTest {
     }
 
     @Test
+    fun stopPickedBeforeStopsLoadIsShownWithThem() {
+        val chooser = TableStopChooser { -1 }
+        chooser.change(20)
+        assertNull(chooser.current)
+        chooser.onLocationAvailable(true)
+        chooser.onStops(sorted, located = true, downloaded = false)
+        assertEquals(20, chooser.current?.id)
+        assertFalse(chooser.follow)
+    }
+
+    @Test
     fun missingDefaultStopFollowsNearest() {
         val chooser = TableStopChooser { 99 }
         chooser.onLocationAvailable(true)

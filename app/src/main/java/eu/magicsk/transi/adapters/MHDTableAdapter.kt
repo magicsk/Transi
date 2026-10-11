@@ -54,6 +54,13 @@ class MHDTableAdapter(
     /** Rebinds every row in place: remaining times, corners, platforms and vehicles. */
     fun refresh() = notifyItemRangeChanged(0, itemCount, REFRESH)
 
+    /** Expands the listed row with [id]; its position, or -1 when it is not listed. */
+    fun expand(id: String): Int {
+        val position = currentList.indexOfFirst { it.id == id }
+        if (position >= 0 && expanded.add(id)) notifyItemChanged(position)
+        return position
+    }
+
     override fun onCurrentListChanged(previousList: MutableList<MHDTableData>, currentList: MutableList<MHDTableData>) {
         expanded.retainAll(currentList.map { it.id }.toSet())
         // The first and last rows round their outer corners.

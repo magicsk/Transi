@@ -43,6 +43,14 @@ class MainViewModel @Inject constructor(
     /** The table follows the nearest stop (iOS changeLocation). */
     val followLocation = MutableLiveData(true)
 
+    // Set by MainActivity.navigate and cleared by the tab that carries them out.
+    /** The departure the table expands once it is listed: its stop id and departure id. */
+    val expandDeparture = MutableLiveData<Pair<Int, String>?>()
+    /** The stop the Map tab selects once its stops are loaded. */
+    val mapStop = MutableLiveData<Int?>()
+    /** The line (short name) the Timetables tab opens once its routes are loaded. */
+    val timetableLine = MutableLiveData<String?>()
+
     private val idsbkSessionData = MutableLiveData<Session?>()
     val idsbkSession: MutableLiveData<Session?> = idsbkSessionData
 

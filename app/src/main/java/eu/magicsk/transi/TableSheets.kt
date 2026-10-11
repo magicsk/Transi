@@ -6,6 +6,7 @@ import android.text.format.DateFormat
 import android.view.View
 import androidx.core.os.BundleCompat
 import androidx.core.view.isVisible
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -15,6 +16,7 @@ import eu.magicsk.transi.data.remote.responses.Stop
 import eu.magicsk.transi.databinding.SheetDepartureActionsBinding
 import eu.magicsk.transi.databinding.SheetServiceInfoBinding
 import eu.magicsk.transi.util.tableNotification
+import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.TableViewModel
 import java.util.Date
 
@@ -37,6 +39,8 @@ class ServiceInfoSheet : BottomSheetDialogFragment(R.layout.sheet_service_info) 
 
 /** Long-press actions for one departure. */
 class DepartureActionsSheet : BottomSheetDialogFragment(R.layout.sheet_departure_actions) {
+    private val mainViewModel: MainViewModel by activityViewModels()
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val binding = SheetDepartureActionsBinding.bind(view)
@@ -58,6 +62,19 @@ class DepartureActionsSheet : BottomSheetDialogFragment(R.layout.sheet_departure
             startActivity(Intent.createChooser(send, null))
             dismiss()
         }
+        // iOS trailing swipes: the stop named as the vehicle's last stop on the map (only when there is one), the line's timetable.
+        mainViewModel.stopList.observe(viewLifecycleOwner) { stops ->
+            val lastStop = stops.firstOrNull { it.name == departure.lastStopName }
+            binding.departureActionsMap.isVisible = lastStop != null
+            binding.departureActionsMap.setOnClickListener { lastStop?.let { open(DeepLink.Map(it.id)) } }
+        }
+        binding.departureActionsTimetable.setOnClickListener { open(DeepLink.Timetable(departure.line)) }
+    }
+
+    private fun open(link: DeepLink) {
+        val activity = activity as? MainActivity
+        dismiss()
+        activity?.navigate(link)
     }
 
     companion object {

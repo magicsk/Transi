@@ -47,4 +47,33 @@
         android:textAppearance="?attr/textAppearanceBodyLarge"
         app:drawableStartCompat="@drawable/ic_share"
         app:drawableTint="?attr/colorOnSurface" />
+
+    <TextView
+        android:id="@+id/departureActionsMap"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:drawablePadding="16dp"
+        android:gravity="center_vertical"
+        android:minHeight="56dp"
+        android:paddingHorizontal="20dp"
+        android:text="@string/map_show_on_map"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:visibility="gone"
+        app:drawableStartCompat="@drawable/ic_map"
+        app:drawableTint="?attr/colorOnSurface" />
+
+    <TextView
+        android:id="@+id/departureActionsTimetable"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:drawablePadding="16dp"
+        android:gravity="center_vertical"
+        android:minHeight="56dp"
+        android:paddingHorizontal="20dp"
+        android:text="@string/map_timetable"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        app:drawableStartCompat="@drawable/ic_bus"
+        app:drawableTint="?attr/colorOnSurface" />
 </LinearLayout>

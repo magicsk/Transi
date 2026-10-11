@@ -16,4 +16,9 @@
         android:icon="@drawable/ic_bus"
         android:title="Timetables"/>
 
+    <item
+        android:id="@+id/navigationMap"
+        android:icon="@drawable/ic_map"
+        android:title="@string/map_tab"/>
+
 </menu>
