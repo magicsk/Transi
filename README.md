@@ -1,6 +1,7 @@
 <p align="center">
    <picture>
-     <img width="200" alt="logo_transi" src="https://github.com/user-attachments/assets/4b610e3d-fe21-4323-8e95-30a9c033f5e0" />
+     <source width="200" media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/084590ee-b52f-4168-8b69-42c3870a8601" />
+     <img width="200" alt="logo_transi" src="https://github.com/user-attachments/assets/afb8b9d7-e1c3-4513-b08c-6d62522ead14" />
    </picture>
    <br>
    <br>
@@ -24,16 +25,16 @@ trip planner and timetables for MHD in Bratislava.
 
 <p>
 <picture>
-     <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/ad025741-aca4-4db0-9cff-b11a41924cd1" />
-     <img width="200" src="https://github.com/user-attachments/assets/e0ecac79-72b2-47e9-b342-864f53e589e0" />
+     <source media="(prefers-color-scheme: dark)" srcset=".github/readme/table-dark.jpg" />
+     <img width="200" src=".github/readme/table-light.jpg" />
 </picture>
 <picture>
-     <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/d7065ca6-526f-4507-be0b-1478cb06f346" />
-     <img width="200" src="https://github.com/user-attachments/assets/660af1e4-742d-4d57-a76e-9ae38cd43f2f" />
+     <source media="(prefers-color-scheme: dark)" srcset=".github/readme/planner-dark.jpg" />
+     <img width="200" src=".github/readme/planner-light.jpg" />
 </picture>
 <picture>
-     <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/670db0db-ef1d-471c-a3b0-b26b1d7c7e2e" />
-     <img width="200" src="https://github.com/user-attachments/assets/75c170d0-5380-4902-9769-74629280a547" />
+     <source media="(prefers-color-scheme: dark)" srcset=".github/readme/timetables-dark.jpg" />
+     <img width="200" src=".github/readme/timetables-light.jpg" />
 </picture>
 </p>
 
@@ -47,7 +48,7 @@ searched trip from the trip planner. There are also timetables.
 Everything requires internet connection but database of stops is
 cached to save data.
 
-### More screenshots info on [transi.eu](transi.eu)
+### More screenshots and info on [transi.eu](https://transi.eu)
 
 ## Download
 
