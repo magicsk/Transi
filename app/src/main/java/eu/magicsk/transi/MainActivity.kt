@@ -35,6 +35,7 @@ import eu.magicsk.transi.timetable.TimetableDatabase
 import eu.magicsk.transi.util.Prefs
 import eu.magicsk.transi.util.UpdateAlert
 import eu.magicsk.transi.util.hasLocationPermission
+import eu.magicsk.transi.util.isNewerVersion
 import eu.magicsk.transi.util.WhatsNewSheet
 import eu.magicsk.transi.view_models.MainViewModel
 import eu.magicsk.transi.view_models.ReleaseInfoViewModel
@@ -144,12 +145,13 @@ class MainActivity : AppCompatActivity() {
         }
         releaseInfoViewModel.releaseInfo.observe(this) { releaseInfo ->
             val version = releaseInfo?.tag_name?.removePrefix("v")
-            val downloadUrl = releaseInfo?.assets?.firstOrNull()?.browser_download_url
-            if (!version.isNullOrEmpty() && version != versionName && downloadUrl != null &&
+            val apk = releaseInfo?.assets?.firstOrNull { it.name?.endsWith(".apk", ignoreCase = true) == true }
+            val downloadUrl = apk?.browser_download_url
+            if (!version.isNullOrEmpty() && isNewerVersion(version, versionName) && downloadUrl != null &&
                 !releaseInfoViewModel.updateOffered && supportFragmentManager.findFragmentByTag("updateAlert") == null
             ) {
                 releaseInfoViewModel.updateOffered = true
-                UpdateAlert.newInstance(version, releaseInfo.body.orEmpty(), downloadUrl)
+                UpdateAlert.newInstance(version, releaseInfo.body.orEmpty(), downloadUrl, apk.size, apk.digest)
                     .show(supportFragmentManager, "updateAlert")
             } else if (version == versionName) {
                 // ponytail: only the latest release is fetched, so builds behind it get its notes in the Update dialog instead
