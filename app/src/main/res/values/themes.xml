@@ -43,6 +43,15 @@
         <item name="windowNoTitle">true</item>
     </style>
 
+    <!-- Title row of the main tabs (Trip planner, Table, Timetables): headline-medium in the regular weight. -->
+    <style name="Widget.Transi.ScreenTitle" parent="">
+        <item name="android:textAppearance">?attr/textAppearanceHeadlineMedium</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:accessibilityHeading" tools:targetApi="p">true</item>
+    </style>
+
     <style name="Theme.Transi.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" tools:keep="@style/Theme_Transi_AppBarOverlay" />
 
     <style name="Theme.Transi.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" tools:keep="@style/Theme_Transi_PopupOverlay" />

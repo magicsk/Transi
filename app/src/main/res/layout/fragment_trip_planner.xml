@@ -12,10 +12,10 @@
         android:id="@+id/TripPlannerHeader"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="7dp"
+        android:layout_marginTop="4dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="15dp"
+        android:paddingStart="16dp"
         android:paddingEnd="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -23,18 +23,12 @@
 
         <TextView
             android:id="@+id/TripPlannerTitle"
+            style="@style/Widget.Transi.ScreenTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:accessibilityHeading="true"
             android:ellipsize="end"
-            android:fontFamily="@font/roboto_medium"
-            android:gravity="center_vertical"
-            android:minHeight="48dp"
-            android:singleLine="true"
-            android:text="@string/tripPlanner"
-            android:textSize="26sp"
-            tools:targetApi="p" />
+            android:text="@string/tripPlanner" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/TripPlannerSettingsBtn"
