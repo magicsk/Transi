@@ -24,7 +24,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.Insets
 import androidx.core.graphics.createBitmap
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
@@ -72,9 +71,11 @@ import eu.magicsk.transi.databinding.ActivityTripDetailBinding
 import eu.magicsk.transi.repository.TicketCatalogueProvider
 import eu.magicsk.transi.util.DEFAULT_MAP_CENTER
 import eu.magicsk.transi.util.Prefs
+import eu.magicsk.transi.util.TOP_APP_BAR_INSETS
 import eu.magicsk.transi.util.getLineColor
 import eu.magicsk.transi.util.getLineTextColor
 import eu.magicsk.transi.util.isDarkTheme
+import eu.magicsk.transi.util.padUnderStatusBar
 import eu.magicsk.transi.util.seasonPass
 import eu.magicsk.transi.util.useTransportTiles
 import eu.magicsk.transi.util.vehicleIcon
@@ -165,8 +166,8 @@ class TripDetailActivity : AppCompatActivity() {
         })
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
-            bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            binding.tripDetailToolbar.updatePadding(left = bars.left, top = bars.top, right = bars.right)
+            bars = insets.getInsets(TOP_APP_BAR_INSETS)
+            binding.tripDetailToolbar.padUnderStatusBar(bars)
             binding.tripDetailList.updatePadding(left = bars.left, right = bars.right)
             binding.tripDetailAttribution.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                 updateMargins(left = bars.left + dp(8), right = bars.right + dp(8))

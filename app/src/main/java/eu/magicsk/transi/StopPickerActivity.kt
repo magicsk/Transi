@@ -12,6 +12,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.commit
 import eu.magicsk.transi.databinding.ActivityStopPickerBinding
+import eu.magicsk.transi.util.TOP_APP_BAR_INSETS
+import eu.magicsk.transi.util.padUnderStatusBar
 
 /** Picks a stop for Settings; the result is its id, -1 for Actual location. */
 class StopPickerActivity : AppCompatActivity() {
@@ -21,12 +23,16 @@ class StopPickerActivity : AppCompatActivity() {
         val binding = ActivityStopPickerBinding.inflate(layoutInflater)
         setContentView(binding.root)
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { root, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            val bars = insets.getInsets(TOP_APP_BAR_INSETS)
             val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-            root.updatePadding(left = bars.left, top = bars.top, right = bars.right, bottom = maxOf(bars.bottom, ime.bottom))
+            // The bar reaches under the status bar; the rest stays clear of the bars and the keyboard.
+            binding.pickerToolbar.padUnderStatusBar(bars)
+            root.updatePadding(left = bars.left, right = bars.right, bottom = maxOf(bars.bottom, ime.bottom))
             WindowInsetsCompat.CONSUMED
         }
         binding.pickerToolbar.setNavigationOnClickListener { finish() }
+        // The list scrolls inside the card's rounded corners.
+        binding.pickerContainer.clipToOutline = true
         if (savedInstanceState == null) {
             supportFragmentManager.commit {
                 replace(

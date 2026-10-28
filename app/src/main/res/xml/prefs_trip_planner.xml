@@ -7,7 +7,7 @@
         app:title="@string/trip_planner_settings"
         app:iconSpaceReserved="false">
 
-        <SeekBarPreference
+        <eu.magicsk.transi.SliderPreference
             app:key="trip_max_walk_duration"
             app:title="@string/trip_planner_max_walk_title"
             app:min="0"
@@ -18,7 +18,7 @@
             app:iconSpaceReserved="false"
             android:defaultValue="15" />
 
-        <SeekBarPreference
+        <eu.magicsk.transi.SliderPreference
             app:key="trip_max_transfers"
             app:title="@string/trip_planner_max_transfers_title"
             app:min="0"

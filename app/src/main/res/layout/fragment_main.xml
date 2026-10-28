@@ -22,18 +22,16 @@
 
             <TextView
                 android:id="@+id/MHDTableStopName"
+                style="@style/Widget.Transi.ScreenTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="15dp"
-                android:layout_marginStart="15dp"
-                android:fontFamily="@font/roboto_medium"
+                android:layout_marginTop="4dp"
+                android:layout_marginStart="16dp"
                 android:text="@string/locating_nearest_stop"
-                android:singleLine="true"
                 android:ellipsize="marquee"
                 android:fadingEdge="horizontal"
                 android:marqueeRepeatLimit="marquee_forever"
                 android:scrollHorizontally="true"
-                android:textSize="26sp"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/MHDTableInfoButton"/>

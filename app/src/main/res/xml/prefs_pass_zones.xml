@@ -28,6 +28,7 @@
             app:widgetLayout="@layout/preference_widget_progress" />
 
         <Preference
+            android:layout="@layout/preference_footer"
             app:iconSpaceReserved="false"
             app:key="pass_zones_failed"
             app:selectable="false"
@@ -40,6 +41,7 @@
 
         <!-- Last, after the zone rows added in code. -->
         <Preference
+            android:layout="@layout/preference_footer"
             android:order="10000"
             app:iconSpaceReserved="false"
             app:selectable="false"

@@ -3,11 +3,9 @@ package eu.magicsk.transi
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import dagger.hilt.android.AndroidEntryPoint
 import eu.magicsk.transi.databinding.ActivitySettingsBinding
+import eu.magicsk.transi.util.fitUnderStatusBar
 
 @AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
@@ -21,10 +19,6 @@ class SettingsActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
         // The list in SettingsFragment takes the bottom inset.
-        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar) { toolbar, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            toolbar.updatePadding(left = bars.left, top = bars.top, right = bars.right)
-            insets
-        }
+        binding.toolbar.fitUnderStatusBar()
     }
 }

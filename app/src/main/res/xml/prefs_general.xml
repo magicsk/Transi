@@ -22,9 +22,11 @@
             android:key="default_stop_id"
             android:persistent="false"
             android:title="@string/pref_default_stop"
+            android:widgetLayout="@layout/preference_widget_chevron"
             app:iconSpaceReserved="false" />
 
         <Preference
+            android:layout="@layout/preference_footer"
             android:selectable="false"
             android:summary="@string/pref_default_stop_footer"
             app:iconSpaceReserved="false" />

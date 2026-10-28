@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
 import androidx.annotation.MainThread
 import androidx.annotation.StringRes
+import androidx.annotation.WorkerThread
 import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import eu.magicsk.transi.R
@@ -115,6 +116,10 @@ class TimetableDatabase @Inject constructor(
             prefs.edit { DbFile.entries.forEach { remove(it.shaKey) } }
         }
     }
+
+    /** The space the downloaded files take, in bytes. Reads the disk: call it off the main thread. */
+    @WorkerThread
+    fun sizeOnDisk(): Long = dir.walk().filter { it.isFile }.sumOf { it.length() }
 
     /**
      * Runs [block] on the schedule connection (base.db attached as `base`) off the main thread.

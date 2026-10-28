@@ -8,4 +8,8 @@
     <string name="settings_api_url_reset">Reset to default</string>
     <string name="settings_api_url_footer">Override the Magic API base URL (e.g. https://staging.example.com). Leave empty to use the default.</string>
     <string name="settings_api_url_invalid">Enter an https:// URL, or leave it empty.</string>
+    <!-- The timetable database delete confirmation; %1$s is the space it takes, like "48 MB". -->
+    <string name="settings_delete_database_title">Delete offline timetables?</string>
+    <string name="settings_delete_database_message">The downloaded timetables are removed from this device and offline timetables are turned off. Trips are planned online until you download them again.</string>
+    <string name="settings_delete_database_message_size">The downloaded timetables are removed from this device, freeing %1$s, and offline timetables are turned off. Trips are planned online until you download them again.</string>
 </resources>

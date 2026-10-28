@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The stop picker's list as a card, rounded like the settings cards. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="?attr/colorSurface" />
+    <corners android:radius="24dp" />
+</shape>
