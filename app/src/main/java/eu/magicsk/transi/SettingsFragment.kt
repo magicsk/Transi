@@ -3,15 +3,13 @@ package eu.magicsk.transi
 import android.os.Bundle
 import android.text.InputType
 import android.text.SpannableString
+import android.text.format.Formatter
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.core.content.edit
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -80,14 +78,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        listView.clipToPadding = false
-        ViewCompat.setOnApplyWindowInsetsListener(listView) { list, insets ->
-            val bars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime()
-            )
-            list.updatePadding(left = bars.left, right = bars.right, bottom = bars.bottom)
-            insets
-        }
+        showAsCards()
+    }
+
+    override fun onDisplayPreferenceDialog(preference: Preference) {
+        if (!showMaterialPreferenceDialog(preference)) super.onDisplayPreferenceDialog(preference)
     }
 
     // The threshold's title shows it as iOS does ("X min Y sec"); dragging snaps to the iOS stepper's 30 s steps.
@@ -125,20 +120,32 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
         val deleteTitle = getString(R.string.timetable_delete_database)
         val errorColor = MaterialColors.getColor(requireContext(), androidx.appcompat.R.attr.colorError, deleteTitle)
+        // setTitle ignores a title equal in text to the current one, spans included, hence the reset.
+        delete.title = null
         delete.title = SpannableString(deleteTitle).apply {
             setSpan(ForegroundColorSpan(errorColor), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
         delete.setOnPreferenceClickListener {
-            showWhileViewExists(
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(R.string.timetable_delete_database_title)
-                    .setMessage(R.string.timetable_delete_database_message)
-                    .setNegativeButton(R.string.cancel, null)
-                    .setPositiveButton(R.string.timetable_delete) { _, _ ->
-                        timetableDatabase.delete()
-                        offline.isChecked = false
-                    }
-            )
+            viewLifecycleOwner.lifecycleScope.launch {
+                // Says how much space deleting frees, when anything is downloaded.
+                val size = withContext(Dispatchers.IO) { timetableDatabase.sizeOnDisk() }
+                val message = if (size > 0) {
+                    getString(R.string.settings_delete_database_message_size, Formatter.formatShortFileSize(requireContext(), size))
+                } else {
+                    getString(R.string.settings_delete_database_message)
+                }
+                showWhileViewExists(
+                    MaterialAlertDialogBuilder(requireContext(), R.style.ThemeOverlay_Transi_DestructiveDialog)
+                        .setIcon(R.drawable.ic_delete)
+                        .setTitle(R.string.settings_delete_database_title)
+                        .setMessage(message)
+                        .setNegativeButton(R.string.cancel, null)
+                        .setPositiveButton(R.string.timetable_delete) { _, _ ->
+                            timetableDatabase.delete()
+                            offline.isChecked = false
+                        }
+                )
+            }
             true
         }
         lifecycleScope.launch {

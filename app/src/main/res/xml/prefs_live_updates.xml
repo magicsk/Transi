@@ -13,7 +13,7 @@
             android:title="@string/pref_live_updates_sounds"
             app:iconSpaceReserved="false" />
 
-        <SeekBarPreference
+        <eu.magicsk.transi.SliderPreference
             android:defaultValue="200"
             android:key="live_activity_threshold"
             android:max="600"

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SliderPreference: the title (which shows the value) over a Material slider whose track lines up with the text
+     (the slider insets its track by 14dp). seekbar_value only satisfies SeekBarPreference, which hides it. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="14dp"
+    android:paddingBottom="6dp">
+
+    <TextView
+        android:id="@android:id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:labelFor="@id/preferenceSlider"
+        android:paddingHorizontal="20dp"
+        android:textAlignment="viewStart"
+        android:textAppearance="@style/TextAppearance.Transi.PreferenceTitle"
+        android:textColor="?android:attr/textColorPrimary" />
+
+    <TextView
+        android:id="@android:id/summary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:paddingHorizontal="20dp"
+        android:textAlignment="viewStart"
+        android:textAppearance="@style/TextAppearance.Transi.PreferenceSummary"
+        android:textColor="?android:attr/textColorSecondary" />
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/preferenceSlider"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="6dp"
+        app:labelBehavior="gone"
+        app:tickVisibilityMode="hidden" />
+
+    <TextView
+        android:id="@id/seekbar_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+</LinearLayout>

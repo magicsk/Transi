@@ -22,7 +22,5 @@
     <string name="offline_timetables">Offline timetables</string>
     <string name="offline_timetables_summary">Download timetables to browse them without internet</string>
     <string name="timetable_delete_database">Delete database</string>
-    <string name="timetable_delete_database_title">Delete timetable database?</string>
-    <string name="timetable_delete_database_message">Downloaded timetables are removed and offline timetables are turned off.</string>
     <string name="timetable_delete">Delete</string>
 </resources>

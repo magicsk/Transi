@@ -57,7 +57,8 @@
         <activity
             android:name=".SettingsActivity"
             android:exported="false"
-            android:label="@string/settings" />
+            android:label="@string/settings"
+            android:theme="@style/Theme.Transi.Settings" />
 
         <activity
             android:name=".TripDetailActivity"

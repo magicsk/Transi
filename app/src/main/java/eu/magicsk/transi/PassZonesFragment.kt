@@ -3,9 +3,6 @@ package eu.magicsk.transi
 import android.os.Bundle
 import android.view.View
 import androidx.core.content.edit
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -53,13 +50,7 @@ class PassZonesFragment : PreferenceFragmentCompat() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().setTitle(R.string.pass_zones)
-        // Like SettingsFragment: the list takes the side and bottom insets, the toolbar the top one.
-        listView.clipToPadding = false
-        ViewCompat.setOnApplyWindowInsetsListener(listView) { list, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            list.updatePadding(left = bars.left, right = bars.right, bottom = bars.bottom)
-            insets
-        }
+        showAsCards()
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) { provider.state.collect(::render) }
         }

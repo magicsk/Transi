@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Keys and defaults match eu.magicsk.transi.util.Prefs; wired by SettingsFragment.bindMyPass. -->
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
         app:iconSpaceReserved="false"
@@ -33,7 +34,8 @@
             app:iconSpaceReserved="false"
             app:key="pass_zones"
             app:persistent="false"
-            app:title="@string/pass_zones" />
+            app:title="@string/pass_zones"
+            app:widgetLayout="@layout/preference_widget_chevron" />
 
         <SwitchPreferenceCompat
             app:defaultValue="false"
@@ -43,6 +45,7 @@
             app:title="@string/pass_bank_card" />
 
         <Preference
+            android:layout="@layout/preference_footer"
             app:iconSpaceReserved="false"
             app:key="pass_footer"
             app:selectable="false"

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The small top app bar of every screen with a back arrow (Settings, the stop picker, the trip map). It sits on the
+         screen background; fitUnderStatusBar pads it under the status bar. -->
+    <style name="Widget.Transi.TopAppBar" parent="Widget.Material3.Toolbar">
+        <item name="android:background">?attr/colorMyBackground</item>
+        <item name="android:minHeight">64dp</item>
+        <item name="titleTextAppearance">?attr/textAppearanceTitleLarge</item>
+        <item name="titleTextColor">?attr/colorOnSurface</item>
+        <item name="navigationIcon">@drawable/ic_arrow_back</item>
+        <item name="navigationContentDescription">@string/back</item>
+        <item name="navigationIconTint">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- A confirmation that destroys data: the icon above the centred title and the confirming button in the error
+         colour. -->
+    <style name="ThemeOverlay.Transi.DestructiveDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog.Centered">
+        <item name="materialAlertDialogTitleIconStyle">@style/Transi.DestructiveDialog.Icon</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.Transi.Button.DestructiveDialog</item>
+    </style>
+
+    <style name="Transi.DestructiveDialog.Icon" parent="MaterialAlertDialog.Material3.Title.Icon.CenterStacked">
+        <item name="android:theme">@style/ThemeOverlay.Transi.ErrorControls</item>
+    </style>
+
+    <style name="ThemeOverlay.Transi.ErrorControls" parent="">
+        <item name="colorControlNormal">?attr/colorError</item>
+    </style>
+
+    <style name="Widget.Transi.Button.DestructiveDialog" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">?attr/colorError</item>
+        <item name="rippleColor">@color/destructive_button_ripple</item>
+    </style>
+
+    <!-- Settings rows: the list item type scale with tighter tracking. -->
+    <style name="TextAppearance.Transi.PreferenceTitle" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:letterSpacing">0.01</item>
+    </style>
+
+    <style name="TextAppearance.Transi.PreferenceSummary" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:letterSpacing">0.01</item>
+    </style>
+
+    <style name="TextAppearance.Transi.PreferenceFooter" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:letterSpacing">0.01</item>
+    </style>
+
+    <!-- Settings and its sub-screens: sections of rounded cards on the screen background (PreferenceCards). -->
+    <style name="Theme.Transi.Settings">
+        <item name="preferenceTheme">@style/ThemeOverlay.Transi.Preference</item>
+    </style>
+
+    <style name="ThemeOverlay.Transi.Preference" parent="PreferenceThemeOverlay">
+        <item name="preferenceFragmentCompatStyle">@style/Transi.PreferenceFragment</item>
+        <item name="preferenceCategoryStyle">@style/Transi.Preference.Category</item>
+        <item name="preferenceStyle">@style/Transi.Preference</item>
+        <item name="preferenceScreenStyle">@style/Transi.Preference</item>
+        <item name="dialogPreferenceStyle">@style/Transi.Preference.Dialog</item>
+        <item name="editTextPreferenceStyle">@style/Transi.Preference.EditText</item>
+        <item name="switchPreferenceCompatStyle">@style/Transi.Preference.Switch</item>
+        <item name="checkBoxPreferenceStyle">@style/Transi.Preference.CheckBox</item>
+        <item name="seekBarPreferenceStyle">@style/Transi.Preference.Slider</item>
+    </style>
+
+    <!-- The cards replace the dividers. -->
+    <style name="Transi.PreferenceFragment" parent="PreferenceFragment.Material">
+        <item name="android:divider">@null</item>
+    </style>
+
+    <style name="Transi.Preference.Category" parent="Preference.Category.Material">
+        <item name="android:layout">@layout/preference_category_header</item>
+        <item name="allowDividerAbove">false</item>
+        <item name="allowDividerBelow">false</item>
+        <item name="iconSpaceReserved">false</item>
+    </style>
+
+    <style name="Transi.Preference" parent="Preference.Material">
+        <item name="android:layout">@layout/preference_row</item>
+        <item name="iconSpaceReserved">false</item>
+    </style>
+
+    <style name="Transi.Preference.Dialog" parent="Preference.DialogPreference.Material">
+        <item name="android:layout">@layout/preference_row</item>
+        <item name="iconSpaceReserved">false</item>
+    </style>
+
+    <style name="Transi.Preference.EditText" parent="Preference.DialogPreference.EditTextPreference.Material">
+        <item name="android:layout">@layout/preference_row</item>
+        <item name="android:dialogLayout">@layout/preference_dialog_text_field</item>
+        <item name="iconSpaceReserved">false</item>
+    </style>
+
+    <style name="Transi.Preference.Switch" parent="Preference.SwitchPreferenceCompat.Material">
+        <item name="android:layout">@layout/preference_row</item>
+        <item name="android:widgetLayout">@layout/preference_widget_material_switch</item>
+        <item name="iconSpaceReserved">false</item>
+        <item name="singleLineTitle">false</item>
+    </style>
+
+    <style name="Transi.Preference.CheckBox" parent="Preference.CheckBoxPreference.Material">
+        <item name="android:layout">@layout/preference_row</item>
+        <item name="iconSpaceReserved">false</item>
+    </style>
+
+    <!-- SliderPreference: the row itself does not take taps, the slider does. -->
+    <style name="Transi.Preference.Slider" parent="Preference.SeekBarPreference.Material">
+        <item name="android:layout">@layout/preference_slider</item>
+        <item name="android:selectable">false</item>
+        <item name="iconSpaceReserved">false</item>
+    </style>
+</resources>
