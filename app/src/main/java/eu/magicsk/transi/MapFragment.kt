@@ -1,6 +1,7 @@
 package eu.magicsk.transi
 
 import android.content.Context
+import android.animation.ValueAnimator
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -106,6 +107,8 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         super.onViewCreated(view, savedInstanceState)
         val binding = FragmentMapBinding.bind(view)
         this.binding = binding
+        // Hidden until the tiles have drawn, so the empty surface never shows; then it fades in.
+        binding.mapContainer.alpha = 0f
         val sheet = BottomSheetBehavior.from<View>(binding.mapSheet)
         this.sheet = sheet
         // Restored afterwards with the view state when it was open.
@@ -246,6 +249,13 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         if (!googleMap.useTransportTiles(dark, binding.mapAttribution) && dark) {
             googleMap.setMapStyle(MapStyleOptions(getString(R.string.style_json)))
         }
+        // Offline or without a key the tiles never report loaded, so the map shows after a second anyway.
+        val reveal = Runnable {
+            val container = this.binding?.mapContainer ?: return@Runnable
+            if (container.alpha < 1f) container.animate().alpha(1f).setDuration(if (ValueAnimator.areAnimatorsEnabled()) 180L else 0L).start()
+        }
+        googleMap.setOnMapLoadedCallback { reveal.run() }
+        binding.root.postDelayed(reveal, 1000L)
         googleMap.uiSettings.isMapToolbarEnabled = false
         googleMap.uiSettings.isMyLocationButtonEnabled = false
         // After the next layout, which measures the attribution just shown.

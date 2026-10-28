@@ -26,6 +26,8 @@ import androidx.core.view.updatePadding
 import androidx.fragment.app.FragmentManager
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavOptions
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
 import dagger.hilt.android.AndroidEntryPoint
@@ -176,8 +178,8 @@ class MainActivity : AppCompatActivity() {
             )
             // The top margin is the status bar strip; statusBarBackground fills it. The map runs under the status bar
             // and pads its own controls (MapFragment).
-            val mapShown = navController.currentDestination?.id == R.id.navigationMap
-            binding.navHostFragment.updateLayoutParams<ViewGroup.MarginLayoutParams> { topMargin = if (mapShown) 0 else bars.top }
+            statusBarInset = bars.top
+            applyHostTopMargin()
             binding.navView.isVisible = !imeVisible
             binding.navView.updatePadding(bottom = bars.bottom)
             WindowInsetsCompat.CONSUMED
@@ -190,11 +192,24 @@ class MainActivity : AppCompatActivity() {
         }
         locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
 
-        navController.addOnDestinationChangedListener { _, _, _ -> ViewCompat.requestApplyInsets(view) }
+        // Applied in the same frame as the switch: waiting for the next insets pass shows the screen shifted for a frame.
+        navController.addOnDestinationChangedListener { _, _, _ -> applyHostTopMargin() }
         binding.navView.setupWithNavController(navController)
         binding.navView.setOnItemSelectedListener { item ->
             if (supportFragmentManager.backStackEntryCount > 0) closeSearch()
-            NavigationUI.onNavDestinationSelected(item, navController)
+            // The map is a surface: the default fade tears it for a frame, so it is entered and left without animation.
+            val toMap = item.itemId == R.id.navigationMap
+            val fromMap = navController.currentDestination?.id == R.id.navigationMap
+            if (toMap || fromMap) {
+                val options = NavOptions.Builder()
+                    .setLaunchSingleTop(true)
+                    .setRestoreState(true)
+                    .setPopUpTo(navController.graph.findStartDestination().id, inclusive = false, saveState = true)
+                    .build()
+                runCatching { navController.navigate(item.itemId, null, options) }
+            } else {
+                NavigationUI.onNavDestinationSelected(item, navController)
+            }
             true
         }
 
@@ -231,6 +246,14 @@ class MainActivity : AppCompatActivity() {
             )
             openLink(intent)
         }
+    }
+
+    private var statusBarInset = 0
+
+    // The map runs under the status bar and pads its own controls (MapFragment); the other screens sit below it.
+    private fun applyHostTopMargin() {
+        val mapShown = navController.currentDestination?.id == R.id.navigationMap
+        binding.navHostFragment.updateLayoutParams<ViewGroup.MarginLayoutParams> { topMargin = if (mapShown) 0 else statusBarInset }
     }
 
     override fun onNewIntent(intent: Intent) {
